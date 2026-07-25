@@ -9,7 +9,7 @@ use Inertia\Response;
 
 class PosController extends Controller
 {
-    public function index() : response
+    public function index() : \Inertia\Response
     {
         $products = Product::with('category')
         ->where('is_active', true)

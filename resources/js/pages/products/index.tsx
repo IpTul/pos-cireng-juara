@@ -82,7 +82,7 @@ export default function ProductIndex({ products, categories }: Props) {
                     {product.category.name}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    Rp. {Number(product.price).toLocaleString('id-ID')}
+                    Rp{Number(product.price).toLocaleString('id-ID')}
                   </td>
                   <td
                     className={`px-4 py-3 text-right ${product.stock <= 5 ? 'font-semibold text-orange-600' : ''}`}

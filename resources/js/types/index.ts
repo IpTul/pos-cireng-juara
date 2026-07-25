@@ -24,3 +24,21 @@ export interface CartItem {
   product: Product;
   quantity: number;
 }
+
+export interface SaleItem {
+  id: number;
+  product_name: string;
+  unit_price: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface Sale {
+  id: number;
+  total: number;
+  cash_tendered: number;
+  change_amount: number;
+  status: string;
+  created_at: string;
+  items: SaleItem[];
+}

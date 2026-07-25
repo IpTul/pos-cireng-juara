@@ -73,7 +73,7 @@ export default function CartPanel({
       <div className="space-y-3 border-t p-4">
         <div className="flex justify-between text-lg font-bold">
           <span>Total</span>
-          <span>Rp. {subtotal.toLocaleString('id-ID')}</span>
+          <span>Rp{subtotal.toLocaleString('id-ID')}</span>
         </div>
         <Button
           className="w-full"

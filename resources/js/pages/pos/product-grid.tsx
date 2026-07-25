@@ -42,7 +42,7 @@ export default function ProductGrid({ products, onAdd }: Props) {
             <div className="p-2">
               <p className="truncate text-sm font-medium">{product.name}</p>
               <p className="text-sm font-bold text-primary">
-                Rp. {parseFloat(product.price).toLocaleString('id-ID')}
+                Rp{parseFloat(product.price).toLocaleString('id-ID')}
               </p>
               <p className="text-xs text-muted-foreground">
                 Stock: {product.stock}

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SaleItem;
+use App\Models\SalesItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,10 +15,10 @@ class SaleHistoryController extends Controller
      */
     public function index()
     {
-        $saleItems = SaleItem::with('user')
-            ->when(Auth::user(), fn($q) => $q, function ($q) {
-                return $q->where('user_id', Auth::id());
-            })
+        $saleItems = SalesItem::with('user')
+            // ->when(Auth::user(), fn($q) => $q, function ($q) {
+            //     return $q->where('user_id', Auth::id());
+            // })
             ->latest()
             ->get();
 
