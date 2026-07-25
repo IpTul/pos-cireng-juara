@@ -2,8 +2,9 @@ import * as React from "react"
 import { ChevronRight, ChevronLeft } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { cva } from "class-variance-authority"
 
-const paginationVariants = React.cva(
+const paginationVariants = cva(
   "inline-flex items-center justify-center -space-x-px rounded-md shadow-sm",
   {
     variants: {
@@ -62,8 +63,8 @@ export function Dots({ className, ...props }: DotsProps) {
 }
 
 type PageLinkProps = React.ComponentProps<"a"> & {
-  className?: string
-  aria-current?: "page" | "step" | "location" | "date" | "time" | boolean
+  className?: string;
+  "aria-current"?: "page" | "step" | "location" | "date" | "time" | boolean
 }
 
 function PageLink({ className, ariaCurrent, ...props }: PageLinkProps) {
