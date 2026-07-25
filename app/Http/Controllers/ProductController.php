@@ -10,12 +10,27 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+    protected $user;
+
+    public function __construct()
+    {
+        $this->user = auth()->user();
+    }
+
+    private function authorizeOwnerOnly()
+    {
+        if(! $this->user?->isOwner()) {
+            abort(403, 'Hanya owner yang boleh melakukan aksi ini.');
+        }
+    }
+
     public function index()
     {
         $products = Product::with('category')
@@ -27,7 +42,13 @@ class ProductController extends Controller
 
         return Inertia::render('products/index', [
             'products' => $products,
-            'categories' => $categories
+            'categories' => $categories,
+            'user' => [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+                'email' => $this->user->email,
+                'role' => $this->user->role,
+            ]
         ]);
     }
 
@@ -44,15 +65,15 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request) : RedirectResponse
     {
+        $this->authorizeOwnerOnly();
         $data = $request->validated();
-
-        if ($request->hasFile('image')) {
+        if($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
         Product::create($data);
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Produck berhasil dibuat.');
     }
 
     /**
@@ -74,19 +95,17 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProductRequest $request, Product $product) : RedirectResponse
+    public function update(UpdateProductRequest $request, Product $product)
     {
+        $this->authorizeOwnerOnly();
         $data = $request->validated();
-
         if($request->hasFile('image')) {
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
-            }
+            $data['image'] = $request->file('image')->store('products', 'public');
         }
 
         $product->update($data);
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Produk berhasil diperbarui');
     }
 
     /**

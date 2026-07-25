@@ -8,16 +8,39 @@ use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class CategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+    protected $user;
+
+    public function __construct()
+    {
+        $this->user = auth()->user();
+    }
+
+    public function authorizeOwnerOnly()
+    {
+        if(! $this->user?->isOwner()) {
+            abort(403, 'Hanya owner yang boleh melakukan aksi ini.');
+        }
+    }
+
     public function index()
     {
-        return Inertia::render('categories/index',[
-            'categories' => Category::withCount('products')->orderBy('name')->get(),
+        $categories = Category::withCount('products')->orderby('name')->get();
+
+        return Inertia::render('categories/index', [
+            'categories' => $categories,
+            'user' => [
+                'id'    => $this->user->id,
+                'name'  => $this->user->name,
+                'email' => $this->user->email,
+                'role'  => $this->user->role,
+            ],
         ]);
     }
 
@@ -32,10 +55,11 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCategoryRequest $request) : RedirectResponse
+    public function store(StoreCategoryRequest $request)
     {
+        $this->authorizeOwnerOnly();
         Category::create($request->validated());
-        return redirect()->route('categories.index')->with('success', 'Category created successfully.');
+        return redirect()->route('categories.index')->with('success', 'Kategori berhasil dibuat.');
     }
 
     /**
@@ -57,10 +81,11 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCategoryRequest $request, Category $category) : RedirectResponse
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
+        $this->authorizeOwnerOnly();
         $category->update($request->validated());
-        return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
+        return redirect()->route('categories.index')->with('success', 'Kategori berhasil diperbarui.');
     }
 
     /**
@@ -68,6 +93,7 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
+        $this->authorizeOwnerOnly();
         $category->delete();
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }

@@ -14,7 +14,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class,'index'])->name('dashboard');
     Route::resource('products', ProductController::class)->except(['create', 'show', 'edit']);
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
-    Route::get('pos', [PosController::class, 'index'])->name('pos.index');
+    Route::get('pos', [PosController::class, 'index'])
+    ->name('pos.index')
+    ->middleware('role:owner,kasir');
     Route::get('history', [SaleHistoryController::class, 'index'])->name('history');
     Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout');
     Route::get('receipt/{sale}', [CheckoutController::class, 'receipt'])->name('receipt');

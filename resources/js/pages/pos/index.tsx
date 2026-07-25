@@ -10,9 +10,15 @@ import CheckoutDialog from './checkout-dialog';
 
 interface Props {
   products: Product[];
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: 'owner' | 'kasir';
+  };
 }
 
-export default function PosIndex({ products }: Props) {
+export default function PosIndex({ products, user }: Props) {
   const [search, setSearch] = useState('');
   const { items, subtotal, addItem, removeItem, setQuantity, clear } =
     useCart();
@@ -37,6 +43,10 @@ export default function PosIndex({ products }: Props) {
             <LayoutGrid className="h-5 w-5" />
           </Link>
           <span className="font-semibold">Point of Sale</span>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Anda login sebagai{' '}
+            <strong>{user.role === 'owner' ? 'Owner' : 'Kasir'}</strong>
+          </p>
           <div className="relative ml-4 max-w-sm flex-1">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

@@ -18,9 +18,15 @@ type CategoryWithCount = Category & { products_count: number };
 
 interface Props {
   categories: CategoryWithCount[];
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: 'owner' | 'kasir';
+  };
 }
 
-export default function CategoryIndex({ categories }: Props) {
+export default function CategoryIndex({ categories, user }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
 
@@ -85,10 +91,12 @@ export default function CategoryIndex({ categories }: Props) {
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Categories</h1>
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Category
-          </Button>
+          {user.role === 'owner' && (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+          )}
         </div>
         <div className="rounded-lg border">
           <table className="w-full text-sm">

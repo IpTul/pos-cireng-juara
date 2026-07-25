@@ -39,12 +39,29 @@ class User extends Authenticatable implements PasskeyUser
      *
      * @return array<string, string>
      */
+
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
+    public function isKasir(): bool
+    {
+        return $this->role === 'kasir';
+    }
+
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'role' => 'string',
         ];
+    }
+
+    public function inRole(array $roles): bool
+    {
+        return in_array($this->role, $roles, true);
     }
 }
