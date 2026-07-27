@@ -1,15 +1,6 @@
 import { Link } from '@inertiajs/react';
-import {
-  BookOpen,
-  FolderGit2,
-  LayoutGrid,
-  Package,
-  Tag,
-  ShoppingCart,
-  History,
-} from 'lucide-react';
+import { LayoutGrid, Package, Tag, ShoppingCart, History } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -17,82 +8,58 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { usePage } from '@inertiajs/react';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-  {
-    title: 'Dashboard',
-    href: dashboard(),
-    icon: LayoutGrid,
-  },
-
-  {
-    title: 'Products',
-    href: '/products',
-    icon: Package,
-  },
-
-  {
-    title: 'Categories',
-    href: '/categories',
-    icon: Tag,
-  },
-
-  {
-    title: 'Point of Sale',
-    href: '/pos',
-    icon: ShoppingCart,
-  },
-
-  {
-    title: 'History',
-    href: '/history',
-    icon: History,
-  },
-];
-
-const footerNavItems: NavItem[] = [
-  {
-    title: 'Repository',
-    href: 'https://github.com/laravel/react-starter-kit',
-    icon: FolderGit2,
-  },
-  {
-    title: 'Documentation',
-    href: 'https://laravel.com/docs/starter-kits#react',
-    icon: BookOpen,
-  },
-];
-
 export function AppSidebar() {
+  const { auth } = usePage().props;
+  const isKasir = auth.user?.role === 'kasir';
+
+  const mainNavItems: NavItem[] = [
+    {
+      title: 'Dashboard',
+      href: '/',
+      icon: LayoutGrid,
+    },
+    {
+      title: 'Products',
+      href: '/products',
+      icon: Package,
+    },
+    {
+      title: 'Categories',
+      href: '/categories',
+      icon: Tag,
+    },
+    {
+      title: 'Point of Sale',
+      href: '/pos',
+      icon: ShoppingCart,
+    },
+    {
+      title: 'History',
+      href: '/history',
+      icon: History,
+    },
+  ];
+
+  const filteredItems = mainNavItems.filter(
+    item => !(item.title === 'History' && isKasir)
+  );
+
   return (
-    <Sidebar collapsible="icon" variant="inset">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href={dashboard()} prefetch>
-                <AppLogo />
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar>
+      <SidebarHeader className="space-y-2">
+        <AppLogo />
+        <p className="text-xs text-muted-foreground">Cashier App</p>
       </SidebarHeader>
-
       <SidebarContent>
-        <NavMain items={mainNavItems} />
+        <NavMain items={filteredItems} />
       </SidebarContent>
-
       <SidebarFooter>
-        <NavFooter items={footerNavItems} className="mt-auto" />
         <NavUser />
       </SidebarFooter>
     </Sidebar>
   );
 }
-// Added comment to force rebuild

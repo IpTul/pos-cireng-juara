@@ -11,7 +11,9 @@ use App\Http\Controllers\DashboardController;
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [DashboardController::class,'index'])->name('dashboard');
+    Route::get('dashboard', [DashboardController::class,'index'])
+    ->name('dashboard')
+    ->middleware('role:owner,kasir');;
     Route::resource('products', ProductController::class)->except(['create', 'show', 'edit']);
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
     Route::get('pos', [PosController::class, 'index'])

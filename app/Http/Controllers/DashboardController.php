@@ -11,6 +11,18 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    protected $user;
+
+    public function __construct()
+    {
+        $this->user = auth()->user();
+
+        // Optionally, restrict to owner or kasir (duplicate of route middleware)
+        if (! $this->user?->inRole(['owner', 'kasir'])) {
+            abort(403, 'Akses ditolak.');
+        }
+    }
+    
     public function index(): Response
     {
         $today = today();
@@ -54,9 +66,15 @@ class DashboardController extends Controller
                     'today_transactions' => $todaySales->count(),
                     'total_products' => Product::where('is_active', true)->count(),
                     'low_stock_count' => Product::where('stock', '<=', 5)->where('stock', '>', 0)->count(),
-                ],
-                'top_products' => $topProduct,
-                'recent_sales' => $recentSales,
-            ]);
+            ],
+            'top_products' => $topProduct,
+            'recent_sales' => $recentSales,
+            'user' => [
+                'id'    => $this->user->id,
+                'name'  => $this->user->name,
+                'email' => $this->user->email,
+                'role'  => $this->user->role,
+            ],
+        ]);
     }
 }

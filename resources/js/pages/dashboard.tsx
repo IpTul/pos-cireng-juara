@@ -20,18 +20,31 @@ interface Props {
   stats: Stats;
   top_products: TopProduct[];
   recent_sales: Sale[];
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: 'owner' | 'kasir';
+  };
 }
 
 export default function Dashboard({
   stats,
   top_products,
   recent_sales,
+  user,
 }: Props) {
   return (
     <>
       <Head title="Dashboard" />
       <div className="space-y-6 p-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-bold">
+          Dashboard{' '}
+          <p className="mb-4 text-sm text-muted-foreground">
+            Anda login sebagai{' '}
+            <strong>{user.role === 'owner' ? 'Owner' : 'Kasir'}</strong>
+          </p>
+        </h1>
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
