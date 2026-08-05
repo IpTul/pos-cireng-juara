@@ -10,8 +10,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SalesItem extends Model
 {
     protected $table = 'sales_items';
+
     public function sale() : BelongsTo
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function product() : BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 }

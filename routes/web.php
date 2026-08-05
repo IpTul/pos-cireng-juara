@@ -19,7 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pos', [PosController::class, 'index'])
     ->name('pos.index')
     ->middleware('role:owner,kasir');
-    Route::get('history', [SaleHistoryController::class, 'index'])->name('history');
+    Route::get('history', [SaleHistoryController::class, 'index']);
     Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout');
     Route::get('receipt/{sale}', [CheckoutController::class, 'receipt'])->name('receipt');
 });

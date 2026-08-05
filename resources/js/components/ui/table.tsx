@@ -1,8 +1,9 @@
 import * as React from "react"
+import { cva } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
-const tableVariants = React.cva(
+const tableVariants = cva(
   "w-full text-sm",
   {
     variants: {
