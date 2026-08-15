@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import type { CartItem } from '@/types';
+import { CartItem, PackCartItem } from '@/types';
+import { FreeItemSelection } from './use-cart';
 import {
   Dialog,
   DialogContent,
@@ -11,13 +12,23 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Package, Gift } from 'lucide-react';
 
 interface Props {
   open: boolean;
-  items: CartItem[];
+  items: (CartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] } | PackCartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] })[];
   subtotal: number;
+  totalItems: number;
   onSuccess: () => void;
   onClose: () => void;
+}
+
+function isCartItem(item: Props['items'][0]): item is (CartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] }) {
+  return 'product' in item;
+}
+
+function isPackCartItem(item: Props['items'][0]): item is (PackCartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] }) {
+  return 'pack' in item;
 }
 
 function formatRupiah(value: number) {
@@ -28,6 +39,7 @@ export default function CheckoutDialog({
   open,
   items,
   subtotal,
+  totalItems,
   onSuccess,
   onClose,
 }: Props) {
@@ -46,13 +58,29 @@ export default function CheckoutDialog({
     setError(null);
     setProcessing(true);
 
+    // Collect all free items from all items (they're stored on the first item)
+    const allFreeItems = items.flatMap(i => i.freeItems || []);
+
+    const regularItems = items
+      .filter(isCartItem)
+      .map((i) => ({
+        product_id: i.product.id,
+        quantity: i.quantity,
+      }));
+
+    const packItems = items
+      .filter(isPackCartItem)
+      .map((i) => ({
+        pack_id: i.pack.id,
+        quantity: i.quantity,
+      }));
+
     router.post(
       '/checkout',
       {
-        items: items.map((i) => ({
-          product_id: i.product.id,
-          quantity: i.quantity,
-        })),
+        items: regularItems,
+        packs: packItems,
+        free_items: allFreeItems,
         cash_tendered: cash,
       },
       {
@@ -78,19 +106,50 @@ export default function CheckoutDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1 rounded-lg bg-muted p-4">
-            {items.map((i) => (
-              <div key={i.product.id} className="flex justify-between text-sm">
+            {items.map((i, index) => (
+              <div key={index} className="flex justify-between text-sm">
                 <span>
-                  {i.product.name} × {i.quantity}
+                  {isCartItem(i)
+                    ? i.product.name
+                    : <span className="flex items-center gap-1"><Package className="h-3 w-3" />{i.pack.name}</span>}
+                  × {i.quantity}
+                  {(i.freeQuantity && i.freeQuantity > 0) && (
+                    <span className="ml-2 text-xs text-green-600 flex items-center gap-1">
+                      <Gift className="h-2.5 w-2.5" />
+                      +{i.freeQuantity} Gratis
+                    </span>
+                  )}
+                  {(i.freeItems && i.freeItems.length > 0) && (
+                    <div className="ml-2 text-xs text-green-600">
+                      {' '}
+                      {i.freeItems.map(f => `[GRATIS] ${f.quantity}x`).join(', ')}
+                    </div>
+                  )}
                 </span>
                 <span>
-                  {formatRupiah(parseFloat(i.product.price) * i.quantity)}
+                  {isCartItem(i)
+                    ? formatRupiah(parseFloat(i.product.price) * i.quantity)
+                    : formatRupiah(parseFloat(i.pack.price) * i.quantity)}
                 </span>
               </div>
             ))}
-            <div className="mt-2 flex justify-between border-t pt-2 font-bold">
-              <span>Total</span>
-              <span>{formatRupiah(subtotal)}</span>
+            <div className="mt-2 space-y-1 border-t pt-2 text-xs">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Item dibayar</span>
+                <span>{items.reduce((sum, i) => sum + i.quantity, 0)}</span>
+              </div>
+              <div className="flex justify-between text-green-600">
+                <span>Gratis (Beli 10 Gratis 1)</span>
+                <span>{items.reduce((sum, i) => sum + (i.freeQuantity || 0), 0)}</span>
+              </div>
+              <div className="flex justify-between font-bold">
+                <span>Total Item</span>
+                <span>{totalItems}</span>
+              </div>
+              <div className="flex justify-between font-bold border-t pt-1">
+                <span>Total Bayar</span>
+                <span>{formatRupiah(subtotal)}</span>
+              </div>
             </div>
           </div>
           {/* Cash input */}
@@ -114,9 +173,7 @@ export default function CheckoutDialog({
           {cashInput && (
             <div className="flex justify-between text-lg font-bold">
               <span>Kembalian</span>
-              <span
-                className={change >= 0 ? 'text-green-600' : 'text-destructive'}
-              >
+              <span className={change >= 0 ? 'text-green-600' : 'text-destructive'}>
                 {formatRupiah(change)}
               </span>
             </div>

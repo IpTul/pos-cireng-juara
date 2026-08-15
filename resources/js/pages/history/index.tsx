@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Pencil, Plus, Trash2, Eye } from 'lucide-react';
+import { Pencil, Plus, Trash2, Eye, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,6 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+interface FreeItemInfo {
+  id: number;
+  name: string;
+  quantity: number;
+}
 
 interface SaleItemRow {
   id: number;
@@ -25,10 +31,15 @@ interface SaleItemRow {
   product: {
     name: string;
     category: { name: string };
-  };
+  } | null;
+  pack: {
+    name: string;
+  } | null;
   quantity: number;
   unit_price: number;
   subtotal: number;
+  is_free: boolean;
+  free_items: FreeItemInfo[];
 }
 
 interface Props {
@@ -89,60 +100,92 @@ export default function History({ saleItems, user, can }: Props) {
                   </td>
                 </tr>
               ) : (
-                saleItems.map((sale) => (
-                  <tr
-                    key={sale.id}
-                    className="border-b last:border-0 hover:bg-muted/25"
-                  >
-                    <td className="px-4 py-3">
-                      {new Date(sale.sale.created_at).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-left font-medium">
-                      {sale.product.category.name} - {sale.product.name}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {sale.sale.user.name}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {sale.sale.total}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {sale.sale.cash_tendered}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {sale.sale.change_amount}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge
-                        variant={
-                          sale.sale.status === 'completed'
-                            ? 'default'
-                            : sale.sale.status === 'pending'
-                              ? 'warning'
-                              : 'destructive'
-                        }
-                      >
-                        {sale.sale.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleViewDetail(sale)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handlePrint(sale)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                saleItems.map((sale) => {
+                  const isPack = !!sale.pack;
+                  const isFree = sale.is_free;
+                  const itemName = isPack
+                    ? sale.pack?.name
+                    : sale.product?.name;
+                  const categoryName = isPack
+                    ? 'Paket'
+                    : sale.product?.category?.name;
+                  const badgeIcon = isPack ? (
+                    <Package className="mr-1 h-3 w-3" />
+                  ) : null;
+
+                  const hasFreeItems = sale.free_items && sale.free_items.length > 0;
+                  const freeItemsDisplay = hasFreeItems ? (
+                    <span className="ml-2 text-xs text-green-600">
+                      {' '}
+                      + Gratis: {sale.free_items.map(f => `${f.name} x${f.quantity}`).join(', ')}
+                    </span>
+                  ) : null;
+
+                  return (
+                    <tr
+                      key={sale.id}
+                      // className={`border-b ${isFree ? 'bg-green-50' : ''}`}
+                    >
+                      <td className="px-4 py-3">
+                        {new Date(sale.sale.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-left font-medium">
+                        {badgeIcon}
+                        {categoryName} - {itemName}
+                        {freeItemsDisplay}
+                        {isFree && (
+                          <Badge
+                            variant="default"
+                            className="ml-2 bg-green-600 text-xs"
+                          >
+                            Gratis
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {sale.sale.user.name}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {sale.sale.total}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {sale.sale.cash_tendered}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {sale.sale.change_amount}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge
+                          variant={
+                            sale.sale.status === 'completed'
+                              ? 'default'
+                              : sale.sale.status === 'pending'
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                        >
+                          {sale.sale.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewDetail(sale)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePrint(sale)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -158,10 +201,33 @@ export default function History({ saleItems, user, can }: Props) {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Produk</span>
-                <span className="font-medium">
-                  {selected.product?.category?.name} - {selected.product?.name}
+                <span className="flex items-center gap-2 font-medium">
+                  {selected.pack ? (
+                    <span className="flex items-center gap-1">
+                      <Package className="h-3 w-3" />
+                      Paket - {selected.pack.name}
+                    </span>
+                  ) : (
+                    <span>
+                      {selected.product?.category?.name} -{' '}
+                      {selected.product?.name}
+                    </span>
+                  )}
+                  {selected.is_free && (
+                    <Badge variant="default" className="bg-green-600 text-xs">
+                      Gratis
+                    </Badge>
+                  )}
                 </span>
               </div>
+              {selected.free_items && selected.free_items.length > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Item Gratis</span>
+                  <span className="text-green-600">
+                    {selected.free_items.map(f => `${f.name} x${f.quantity}`).join(', ')}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Kasir</span>
                 <span>{selected.sale.user?.name ?? '-'}</span>
@@ -202,7 +268,7 @@ export default function History({ saleItems, user, can }: Props) {
                     selected.sale.status === 'completed'
                       ? 'default'
                       : selected.sale.status === 'pending'
-                        ? 'warning'
+                        ? 'secondary'
                         : 'destructive'
                   }
                 >

@@ -25,6 +25,11 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface PackCartItem {
+  pack: Pack;
+  quantity: number;
+}
+
 export interface SaleItem {
   id: number;
   product_name: string;
@@ -41,4 +46,22 @@ export interface Sale {
   status: string;
   created_at: string;
   items: SaleItem[];
+}
+
+export interface PackItem {
+  id: number;
+  pack_id: number;
+  product_id: number;
+  quantity: number;
+  product: Product;
+}
+
+export interface Pack {
+  id: number;
+  name: string;
+  description: string | null;
+  price: string;
+  image: string | null;
+  is_active: boolean;
+  pack_items: PackItem[];
 }

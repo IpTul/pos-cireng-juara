@@ -87,14 +87,14 @@ export default function CategoryIndex({ categories, user }: Props) {
 
   return (
     <>
-      <Head title="Categories" />
+      <Head title="Cabang" />
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Categories</h1>
+          <h1 className="text-2xl font-bold">Cabang</h1>
           {user.role === 'owner' && (
             <Button onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Category
+              Tambah Cabang
             </Button>
           )}
         </div>
@@ -157,7 +157,7 @@ export default function CategoryIndex({ categories, user }: Props) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editing ? 'Edit Category' : 'Add Category'}
+              {editing ? 'Edit Cabang' : 'Tambah Cabang'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">

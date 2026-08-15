@@ -73,7 +73,7 @@ class ProductController extends Controller
 
         Product::create($data);
 
-        return redirect()->route('products.index')->with('success', 'Produck berhasil dibuat.');
+        return redirect()->route('products.index')->with('success', 'Produk berhasil dibuat.');
     }
 
     /**
@@ -100,6 +100,9 @@ class ProductController extends Controller
         $this->authorizeOwnerOnly();
         $data = $request->validated();
         if($request->hasFile('image')) {
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 

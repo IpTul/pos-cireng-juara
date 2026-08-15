@@ -95,6 +95,6 @@ class CategoryController extends Controller
     {
         $this->authorizeOwnerOnly();
         $category->delete();
-        return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
+        return redirect()->route('categories.index')->with('success', 'Kategori berhasil dihapus.');
     }
 }

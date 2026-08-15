@@ -1,56 +1,102 @@
-import { Product } from '@/types';
-
-interface CartItem {
-  product: Product;
-  quantity: number;
-}
+import { Product, Pack } from '@/types';
+import { Package } from 'lucide-react';
 
 interface Props {
   products: Product[];
-  onAdd: (product: Product) => void;
+  packs: Pack[];
+  onAddProduct: (product: Product) => void;
+  onAddPack: (pack: Pack) => void;
 }
 
-export default function ProductGrid({ products, onAdd }: Props) {
-  if (products.length === 0) {
+export default function ProductGrid({ products, packs, onAddProduct, onAddPack }: Props) {
+  const hasItems = products.length > 0 || packs.length > 0;
+
+  if (!hasItems) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
-        No products found.
+        Tidak ada produk atau paket tersedia.
       </div>
     );
   }
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {products.map((product) => (
-          <button
-            key={product.id}
-            onClick={() => onAdd(product)}
-            className="group flex flex-col overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            {product.image ? (
-              <img
-                src={`/storage/${product.image}`}
-                alt={product.name}
-                className="aspect-square w-full object-cover"
-              />
-            ) : (
-              <div className="flex aspect-square w-full items-center justify-center bg-muted text-3xl text-muted-foreground">
-                {product.name.charAt(0)}
-              </div>
-            )}
-            <div className="p-2">
-              <p className="truncate text-sm font-medium">{product.name}</p>
-              <p className="text-sm font-bold text-primary">
-                Rp{parseFloat(product.price).toLocaleString('id-ID')}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Stock: {product.stock}
-              </p>
-            </div>
-          </button>
-        ))}
-      </div>
+      {packs.length > 0 && (
+        <div className="mb-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider px-2">
+            <Package className="h-4 w-4" />
+            Paket Makanan
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {packs.map((pack) => (
+              <button
+                key={`pack-${pack.id}`}
+                onClick={() => onAddPack(pack)}
+                className="group flex flex-col overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {pack.image ? (
+                  <img
+                    src={`/storage/${pack.image}`}
+                    alt={pack.name}
+                    className="aspect-square w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-square w-full items-center justify-center bg-primary/10 text-3xl text-primary">
+                    <Package className="h-10 w-10" />
+                  </div>
+                )}
+                <div className="p-2">
+                  <p className="truncate text-sm font-medium">{pack.name}</p>
+                  <p className="text-sm font-bold text-primary">
+                    Rp{parseFloat(pack.price).toLocaleString('id-ID')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {pack.pack_items?.map((item) => `${item.product.name} x${item.quantity}`).join(', ')}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {products.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider px-2">
+            Produk Tunggal
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {products.map((product) => (
+              <button
+                key={`product-${product.id}`}
+                onClick={() => onAddProduct(product)}
+                className="group flex flex-col overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {product.image ? (
+                  <img
+                    src={`/storage/${product.image}`}
+                    alt={product.name}
+                    className="aspect-square w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-square w-full items-center justify-center bg-muted text-3xl text-muted-foreground">
+                    {product.name.charAt(0)}
+                  </div>
+                )}
+                <div className="p-2">
+                  <p className="truncate text-sm font-medium">{product.name}</p>
+                  <p className="text-sm font-bold text-primary">
+                    Rp{parseFloat(product.price).toLocaleString('id-ID')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Stok: {product.stock}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

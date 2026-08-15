@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Pack;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,12 +25,28 @@ class PosController extends Controller
     public function index()
     {
         $products = Product::with('category')
-        ->where('is_active', true)
-        ->where('stock', '>', 0)
-        ->orderBy('name')
-        ->get();
+            ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->orderBy('name')
+            ->get();
+
+        $packs = Pack::with(['packItems.product'])
+            ->where('is_active', true)
+            ->get()
+            ->filter(function ($pack) {
+                // Check if all items in pack have stock
+                foreach ($pack->packItems as $item) {
+                    if (!$item->product->is_active || $item->product->stock < $item->quantity) {
+                        return false;
+                    }
+                }
+                return true;
+            })
+            ->values();
+
         return Inertia::render('pos/index', [
             'products' => $products,
+            'packs' => $packs,
             'user' => [
                 'id'    => $this->user->id,
                 'name'  => $this->user->name,

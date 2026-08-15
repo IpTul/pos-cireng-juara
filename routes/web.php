@@ -7,21 +7,38 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\SaleHistoryController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinancialReportController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\PackController;
 
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [DashboardController::class,'index'])
-    ->name('dashboard')
-    ->middleware('role:owner,kasir');;
+    Route::get('dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard')
+        ->middleware('role:owner,kasir');
+
+    Route::resource('pack', PackController::class)->except(['create', 'show', 'edit']);
     Route::resource('products', ProductController::class)->except(['create', 'show', 'edit']);
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
+
     Route::get('pos', [PosController::class, 'index'])
-    ->name('pos.index')
-    ->middleware('role:owner,kasir');
+        ->name('pos.index')
+        ->middleware('role:owner,kasir');
+
     Route::get('history', [SaleHistoryController::class, 'index']);
+
     Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout');
     Route::get('receipt/{sale}', [CheckoutController::class, 'receipt'])->name('receipt');
+
+    Route::get('/keuangan', [FinancialReportController::class, 'index'])
+        ->middleware('role:owner')
+        ->name('keuangan.index');
+
+    // User management (owner only)
+    Route::resource('users', UserController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('role:owner');
 });
 
 require __DIR__.'/settings.php';

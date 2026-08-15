@@ -6,6 +6,8 @@ import {
   ShoppingCart,
   History,
   Store,
+  Wallet,
+  Users,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -21,7 +23,6 @@ import type { NavItem } from '@/types';
 
 export function AppSidebar() {
   const { auth } = usePage().props;
-  const isKasir = auth.user?.role === 'kasir';
 
   const operationalItems: NavItem[] = [
     {
@@ -39,19 +40,35 @@ export function AppSidebar() {
       href: '/history',
       icon: History,
     },
-  ].filter((item) => !(item.title === 'History' && isKasir));
+  ];
 
   const catalogItems: NavItem[] = [
     {
-      title: 'Products',
+      title: 'Produk',
       href: '/products',
       icon: Package,
     },
     {
-      title: 'Categories',
+      title: 'Paket',
+      href: '/pack',
+      icon: Package,
+    },
+  ];
+
+  const cabangItems: NavItem[] = [
+    {
+      title: 'Cabang',
       href: '/categories',
       icon: Tag,
     },
+  ];
+
+  const financeItems: NavItem[] = [
+    { title: 'Keuangan', href: '/keuangan', icon: Wallet },
+  ];
+
+  const settingsItems: NavItem[] = [
+    { title: 'Manajemen User', href: '/users', icon: Users },
   ];
 
   return (
@@ -74,10 +91,29 @@ export function AppSidebar() {
           <NavMain items={operationalItems} />
         </SidebarGroup>
 
-        {!isKasir && (
+        <SidebarGroup>
+          <SidebarGroupLabel>Produk</SidebarGroupLabel>
+          <NavMain items={catalogItems} />
+        </SidebarGroup>
+
+        {auth.user?.role === 'owner' && (
           <SidebarGroup>
-            <SidebarGroupLabel>Katalog</SidebarGroupLabel>
-            <NavMain items={catalogItems} />
+            <SidebarGroupLabel>Cabang</SidebarGroupLabel>
+            <NavMain items={cabangItems} />
+          </SidebarGroup>
+        )}
+
+        {auth.user?.role === 'owner' && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Laporan</SidebarGroupLabel>
+            <NavMain items={financeItems} />
+          </SidebarGroup>
+        )}
+
+        {auth.user?.role === 'owner' && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Pengaturan</SidebarGroupLabel>
+            <NavMain items={settingsItems} />
           </SidebarGroup>
         )}
       </SidebarContent>
