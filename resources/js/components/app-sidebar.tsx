@@ -8,6 +8,8 @@ import {
   Store,
   Wallet,
   Users,
+  Archive,
+  Activity,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -39,6 +41,11 @@ export function AppSidebar() {
       title: 'History',
       href: '/history',
       icon: History,
+    },
+    {
+      title: 'Stok Cireng',
+      href: '/stok',
+      icon: Activity,
     },
   ];
 

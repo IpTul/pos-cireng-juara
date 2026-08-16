@@ -44,18 +44,12 @@ class SaleHistoryController extends Controller
         // Process each sale to combine free items with their main items
         $saleItems = $sales->flatMap(function ($sale) {
             $items = $sale->items;
-
-            // Separate paid and free items
             $paidItems = $items->where('is_free', false);
             $freeItems = $items->where('is_free', true);
 
             $combined = $paidItems->map(function ($paidItem) use ($freeItems, $paidItems, $sale) {
-                // Find free items that are "related" to this paid item
-                // Strategy: free items of the same product, or if different product, attach to first paid item
-                // For simplicity, we'll attach all free items to their matching product, or distribute
                 $relatedFree = $freeItems->where('product_id', $paidItem->product_id);
 
-                // If no matching product_id, and this is the first paid item, attach orphan free items
                 $isFirstPaid = $paidItems->first()->id === $paidItem->id;
                 $orphanFree = $isFirstPaid ? $freeItems->where('product_id', null)->where('pack_id', null) : collect();
 
@@ -93,7 +87,6 @@ class SaleHistoryController extends Controller
                 ];
             })->values();
 
-            // If there are free items with no paid items (shouldn't happen), include them
             if ($paidItems->isEmpty() && $freeItems->isNotEmpty()) {
                 $combined = $combined->merge($freeItems->map(function ($freeItem) use ($sale) {
                     return [

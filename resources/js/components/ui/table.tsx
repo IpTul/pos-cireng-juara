@@ -94,3 +94,16 @@ export function TableHead({ className, ...props }: TableHeadProps) {
     />
   )
 }
+
+type TableCaptionProps = React.ComponentProps<"caption"> & {
+  className?: string
+}
+
+export function TableCaption({ className, ...props }: TableCaptionProps) {
+  return (
+    <caption
+      className={cn("text-sm text-muted-foreground pb-4", className)}
+      {...props}
+    />
+  )
+}

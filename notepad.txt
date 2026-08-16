@@ -1,4 +1,5 @@
-tambah paketan
-+10 cireng dapat bonus 1
+[DONE] tambah paketan
+[DONE] +10 cireng dapat bonus 1
+[DONE] tambah update stok
+
 tambahan add on (mentai)
-tambah update stok
