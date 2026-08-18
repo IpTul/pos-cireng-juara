@@ -48,25 +48,24 @@ class DashboardController extends Controller
             'total_revenue' => (float) $p->total_revenue,
         ]);
 
-        // recent sales
+        // recent sales (paginated)
         $recentSales = Sale::with(['items.product.category', 'items.pack'])
             ->latest()
-            ->limit(10)
-            ->get()
-            ->map(fn($sale) => [
-            'id'         => $sale->id,
-            'total'      => (float) $sale->total,
-            'created_at' => $sale->created_at,
-            'items'      => $sale->items->map(fn($item) => [
-                'id'            => $item->id,
-                'product_name'  => $item->product_name,
-                'unit_price'    => $item->unit_price,
-                'quantity'      => $item->quantity,
-                'subtotal'      => $item->subtotal,
-                'is_free'       => $item->is_free,
-                'category_name' => $item->product?->category?->name ?? ($item->pack ? 'Paket' : '—'),
-            ]),
-        ]);
+            ->paginate(5)
+            ->through(fn($sale) => [
+                'id'         => $sale->id,
+                'total'      => (float) $sale->total,
+                'created_at' => $sale->created_at,
+                'items'      => $sale->items->map(fn($item) => [
+                    'id'            => $item->id,
+                    'product_name'  => $item->product_name,
+                    'unit_price'    => $item->unit_price,
+                    'quantity'      => $item->quantity,
+                    'subtotal'      => $item->subtotal,
+                    'is_free'       => $item->is_free,
+                    'category_name' => $item->product?->category?->name ?? ($item->pack ? 'Paket' : '—'),
+                ]),
+            ]);
 
         return Inertia::render('dashboard',[
             'stats' => [

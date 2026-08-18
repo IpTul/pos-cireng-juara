@@ -36,7 +36,7 @@ class SaleHistoryController extends Controller
     {
         $this->authorizeOwnerOnly();
 
-        // Get all sales with their items, grouped by sale
+        // Get all sales with their items (no pagination on Sale level)
         $sales = Sale::with(['items.product.category', 'items.pack', 'user'])
             ->latest()
             ->get();
@@ -115,10 +115,24 @@ class SaleHistoryController extends Controller
             }
 
             return $combined;
-        });
+        })->values();
+
+        // Apply manual pagination to the combined items
+        $perPage = 15;
+        $currentPage = request()->get('page', 1);
+        $total = $saleItems->count();
+        $paginatedItems = $saleItems->forPage($currentPage, $perPage)->values();
+
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
 
         return Inertia::render('history/index', [
-            'saleItems' => $saleItems,
+            'saleItems' => $paginated,
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,

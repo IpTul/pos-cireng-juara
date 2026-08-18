@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Pencil, Plus, Trash2, Eye, Package } from 'lucide-react';
+import { Pencil, Eye, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { SimplePagination } from '@/components/ui/pagination';
 
 interface FreeItemInfo {
   id: number;
@@ -42,8 +43,18 @@ interface SaleItemRow {
   free_items: FreeItemInfo[];
 }
 
+interface PaginatedData<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number | null;
+  to: number | null;
+}
+
 interface Props {
-  saleItems: SaleItemRow[];
+  saleItems: PaginatedData<SaleItemRow>;
   user: { id: number; name: string; email: string; role: 'owner' | 'kasir' };
   can: { create: boolean };
 }
@@ -90,7 +101,7 @@ export default function History({ saleItems, user, can }: Props) {
               </tr>
             </thead>
             <tbody>
-              {saleItems.length === 0 ? (
+              {saleItems.data.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
@@ -100,7 +111,7 @@ export default function History({ saleItems, user, can }: Props) {
                   </td>
                 </tr>
               ) : (
-                saleItems.map((sale) => {
+                saleItems.data.map((sale) => {
                   const isPack = !!sale.pack;
                   const isFree = sale.is_free;
                   const itemName = isPack
@@ -113,11 +124,15 @@ export default function History({ saleItems, user, can }: Props) {
                     <Package className="mr-1 h-3 w-3" />
                   ) : null;
 
-                  const hasFreeItems = sale.free_items && sale.free_items.length > 0;
+                  const hasFreeItems =
+                    sale.free_items && sale.free_items.length > 0;
                   const freeItemsDisplay = hasFreeItems ? (
                     <span className="ml-2 text-xs text-green-600">
                       {' '}
-                      + Gratis: {sale.free_items.map(f => `${f.name} x${f.quantity}`).join(', ')}
+                      + Gratis:{' '}
+                      {sale.free_items
+                        .map((f) => `${f.name} x${f.quantity}`)
+                        .join(', ')}
                     </span>
                   ) : null;
 
@@ -189,6 +204,15 @@ export default function History({ saleItems, user, can }: Props) {
               )}
             </tbody>
           </table>
+          {saleItems.last_page > 1 && (
+            <div className="border-t p-4">
+              <SimplePagination
+                currentPage={saleItems.current_page}
+                totalPages={saleItems.last_page}
+                baseUrl="/history"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -224,7 +248,9 @@ export default function History({ saleItems, user, can }: Props) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Item Gratis</span>
                   <span className="text-green-600">
-                    {selected.free_items.map(f => `${f.name} x${f.quantity}`).join(', ')}
+                    {selected.free_items
+                      .map((f) => `${f.name} x${f.quantity}`)
+                      .join(', ')}
                   </span>
                 </div>
               )}
@@ -290,5 +316,5 @@ export default function History({ saleItems, user, can }: Props) {
 }
 
 History.layout = {
-  breadcrumbs: [{ title: 'History', href: '/history' }],
+  breadcrumbs: [{ title: 'Riwayat Penjualan', href: '/history' }],
 };

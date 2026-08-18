@@ -1,6 +1,7 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { dashboard } from '@/routes';
+import { SimplePagination } from '@/components/ui/pagination';
 import type { Sale } from '@/types';
 
 interface Stats {
@@ -16,10 +17,32 @@ interface TopProduct {
   total_revenue: number;
 }
 
+interface PaginatedData<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from: number | null;
+  to: number | null;
+}
+
+interface SaleWithItems extends Sale {
+  items: Array<{
+    id: number;
+    product_name: string;
+    unit_price: number;
+    quantity: number;
+    subtotal: number;
+    is_free?: boolean;
+    category_name?: string;
+  }>;
+}
+
 interface Props {
   stats: Stats;
   top_products: TopProduct[];
-  recent_sales: Sale[];
+  recent_sales: PaginatedData<SaleWithItems>;
   user: {
     id: number;
     name: string;
@@ -106,12 +129,12 @@ export default function Dashboard({
               <h2 className="font-semibold">Penjualan Terbaru</h2>
             </div>
             <div className="divide-y">
-              {recent_sales.length === 0 ? (
+              {recent_sales.data.length === 0 ? (
                 <p className="px-4 py-6 text-center text-sm text-muted-foreground">
                   Tidak ada penjualan yang direkam.
                 </p>
               ) : (
-                recent_sales.map((sale) => (
+                recent_sales.data.map((sale) => (
                   <div
                     key={sale.id}
                     className="flex items-center justify-between px-4 py-3"
@@ -148,6 +171,15 @@ export default function Dashboard({
                 ))
               )}
             </div>
+            {recent_sales.last_page > 1 && (
+              <div className="border-t p-4">
+                <SimplePagination
+                  currentPage={recent_sales.current_page}
+                  totalPages={recent_sales.last_page}
+                  baseUrl={dashboard()}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
