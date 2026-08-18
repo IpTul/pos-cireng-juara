@@ -26,26 +26,24 @@ import type { NavItem } from '@/types';
 export function AppSidebar() {
   const { auth } = usePage().props;
 
+  const posItems: NavItem[] = [
+    {
+      title: 'Jual',
+      href: '/pos',
+      icon: ShoppingCart,
+    },
+  ];
+
   const operationalItems: NavItem[] = [
     {
-      title: 'Dashboard',
+      title: 'Halaman Utama',
       href: '/dashboard',
       icon: LayoutGrid,
     },
     {
-      title: 'Point of Sale',
-      href: '/pos',
-      icon: ShoppingCart,
-    },
-    {
-      title: 'History',
+      title: 'Riwayat Transaksi',
       href: '/history',
       icon: History,
-    },
-    {
-      title: 'Stok Cireng',
-      href: '/stok',
-      icon: Activity,
     },
   ];
 
@@ -56,27 +54,34 @@ export function AppSidebar() {
       icon: Package,
     },
     {
+      title: 'Stok Cireng',
+      href: '/stok',
+      icon: Activity,
+    },
+    {
       title: 'Paket',
       href: '/pack',
       icon: Package,
     },
   ];
 
-  const cabangItems: NavItem[] = [
+  const managementItems: NavItem[] = [
     {
       title: 'Cabang',
       href: '/categories',
       icon: Tag,
     },
-  ];
-
-  const financeItems: NavItem[] = [
     { title: 'Keuangan', href: '/keuangan', icon: Wallet },
+    { title: 'Manajemen Pengguna', href: '/users', icon: Users },
   ];
 
-  const settingsItems: NavItem[] = [
-    { title: 'Manajemen User', href: '/users', icon: Users },
-  ];
+  // const financeItems: NavItem[] = [
+  //   { title: 'Keuangan', href: '/keuangan', icon: Wallet },
+  // ];
+
+  // const settingsItems: NavItem[] = [
+  //   { title: 'Manajemen Pengguna', href: '/users', icon: Users },
+  // ];
 
   return (
     <Sidebar>
@@ -87,12 +92,16 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold">Cireng Juara</span>
-            <span className="text-xs text-muted-foreground">Cashier App</span>
+            {/* <span className="text-xs text-muted-foreground">Cashier App</span> */}
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="gap-4 py-2">
+      <SidebarContent className="gap-2 py-2">
+        <SidebarGroup>
+          <NavMain items={posItems} />
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel>Operasional</SidebarGroupLabel>
           <NavMain items={operationalItems} />
@@ -105,14 +114,14 @@ export function AppSidebar() {
 
         {auth.user?.role === 'owner' && (
           <SidebarGroup>
-            <SidebarGroupLabel>Cabang</SidebarGroupLabel>
-            <NavMain items={cabangItems} />
+            <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
+            <NavMain items={managementItems} />
           </SidebarGroup>
         )}
 
-        {auth.user?.role === 'owner' && (
+        {/* {auth.user?.role === 'owner' && (
           <SidebarGroup>
-            <SidebarGroupLabel>Laporan</SidebarGroupLabel>
+            <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
             <NavMain items={financeItems} />
           </SidebarGroup>
         )}
@@ -122,7 +131,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>Pengaturan</SidebarGroupLabel>
             <NavMain items={settingsItems} />
           </SidebarGroup>
-        )}
+        )} */}
       </SidebarContent>
 
       <SidebarFooter className="border-t px-2 py-3">

@@ -32,7 +32,7 @@ export default function PosIndex({ products, packs, user }: Props) {
     setProductQuantity,
     setPackQuantity,
     setFreeItems,
-    clear
+    clear,
   } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -44,7 +44,7 @@ export default function PosIndex({ products, packs, user }: Props) {
 
   return (
     <>
-      <Head title="Point of Sale" />
+      <Head title="Jual" />
       <div className="flex h-screen flex-col bg-background">
         {/* Top Bar */}
         <div className="flex items-center gap-4 border-b px-4 py-3">
@@ -54,7 +54,7 @@ export default function PosIndex({ products, packs, user }: Props) {
           >
             <LayoutGrid className="h-5 w-5" />
           </Link>
-          <span className="font-semibold">Point of Sale</span>
+          <span className="font-semibold">Jual</span>
           <div className="relative ml-4 max-w-sm flex-1">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

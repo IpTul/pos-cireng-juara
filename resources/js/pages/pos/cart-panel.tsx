@@ -9,7 +9,18 @@ import { FreeItemSelection } from './use-cart';
 import { Badge } from '@/components/ui/badge';
 
 interface Props {
-  items: (CartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] } | PackCartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] })[];
+  items: (
+    | (CartItem & {
+        freeQuantity?: number;
+        totalQuantity?: number;
+        freeItems?: FreeItemSelection[];
+      })
+    | (PackCartItem & {
+        freeQuantity?: number;
+        totalQuantity?: number;
+        freeItems?: FreeItemSelection[];
+      })
+  )[];
   subtotal: number;
   totalItems: number;
   onRemoveProduct: (productId: number) => void;
@@ -22,11 +33,19 @@ interface Props {
   onSetFreeItems: (freeItems: FreeItemSelection[]) => void;
 }
 
-function isCartItem(item: Props['items'][0]): item is (CartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] }) {
+function isCartItem(item: Props['items'][0]): item is CartItem & {
+  freeQuantity?: number;
+  totalQuantity?: number;
+  freeItems?: FreeItemSelection[];
+} {
   return 'product' in item;
 }
 
-function isPackCartItem(item: Props['items'][0]): item is (PackCartItem & { freeQuantity?: number; totalQuantity?: number; freeItems?: FreeItemSelection[] }) {
+function isPackCartItem(item: Props['items'][0]): item is PackCartItem & {
+  freeQuantity?: number;
+  totalQuantity?: number;
+  freeItems?: FreeItemSelection[];
+} {
   return 'pack' in item;
 }
 
@@ -49,10 +68,14 @@ export default function CartPanel({
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
-  const [selectedItemType, setSelectedItemType] = useState<'product' | 'pack' | null>(null);
+  const [selectedItemType, setSelectedItemType] = useState<
+    'product' | 'pack' | null
+  >(null);
   const [selectedItemName, setSelectedItemName] = useState('');
   const [selectedMaxFree, setSelectedMaxFree] = useState(0);
-  const [selectedCurrentFree, setSelectedCurrentFree] = useState<FreeItemSelection[]>([]);
+  const [selectedCurrentFree, setSelectedCurrentFree] = useState<
+    FreeItemSelection[]
+  >([]);
 
   function openFreeModal(item: Props['items'][0]) {
     const freeQty = item.freeQuantity || 0;
@@ -99,7 +122,9 @@ export default function CartPanel({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1">
                     <p className="truncate text-sm font-medium">
-                      {isCartItem(item) ? item.product.name : `[Paket] ${item.pack.name}`}
+                      {isCartItem(item)
+                        ? item.product.name
+                        : `[Paket] ${item.pack.name}`}
                     </p>
                     {isPackCartItem(item) && (
                       <Package className="h-3 w-3 text-primary" />
@@ -111,28 +136,42 @@ export default function CartPanel({
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      {item.pack.pack_items?.map((pi) => `${pi.product.name} x${pi.quantity}`).join(', ')}
+                      {item.pack.pack_items
+                        ?.map((pi) => `${pi.product.name} x${pi.quantity}`)
+                        .join(', ')}
                     </p>
                   )}
-                  {(item.freeQuantity && item.freeQuantity > 0) && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-green-600 flex items-center gap-1">
+                  {item.freeQuantity && item.freeQuantity > 0 && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <p className="flex items-center gap-1 text-xs text-green-600">
                         <Gift className="h-3 w-3" />
-                        Gratis {item.freeQuantity} (Beli {item.quantity} total {item.totalQuantity})
+                        Gratis {item.freeQuantity} (Beli {item.quantity} total{' '}
+                        {item.totalQuantity})
                       </p>
-                      {(!item.freeItems || item.freeItems.length === 0 || item.freeItems.reduce((s, f) => s + f.quantity, 0) < item.freeQuantity) && (
+                      {(!item.freeItems ||
+                        item.freeItems.length === 0 ||
+                        item.freeItems.reduce((s, f) => s + f.quantity, 0) <
+                          item.freeQuantity) && (
                         <Button
                           variant="outline"
                           size="sm"
-                          style={{ padding: '0 8px', height: '24px', fontSize: '11px' }}
+                          style={{
+                            padding: '0 8px',
+                            height: '24px',
+                            fontSize: '11px',
+                          }}
                           onClick={() => openFreeModal(item)}
                         >
                           Pilih Gratis
                         </Button>
                       )}
-                      {(item.freeItems && item.freeItems.reduce((s, f) => s + f.quantity, 0) >= item.freeQuantity) && (
-                        <Badge variant="default" className="text-xs">Selesai</Badge>
-                      )}
+                      {item.freeItems &&
+                        item.freeItems.reduce((s, f) => s + f.quantity, 0) >=
+                          item.freeQuantity && (
+                          <Badge variant="default" className="text-xs">
+                            Selesai
+                          </Badge>
+                        )}
                     </div>
                   )}
                 </div>
@@ -151,7 +190,7 @@ export default function CartPanel({
                   }}
                   className="w-16 text-center"
                 />
-                <span className="text-xs text-muted-foreground w-16 text-center">
+                <span className="w-16 text-center text-xs text-muted-foreground">
                   Total: {item.totalQuantity ?? item.quantity}
                 </span>
                 <button
@@ -177,7 +216,9 @@ export default function CartPanel({
           </div>
           <div className="flex justify-between text-sm text-green-600">
             <span>Gratis (Beli 10 Gratis 1)</span>
-            <span>{items.reduce((sum, i) => sum + (i.freeQuantity || 0), 0)}</span>
+            <span>
+              {items.reduce((sum, i) => sum + (i.freeQuantity || 0), 0)}
+            </span>
           </div>
           <div className="flex justify-between text-lg font-bold">
             <span>Total Item</span>

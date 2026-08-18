@@ -8,7 +8,12 @@ interface Props {
   onAddPack: (pack: Pack) => void;
 }
 
-export default function ProductGrid({ products, packs, onAddProduct, onAddPack }: Props) {
+export default function ProductGrid({
+  products,
+  packs,
+  onAddProduct,
+  onAddPack,
+}: Props) {
   const hasItems = products.length > 0 || packs.length > 0;
 
   if (!hasItems) {
@@ -23,16 +28,17 @@ export default function ProductGrid({ products, packs, onAddProduct, onAddPack }
     <div className="flex-1 overflow-y-auto p-4">
       {packs.length > 0 && (
         <div className="mb-4">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider px-2">
-            <Package className="h-4 w-4" />
-            Paket Makanan
+          <h3 className="flex items-center gap-2 px-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase">
+            <h3 className="mb-2 px-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase">
+              Paket Makanan
+            </h3>
           </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {packs.map((pack) => (
               <button
                 key={`pack-${pack.id}`}
                 onClick={() => onAddPack(pack)}
-                className="group flex flex-col overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="group flex flex-col overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {pack.image ? (
                   <img
@@ -51,7 +57,9 @@ export default function ProductGrid({ products, packs, onAddProduct, onAddPack }
                     Rp{parseFloat(pack.price).toLocaleString('id-ID')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {pack.pack_items?.map((item) => `${item.product.name} x${item.quantity}`).join(', ')}
+                    {pack.pack_items
+                      ?.map((item) => `${item.product.name} x${item.quantity}`)
+                      .join(', ')}
                   </p>
                 </div>
               </button>
@@ -62,7 +70,7 @@ export default function ProductGrid({ products, packs, onAddProduct, onAddPack }
 
       {products.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider px-2">
+          <h3 className="mb-2 px-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase">
             Produk Tunggal
           </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">

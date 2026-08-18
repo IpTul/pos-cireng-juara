@@ -36,47 +36,45 @@ export default function Dashboard({
 }: Props) {
   return (
     <>
-      <Head title="Dashboard" />
+      <Head title="Halaman Utama" />
       <div className="space-y-6 p-6">
         <h1 className="text-2xl font-bold">
-          Dashboard{' '}
+          Halaman Utama
           <p className="mb-4 text-sm text-muted-foreground">
             Anda login sebagai{' '}
             <strong>{user.role === 'owner' ? 'Owner' : 'Kasir'}</strong>
           </p>
         </h1>
-        {/* Stats row */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
-            title="Today's Revenue"
+            title="Pendapatan Hari Ini"
             value={`Rp ${stats.today_revenue.toLocaleString('id-ID')}`}
           />
           <StatCard
-            title="Transactions Today"
+            title="Transaksi Hari Ini"
             value={stats.today_transactions.toString()}
           />
           <StatCard
-            title="Active Products"
+            title="Produk Aktif"
             value={stats.total_products.toString()}
           />
           <StatCard
-            title="Low Stock"
+            title="Stok Rendah"
             value={stats.low_stock_count.toString()}
             highlight={stats.low_stock_count > 0}
           />
         </div>
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Top products */}
           <div className="rounded-lg border">
             <div className="border-b px-4 py-3">
-              <h2 className="font-semibold">Top Products Today</h2>
+              <h2 className="font-semibold">Produk Terlaris</h2>
             </div>
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-2 text-left">Product</th>
-                  <th className="px-4 py-2 text-right">Units</th>
-                  <th className="px-4 py-2 text-right">Revenue</th>
+                  <th className="px-4 py-2 text-left">Produk</th>
+                  <th className="px-4 py-2 text-right">Unit</th>
+                  <th className="px-4 py-2 text-right">Pendapatan</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,7 +84,7 @@ export default function Dashboard({
                       colSpan={3}
                       className="px-4 py-6 text-center text-muted-foreground"
                     >
-                      No sales today yet.
+                      Tidak ada penjualan hari ini.
                     </td>
                   </tr>
                 ) : (
@@ -103,15 +101,14 @@ export default function Dashboard({
               </tbody>
             </table>
           </div>
-          {/* Recent sales */}
           <div className="rounded-lg border">
             <div className="border-b px-4 py-3">
-              <h2 className="font-semibold">Recent Sales</h2>
+              <h2 className="font-semibold">Penjualan Terbaru</h2>
             </div>
             <div className="divide-y">
               {recent_sales.length === 0 ? (
                 <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                  No sales recorded yet.
+                  Tidak ada penjualan yang direkam.
                 </p>
               ) : (
                 recent_sales.map((sale) => (
@@ -120,7 +117,9 @@ export default function Dashboard({
                     className="flex items-center justify-between px-4 py-3"
                   >
                     <div>
-                      <p className="text-sm font-medium">Sale #{sale.id}</p>
+                      <p className="text-sm font-medium">
+                        Penjualan #{sale.id}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {sale.items
                           .map((i) => `${i.product_name} ×${i.quantity}`)
@@ -149,7 +148,7 @@ export default function Dashboard({
 Dashboard.layout = {
   breadcrumbs: [
     {
-      title: 'Dashboard',
+      title: 'Halaman Utama',
       href: dashboard(),
     },
   ],

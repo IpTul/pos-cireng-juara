@@ -36,13 +36,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:owner')
         ->name('keuangan.index');
 
-    // Stock adjustments (owner & kasir)
     Route::prefix('stok')->middleware('role:owner,kasir')->group(function () {
         Route::get('/', [StockAdjustmentController::class, 'index'])->name('stok.index');
         Route::post('/', [StockAdjustmentController::class, 'store'])->name('stok.store');
     });
 
-    // User management (owner only)
     Route::resource('users', UserController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware('role:owner');

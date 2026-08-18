@@ -4,10 +4,7 @@ import { toast } from 'sonner';
 
 type CartItemUnion = CartItem | PackCartItem;
 
-export interface FreeItemSelection {
-  product_id: number;
-  quantity: number;
-}
+export type FreeItemSelection = { product_id: number; quantity: number };
 
 interface CartItemWithFree extends CartItem {
   freeQuantity: number;
