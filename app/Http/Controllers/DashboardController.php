@@ -49,7 +49,7 @@ class DashboardController extends Controller
         ]);
 
         // recent sales
-        $recentSales = Sale::with('items')
+        $recentSales = Sale::with(['items.product.category', 'items.pack'])
             ->latest()
             ->limit(10)
             ->get()
@@ -57,7 +57,15 @@ class DashboardController extends Controller
             'id'         => $sale->id,
             'total'      => (float) $sale->total,
             'created_at' => $sale->created_at,
-            'items'      => $sale->items,
+            'items'      => $sale->items->map(fn($item) => [
+                'id'            => $item->id,
+                'product_name'  => $item->product_name,
+                'unit_price'    => $item->unit_price,
+                'quantity'      => $item->quantity,
+                'subtotal'      => $item->subtotal,
+                'is_free'       => $item->is_free,
+                'category_name' => $item->product?->category?->name ?? ($item->pack ? 'Paket' : '—'),
+            ]),
         ]);
 
         return Inertia::render('dashboard',[

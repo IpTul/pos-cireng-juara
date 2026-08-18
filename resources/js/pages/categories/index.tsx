@@ -102,10 +102,10 @@ export default function CategoryIndex({ categories, user }: Props) {
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Description</th>
-                <th className="px-4 py-3 text-right">Products</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-left">Nama Kategori</th>
+                <th className="px-4 py-3 text-left">Deskripsi</th>
+                <th className="px-4 py-3 text-right">Produk</th>
+                <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -195,5 +195,5 @@ export default function CategoryIndex({ categories, user }: Props) {
 }
 
 CategoryIndex.layout = {
-  breadcrumbs: [{ title: 'Categories', href: '/categories' }],
+  breadcrumbs: [{ title: 'Cabang', href: '/categories' }],
 };

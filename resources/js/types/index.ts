@@ -36,6 +36,8 @@ export interface SaleItem {
   unit_price: number;
   quantity: number;
   subtotal: number;
+  is_free?: boolean;
+  category_name?: string;
 }
 
 export interface Sale {

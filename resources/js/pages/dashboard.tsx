@@ -121,9 +121,19 @@ export default function Dashboard({
                         Penjualan #{sale.id}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {sale.items
-                          .map((i) => `${i.product_name} ×${i.quantity}`)
-                          .join(', ')}
+                        {Object.entries(
+                          sale.items.reduce(
+                            (acc, i) => {
+                              const cat = i.category_name || 'Lainnya';
+                              if (!acc[cat]) acc[cat] = [];
+                              acc[cat].push(`${i.product_name} ×${i.quantity}`);
+                              return acc;
+                            },
+                            {} as Record<string, string[]>,
+                          ),
+                        )
+                          .map(([cat, items]) => `${items.join(', ')} - ${cat}`)
+                          .join('; ')}
                       </p>
                     </div>
                     <div className="text-right">
