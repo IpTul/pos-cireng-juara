@@ -20,6 +20,14 @@ export interface Product {
   category: Category;
 }
 
+export interface Addon {
+  id: number;
+  name: string;
+  description: string | null;
+  price: string; // or number if we want to treat as numeric
+  is_active: boolean;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
@@ -27,6 +35,11 @@ export interface CartItem {
 
 export interface PackCartItem {
   pack: Pack;
+  quantity: number;
+}
+
+export interface AddonSelection {
+  addon: Addon;
   quantity: number;
 }
 
@@ -38,6 +51,8 @@ export interface SaleItem {
   subtotal: number;
   is_free?: boolean;
   category_name?: string;
+  addon_name?: string; // For display: name of the addon if this is an addon item
+  addon_id?: number; // Reference to addons table
 }
 
 export interface Sale {

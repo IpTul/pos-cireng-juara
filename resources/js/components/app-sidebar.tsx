@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import {
   LayoutGrid,
   Package,
@@ -8,8 +8,8 @@ import {
   Store,
   Wallet,
   Users,
-  Archive,
   Activity,
+  PlusCircle,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -62,6 +62,11 @@ export function AppSidebar() {
       title: 'Paket',
       href: '/pack',
       icon: Package,
+    },
+    {
+      title: 'Addon',
+      href: '/addons',
+      icon: PlusCircle,
     },
   ];
 

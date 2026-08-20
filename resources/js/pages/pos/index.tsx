@@ -1,5 +1,5 @@
 import { Input } from '@/components/ui/input';
-import { Product, Pack } from '@/types';
+import { Product, Pack, Addon } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { LayoutGrid, Search } from 'lucide-react';
 import { useState } from 'react';
@@ -11,6 +11,7 @@ import CheckoutDialog from './checkout-dialog';
 interface Props {
   products: Product[];
   packs: Pack[];
+  addons: Addon[]; // Addons data passed from controller
   user: {
     id: number;
     name: string;
@@ -19,10 +20,11 @@ interface Props {
   };
 }
 
-export default function PosIndex({ products, packs, user }: Props) {
+export default function PosIndex({ products, packs, addons }: Props) {
   const [search, setSearch] = useState('');
   const {
     items,
+    addons: cartAddons,
     subtotal,
     totalItems,
     addProduct,
@@ -32,6 +34,8 @@ export default function PosIndex({ products, packs, user }: Props) {
     setProductQuantity,
     setPackQuantity,
     setFreeItems,
+    addAddon,
+    removeAddon,
     clear,
   } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
@@ -85,13 +89,18 @@ export default function PosIndex({ products, packs, user }: Props) {
             onClear={clear}
             onCheckout={() => setShowCheckout(true)}
             products={products}
+            availableAddons={addons}
+            cartAddons={cartAddons}
             onSetFreeItems={setFreeItems}
+            onAddAddon={addAddon}
+            onRemoveAddon={removeAddon}
           />
         </div>
       </div>
       <CheckoutDialog
         open={showCheckout}
         items={items}
+        cartAddons={cartAddons}
         subtotal={subtotal}
         totalItems={totalItems}
         onSuccess={clear}

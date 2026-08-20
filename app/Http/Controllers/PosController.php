@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Pack;
+use App\Models\Addon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,9 +45,14 @@ class PosController extends Controller
             })
             ->values();
 
+        $addons = Addon::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('pos/index', [
             'products' => $products,
             'packs' => $packs,
+            'addons' => $addons,
             'user' => [
                 'id'    => $this->user->id,
                 'name'  => $this->user->name,

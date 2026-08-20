@@ -11,6 +11,7 @@ use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PackController;
 use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\AddonController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -42,6 +43,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::resource('users', UserController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('role:owner');
+
+    Route::resource('addons', AddonController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware('role:owner');
 });

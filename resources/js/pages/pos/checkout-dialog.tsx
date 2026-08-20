@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { CartItem, PackCartItem } from '@/types';
+import { CartItem, PackCartItem, AddonSelection } from '@/types';
 import { FreeItemSelection } from './use-cart';
 import {
   Dialog,
@@ -28,15 +28,14 @@ interface Props {
         freeItems?: FreeItemSelection[];
       })
   )[];
+  cartAddons: AddonSelection[]; // Addon level-cart, sekali untuk seluruh transaksi
   subtotal: number;
   totalItems: number;
   onSuccess: () => void;
   onClose: () => void;
 }
 
-function isCartItem(
-  item: Props['items'][0],
-): item is CartItem & {
+function isCartItem(item: Props['items'][0]): item is CartItem & {
   freeQuantity?: number;
   totalQuantity?: number;
   freeItems?: FreeItemSelection[];
@@ -44,9 +43,7 @@ function isCartItem(
   return 'product' in item;
 }
 
-function isPackCartItem(
-  item: Props['items'][0],
-): item is PackCartItem & {
+function isPackCartItem(item: Props['items'][0]): item is PackCartItem & {
   freeQuantity?: number;
   totalQuantity?: number;
   freeItems?: FreeItemSelection[];
@@ -61,6 +58,7 @@ function formatRupiah(value: number) {
 export default function CheckoutDialog({
   open,
   items,
+  cartAddons,
   subtotal,
   totalItems,
   onSuccess,
@@ -82,7 +80,9 @@ export default function CheckoutDialog({
     setProcessing(true);
 
     // Collect all free items from all items (they're stored on the first item)
-    const allFreeItems = items.flatMap((i) => i.freeItems || []).map(f => ({ product_id: f.product_id, quantity: f.quantity })) as { product_id: number; quantity: number }[];
+    const allFreeItems = items
+      .flatMap((i) => i.freeItems || [])
+      .map((f) => ({ product_id: f.product_id, quantity: f.quantity }));
 
     const regularItems = items.filter(isCartItem).map((i) => ({
       product_id: i.product.id,
@@ -94,12 +94,21 @@ export default function CheckoutDialog({
       quantity: i.quantity,
     }));
 
+    // Addon sekarang level-cart, langsung dari cartAddons
+    const allAddons = cartAddons
+      .filter((a) => a.quantity > 0)
+      .map((a) => ({
+        addon_id: a.addon.id,
+        quantity: a.quantity,
+      }));
+
     router.post(
       '/checkout',
       {
         items: regularItems,
         packs: packItems,
         free_items: allFreeItems,
+        addons: allAddons,
         cash_tendered: cash,
       },
       {
@@ -137,7 +146,7 @@ export default function CheckoutDialog({
                     </span>
                   )}
                   × {i.quantity}
-                  {i.freeQuantity && i.freeQuantity > 0 && (
+                  {Boolean(i.freeQuantity) && i.freeQuantity! > 0 && (
                     <span className="ml-2 flex items-center gap-1 text-xs text-green-600">
                       <Gift className="h-2.5 w-2.5" />+{i.freeQuantity} Gratis
                     </span>
@@ -158,6 +167,33 @@ export default function CheckoutDialog({
                 </span>
               </div>
             ))}
+
+            {/* Addon — sekali untuk seluruh transaksi */}
+            {cartAddons.filter((a) => a.quantity > 0).length > 0 && (
+              <div className="mt-3 space-y-1 border-t pt-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Addon
+                </p>
+                {cartAddons
+                  .filter((a) => a.quantity > 0)
+                  .map((addonSel) => (
+                    <div
+                      key={addonSel.addon.id}
+                      className="flex justify-between text-xs"
+                    >
+                      <span className="text-muted-foreground">
+                        {addonSel.addon.name} x{addonSel.quantity}
+                      </span>
+                      <span>
+                        {formatRupiah(
+                          parseFloat(addonSel.addon.price) * addonSel.quantity,
+                        )}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+
             <div className="mt-2 space-y-1 border-t pt-2 text-xs">
               <div className="flex justify-between text-muted-foreground">
                 <span>Item dibayar</span>

@@ -1,5 +1,12 @@
 import { useReducer, useMemo } from 'react';
-import { CartItem, PackCartItem, Product, Pack } from '@/types';
+import {
+  CartItem,
+  PackCartItem,
+  Product,
+  Pack,
+  Addon,
+  AddonSelection,
+} from '@/types';
 import { toast } from 'sonner';
 
 type CartItemUnion = CartItem | PackCartItem;
@@ -18,6 +25,11 @@ interface PackCartItemWithFree extends PackCartItem {
   freeItems: FreeItemSelection[];
 }
 
+interface CartState {
+  items: (CartItemWithFree | PackCartItemWithFree)[];
+  addons: AddonSelection[]; // addon level-cart, sekali untuk seluruh transaksi
+}
+
 type CartAction =
   | { type: 'ADD_PRODUCT'; product: Product }
   | { type: 'ADD_PACK'; pack: Pack }
@@ -26,6 +38,9 @@ type CartAction =
   | { type: 'SET_QTY_PRODUCT'; productId: number; quantity: number }
   | { type: 'SET_QTY_PACK'; packId: number; quantity: number }
   | { type: 'SET_FREE_ITEMS'; freeItems: FreeItemSelection[] }
+  | { type: 'ADD_ADDON'; addon: Addon }
+  | { type: 'REMOVE_ADDON'; addonId: number }
+  | { type: 'SET_ADDON_QUANTITY'; addon: Addon; quantity: number }
   | { type: 'CLEAR' };
 
 function isCartItem(item: CartItemUnion): item is CartItem {
@@ -37,114 +52,169 @@ function isPackCartItem(item: CartItemUnion): item is PackCartItem {
 }
 
 // Calculate free quantity (1 free per 10 purchased) - GLOBAL across all items
-function getGlobalFreeQuantity(items: (CartItemWithFree | PackCartItemWithFree)[]): number {
+function getGlobalFreeQuantity(
+  items: (CartItemWithFree | PackCartItemWithFree)[],
+): number {
   const totalPaidQty = items.reduce((sum, i) => sum + i.quantity, 0);
   return Math.floor(totalPaidQty / 10);
 }
 
-function cartReducer(state: (CartItemWithFree | PackCartItemWithFree)[], action: CartAction): (CartItemWithFree | PackCartItemWithFree)[] {
-  let newState: (CartItemWithFree | PackCartItemWithFree)[];
+// Distribute global free quantity across items (all free items shown on first item)
+function distributeFreeQuantity(
+  items: (CartItemWithFree | PackCartItemWithFree)[],
+  globalFreeQty: number,
+): (CartItemWithFree | PackCartItemWithFree)[] {
+  return items.map((i, index) => {
+    if (index === 0) {
+      return {
+        ...i,
+        freeQuantity: globalFreeQty,
+        totalQuantity: i.quantity + globalFreeQty,
+      };
+    }
+    return { ...i, freeQuantity: 0, totalQuantity: i.quantity };
+  });
+}
+
+function cartReducer(state: CartState, action: CartAction): CartState {
+  let newItems: (CartItemWithFree | PackCartItemWithFree)[];
 
   switch (action.type) {
     case 'ADD_PRODUCT': {
-      const existing = state.find(
-        (i) => isCartItem(i) && i.product.id === action.product.id
+      const existing = state.items.find(
+        (i) => isCartItem(i) && i.product.id === action.product.id,
       );
       if (existing) {
         const newQty = existing.quantity + 1;
         if (newQty > action.product.stock) {
-          toast.error(`Stok "${action.product.name}" hanya tersisa ${action.product.stock}`);
+          toast.error(
+            `Stok "${action.product.name}" hanya tersisa ${action.product.stock}`,
+          );
           return state;
         }
-        newState = state.map((i) =>
+        newItems = state.items.map((i) =>
           isCartItem(i) && i.product.id === action.product.id
             ? { ...i, quantity: newQty }
             : i,
         );
       } else {
-        if (action.product.stock <= 0) {
-          return state;
-        }
-        newState = [...state, { product: action.product, quantity: 1, freeQuantity: 0, totalQuantity: 1, freeItems: [] }];
+        if (action.product.stock <= 0) return state;
+        newItems = [
+          ...state.items,
+          {
+            product: action.product,
+            quantity: 1,
+            freeQuantity: 0,
+            totalQuantity: 1,
+            freeItems: [],
+          },
+        ];
       }
-      // Recalculate global free quantity for all items
-      const globalFreeQty = getGlobalFreeQuantity(newState);
-      return distributeFreeQuantity(newState, globalFreeQty);
+      const globalFreeQty = getGlobalFreeQuantity(newItems);
+      return {
+        ...state,
+        items: distributeFreeQuantity(newItems, globalFreeQty),
+      };
     }
 
     case 'ADD_PACK': {
-      const existing = state.find(
-        (i) => isPackCartItem(i) && i.pack.id === action.pack.id
+      const existing = state.items.find(
+        (i) => isPackCartItem(i) && i.pack.id === action.pack.id,
       );
       if (existing) {
         const newQty = existing.quantity + 1;
-        // Check stock for paid items only
         for (const packItem of action.pack.pack_items || []) {
           const required = packItem.quantity * newQty;
           if (packItem.product.stock < required) {
             toast.error(
-              `Stok "${packItem.product.name}" tidak mencukupi untuk paket "${action.pack.name}"`
+              `Stok "${packItem.product.name}" tidak mencukupi untuk paket "${action.pack.name}"`,
             );
             return state;
           }
         }
-        newState = state.map((i) =>
+        newItems = state.items.map((i) =>
           isPackCartItem(i) && i.pack.id === action.pack.id
             ? { ...i, quantity: newQty }
             : i,
         );
       } else {
-        // Check initial stock
         for (const packItem of action.pack.pack_items || []) {
           if (packItem.product.stock < packItem.quantity) {
             toast.error(`Stok "${packItem.product.name}" tidak mencukupi`);
             return state;
           }
         }
-        newState = [...state, { pack: action.pack, quantity: 1, freeQuantity: 0, totalQuantity: 1, freeItems: [] }];
+        newItems = [
+          ...state.items,
+          {
+            pack: action.pack,
+            quantity: 1,
+            freeQuantity: 0,
+            totalQuantity: 1,
+            freeItems: [],
+          },
+        ];
       }
-      // Recalculate global free quantity for all items
-      const globalFreeQty = getGlobalFreeQuantity(newState);
-      return distributeFreeQuantity(newState, globalFreeQty);
+      const globalFreeQty = getGlobalFreeQuantity(newItems);
+      return {
+        ...state,
+        items: distributeFreeQuantity(newItems, globalFreeQty),
+      };
     }
 
     case 'REMOVE_PRODUCT': {
-      newState = state.filter((i) => !(isCartItem(i) && i.product.id === action.productId));
-      const globalFreeQtyAfterRemove = getGlobalFreeQuantity(newState);
-      return distributeFreeQuantity(newState, globalFreeQtyAfterRemove);
+      newItems = state.items.filter(
+        (i) => !(isCartItem(i) && i.product.id === action.productId),
+      );
+      const globalFreeQty = getGlobalFreeQuantity(newItems);
+      return {
+        ...state,
+        items: distributeFreeQuantity(newItems, globalFreeQty),
+      };
     }
 
     case 'REMOVE_PACK': {
-      newState = state.filter((i) => !(isPackCartItem(i) && i.pack.id === action.packId));
-      const globalFreeQtyAfterRemove = getGlobalFreeQuantity(newState);
-      return distributeFreeQuantity(newState, globalFreeQtyAfterRemove);
+      newItems = state.items.filter(
+        (i) => !(isPackCartItem(i) && i.pack.id === action.packId),
+      );
+      const globalFreeQty = getGlobalFreeQuantity(newItems);
+      return {
+        ...state,
+        items: distributeFreeQuantity(newItems, globalFreeQty),
+      };
     }
 
     case 'SET_QTY_PRODUCT': {
       if (action.quantity <= 0) {
-        newState = state.filter((i) => !(isCartItem(i) && i.product.id === action.productId));
+        newItems = state.items.filter(
+          (i) => !(isCartItem(i) && i.product.id === action.productId),
+        );
       } else {
-        newState = state.map((i) => {
+        newItems = state.items.map((i) => {
           if (!isCartItem(i) || i.product.id !== action.productId) return i;
           return { ...i, quantity: Math.min(action.quantity, i.product.stock) };
         });
       }
-      const globalFreeQtySet = getGlobalFreeQuantity(newState);
-      return distributeFreeQuantity(newState, globalFreeQtySet);
+      const globalFreeQty = getGlobalFreeQuantity(newItems);
+      return {
+        ...state,
+        items: distributeFreeQuantity(newItems, globalFreeQty),
+      };
     }
 
     case 'SET_QTY_PACK': {
       if (action.quantity <= 0) {
-        newState = state.filter((i) => !(isPackCartItem(i) && i.pack.id === action.packId));
+        newItems = state.items.filter(
+          (i) => !(isPackCartItem(i) && i.pack.id === action.packId),
+        );
       } else {
-        newState = state.map((i) => {
+        newItems = state.items.map((i) => {
           if (!isPackCartItem(i) || i.pack.id !== action.packId) return i;
-          // Check stock for paid items only
           for (const packItem of i.pack.pack_items || []) {
             const required = packItem.quantity * action.quantity;
             if (packItem.product.stock < required) {
               toast.error(
-                `Stok "${packItem.product.name}" hanya tersisa ${packItem.product.stock}`
+                `Stok "${packItem.product.name}" hanya tersisa ${packItem.product.stock}`,
               );
               return i;
             }
@@ -152,66 +222,117 @@ function cartReducer(state: (CartItemWithFree | PackCartItemWithFree)[], action:
           return { ...i, quantity: action.quantity };
         });
       }
-      const globalFreeQtySet = getGlobalFreeQuantity(newState);
-      return distributeFreeQuantity(newState, globalFreeQtySet);
+      const globalFreeQty = getGlobalFreeQuantity(newItems);
+      return {
+        ...state,
+        items: distributeFreeQuantity(newItems, globalFreeQty),
+      };
     }
 
     case 'SET_FREE_ITEMS': {
-      // Global free items selection - attach to first item for display
-      return state.map((i, index) => {
-        if (index === 0) {
-          return { ...i, freeItems: action.freeItems };
-        }
-        return i;
-      });
+      return {
+        ...state,
+        items: state.items.map((i, index) =>
+          index === 0 ? { ...i, freeItems: action.freeItems } : i,
+        ),
+      };
+    }
+
+    case 'ADD_ADDON': {
+      const existingIndex = state.addons.findIndex(
+        (a) => a.addon.id === action.addon.id,
+      );
+      if (existingIndex >= 0) {
+        const updated = [...state.addons];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + 1,
+        };
+        return { ...state, addons: updated };
+      }
+      return {
+        ...state,
+        addons: [...state.addons, { addon: action.addon, quantity: 1 }],
+      };
+    }
+
+    case 'REMOVE_ADDON': {
+      const index = state.addons.findIndex(
+        (a) => a.addon.id === action.addonId,
+      );
+      if (index < 0) return state;
+
+      if (state.addons[index].quantity > 1) {
+        const updated = [...state.addons];
+        updated[index] = {
+          ...updated[index],
+          quantity: updated[index].quantity - 1,
+        };
+        return { ...state, addons: updated };
+      }
+      return { ...state, addons: state.addons.filter((_, i) => i !== index) };
+    }
+
+    case 'SET_ADDON_QUANTITY': {
+      if (action.quantity < 0) return state;
+      const index = state.addons.findIndex(
+        (a) => a.addon.id === action.addon.id,
+      );
+
+      if (action.quantity === 0) {
+        if (index < 0) return state;
+        return { ...state, addons: state.addons.filter((_, i) => i !== index) };
+      }
+
+      if (index < 0) {
+        return {
+          ...state,
+          addons: [
+            ...state.addons,
+            { addon: action.addon, quantity: action.quantity },
+          ],
+        };
+      }
+      const updated = [...state.addons];
+      updated[index] = { ...updated[index], quantity: action.quantity };
+      return { ...state, addons: updated };
     }
 
     case 'CLEAR':
-      return [];
+      return { items: [], addons: [] };
+
     default:
       return state;
   }
 }
 
-// Distribute global free quantity across items (all free items shown on first item)
-function distributeFreeQuantity(
-  items: (CartItemWithFree | PackCartItemWithFree)[],
-  globalFreeQty: number
-): (CartItemWithFree | PackCartItemWithFree)[] {
-  return items.map((i, index) => {
-    if (index === 0) {
-      return { ...i, freeQuantity: globalFreeQty, totalQuantity: i.quantity + globalFreeQty };
-    }
-    return { ...i, freeQuantity: 0, totalQuantity: i.quantity };
-  });
-}
-
 export function useCart() {
-  const [items, dispatch] = useReducer(cartReducer, []);
+  const [state, dispatch] = useReducer(cartReducer, { items: [], addons: [] });
+  const { items, addons } = state;
 
-  const subtotal = useMemo(
-    () =>
-      items.reduce((sum, i) => {
-        if (isCartItem(i)) {
-          return sum + parseFloat(i.product.price) * i.quantity;
-        } else {
-          return sum + parseFloat(i.pack.price) * i.quantity;
-        }
-      }, 0),
-    [items],
-  );
+  const subtotal = useMemo(() => {
+    let sum = 0;
+    for (const item of items) {
+      if (isCartItem(item)) {
+        sum += parseFloat(item.product.price) * item.quantity;
+      } else {
+        sum += parseFloat(item.pack.price) * item.quantity;
+      }
+    }
+    // Addon dihitung sekali untuk seluruh transaksi
+    for (const addonSel of addons) {
+      sum += parseFloat(addonSel.addon.price) * addonSel.quantity;
+    }
+    return sum;
+  }, [items, addons]);
 
-  // Total items including free
   const totalItems = useMemo(
-    () =>
-      items.reduce((sum, i) => sum + i.quantity + i.freeQuantity, 0),
+    () => items.reduce((sum, i) => sum + i.quantity + i.freeQuantity, 0),
     [items],
   );
 
-  // Total free items
   const totalFreeItems = useMemo(
-    () =>
-      items.reduce((sum, i) => sum + i.freeQuantity, 0),
+    () => items.reduce((sum, i) => sum + i.freeQuantity, 0),
     [items],
   );
 
@@ -235,18 +356,36 @@ export function useCart() {
     dispatch({ type: 'SET_FREE_ITEMS', freeItems });
   }
 
+  // Addon level-cart (bukan per item lagi)
+  function addAddon(addon: Addon) {
+    dispatch({ type: 'ADD_ADDON', addon });
+  }
+
+  function removeAddon(addonId: number) {
+    dispatch({ type: 'REMOVE_ADDON', addonId });
+  }
+
+  function setAddonQuantity(addon: Addon, quantity: number) {
+    dispatch({ type: 'SET_ADDON_QUANTITY', addon, quantity });
+  }
+
   return {
     items,
+    addons, // AddonSelection[] terpilih untuk transaksi ini
     subtotal,
     totalItems,
     totalFreeItems,
     addProduct,
     addPack,
-    removeProduct: (productId: number) => dispatch({ type: 'REMOVE_PRODUCT', productId }),
+    removeProduct: (productId: number) =>
+      dispatch({ type: 'REMOVE_PRODUCT', productId }),
     removePack: (packId: number) => dispatch({ type: 'REMOVE_PACK', packId }),
     setProductQuantity,
     setPackQuantity,
     setFreeItems,
+    addAddon,
+    removeAddon,
+    setAddonQuantity,
     clear: () => dispatch({ type: 'CLEAR' }),
   };
 }

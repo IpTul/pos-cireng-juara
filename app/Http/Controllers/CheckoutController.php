@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Pack;
 use App\Models\Sale;
+use App\Models\Addon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,9 @@ class CheckoutController extends Controller
             'free_items'                => ['sometimes', 'array'],
             'free_items.*.product_id'   => ['required', 'exists:products,id'],
             'free_items.*.quantity'     => ['required', 'integer', 'min:1'],
+            'addons'                    => ['sometimes', 'array'],
+            'addons.*.addon_id'         => ['required', 'exists:addons,id'],
+            'addons.*.quantity'         => ['required', 'integer', 'min:1'],
             'cash_tendered'             => ['required', 'integer', 'min:1'],
         ]);
 
@@ -131,6 +135,31 @@ class CheckoutController extends Controller
                     'is_free'      => true,
                 ];
                 $freeProduct->decrement('stock', $freeQty);
+            }
+
+            // Handle addons
+            $addons = $validated['addons'] ?? [];
+            foreach ($addons as $addonItem) {
+                $addon = Addon::findOrFail($addonItem['addon_id']);
+                $addonQty = $addonItem['quantity'];
+
+                if (! $addon->is_active) {
+                    throw ValidationException::withMessages([
+                        'addons' => "Addon \"{$addon->name}\" tidak aktif.",
+                    ]);
+                }
+                // Addons don't have stock, so no stock check needed
+                $saleItems[] = [
+                    'product_id'   => null,
+                    'pack_id'      => null,
+                    'addon_id'     => $addon->id,
+                    'product_name' => "[ADDON] {$addon->name}",
+                    'unit_price'   => $addon->price,
+                    'quantity'     => $addonQty,
+                    'subtotal'     => round($addon->price * $addonQty),
+                    'is_free'      => false,
+                ];
+                // No stock decrement for addons
             }
 
             $cash = (float) $validated['cash_tendered'];
