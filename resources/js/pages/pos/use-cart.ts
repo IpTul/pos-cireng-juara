@@ -243,6 +243,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         (a) => a.addon.id === action.addon.id,
       );
       if (existingIndex >= 0) {
+        if (state.addons[existingIndex].quantity >= 1) {
+          toast.error(`Addon "${action.addon.name}" sudah ditambahkan`);
+          return state;
+        }
         const updated = [...state.addons];
         updated[existingIndex] = {
           ...updated[existingIndex],
