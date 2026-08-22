@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Product, Pack, Addon } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { LayoutGrid, Search } from 'lucide-react';
+import { LayoutGrid, Search, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import ProductGrid from './product-grid';
 import CartPanel from './cart-panel';
@@ -11,7 +11,7 @@ import CheckoutDialog from './checkout-dialog';
 interface Props {
   products: Product[];
   packs: Pack[];
-  addons: Addon[]; // Addons data passed from controller
+  addons: Addon[];
   user: {
     id: number;
     name: string;
@@ -46,6 +46,8 @@ export default function PosIndex({ products, packs, addons }: Props) {
       p.category.name.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const [mobileTab, setMobileTab] = useState<'produk' | 'keranjang'>('produk');
+
   return (
     <>
       <Head title="Jual" />
@@ -70,8 +72,67 @@ export default function PosIndex({ products, packs, addons }: Props) {
           </div>
         </div>
 
-        {/* Main area */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex border-b md:hidden">
+          <button
+            onClick={() => setMobileTab('produk')}
+            className={`flex-1 border-b-2 py-2 text-sm font-medium ${
+              mobileTab === 'produk'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground'
+            }`}
+          >
+            Produk
+          </button>
+          <button
+            onClick={() => setMobileTab('keranjang')}
+            className={`relative flex flex-1 items-center justify-center gap-1 border-b-2 py-2 text-sm font-medium ${
+              mobileTab === 'keranjang'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground'
+            }`}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Keranjang
+            {totalItems > 0 && (
+              <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+                {totalItems}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Main area - Mobile: tampilkan satu panel sesuai tab aktif */}
+        <div className="flex flex-1 overflow-hidden md:hidden">
+          {mobileTab === 'produk' ? (
+            <ProductGrid
+              products={filteredProducts}
+              packs={packs}
+              onAddProduct={addProduct}
+              onAddPack={addPack}
+            />
+          ) : (
+            <CartPanel
+              items={items}
+              subtotal={subtotal}
+              totalItems={totalItems}
+              onRemoveProduct={removeProduct}
+              onRemovePack={removePack}
+              onSetProductQuantity={setProductQuantity}
+              onSetPackQuantity={setPackQuantity}
+              onClear={clear}
+              onCheckout={() => setShowCheckout(true)}
+              products={products}
+              availableAddons={addons}
+              cartAddons={cartAddons}
+              onSetFreeItems={setFreeItems}
+              onAddAddon={addAddon}
+              onRemoveAddon={removeAddon}
+            />
+          )}
+        </div>
+
+        {/* Main area - Desktop: ProductGrid dan CartPanel berdampingan */}
+        <div className="hidden flex-1 overflow-hidden md:flex">
           <ProductGrid
             products={filteredProducts}
             packs={packs}

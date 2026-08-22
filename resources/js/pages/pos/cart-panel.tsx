@@ -107,7 +107,7 @@ export default function CartPanel({
 
   return (
     <>
-      <div className="flex w-80 flex-col border-l bg-card">
+      <div className="flex w-full flex-col bg-card md:w-80 md:border-l">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="font-semibold">Keranjang</h2>
           {items.length > 0 && (
