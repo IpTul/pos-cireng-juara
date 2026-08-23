@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Pencil, Eye, Package } from 'lucide-react';
+import { Pencil, Eye, Package, QrCode, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,6 +25,7 @@ interface SaleItemRow {
     total: number;
     cash_tendered: number;
     change_amount: number;
+    payment_method: 'cash' | 'qris';
     status: string;
     created_at: string;
     user: { id: number; name: string };
@@ -41,6 +42,10 @@ interface SaleItemRow {
   subtotal: number;
   is_free: boolean;
   free_items: FreeItemInfo[];
+}
+
+function formatRupiah(value: number) {
+  return `Rp${Math.round(value).toLocaleString('id-ID')}`;
 }
 
 interface PaginatedData<T> {
@@ -88,12 +93,13 @@ export default function History({ saleItems, user, can }: Props) {
         </div>
         <div className="rounded-lg border">
           <table className="w-full text-sm">
-            <thead className="border=b bg-muted/50">
+            <thead className="border-b bg-muted/50">
               <tr>
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-left">Product</th>
                 <th className="px-4 py-3 text-left">User Name</th>
                 <th className="px-4 py-3 text-left">Total</th>
+                <th className="px-4 py-3 text-center">Payment</th>
                 <th className="px-4 py-3 text-center">Cash Tendered</th>
                 <th className="px-4 py-3 text-center">Change</th>
                 <th className="px-4 py-3 text-center">Status</th>
@@ -161,13 +167,30 @@ export default function History({ saleItems, user, can }: Props) {
                         {sale.sale.user.name}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {sale.sale.total}
+                        {formatRupiah(sale.sale.total)}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {sale.sale.cash_tendered}
+                        {sale.sale.payment_method === 'qris' ? (
+                          <span className="flex items-center gap-1 justify-center text-primary">
+                            <QrCode className="h-3 w-3" />
+                            QRIS
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 justify-center text-green-600">
+                            <DollarSign className="h-3 w-3" />
+                            Tunai
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {sale.sale.change_amount}
+                        {sale.sale.payment_method === 'qris'
+                          ? formatRupiah(sale.sale.total)
+                          : formatRupiah(sale.sale.cash_tendered)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {sale.sale.payment_method === 'qris'
+                          ? 'Rp0'
+                          : formatRupiah(sale.sale.change_amount)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <Badge
@@ -273,19 +296,43 @@ export default function History({ saleItems, user, can }: Props) {
               <hr />
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Transaksi</span>
-                <span>Rp {selected.sale.total.toLocaleString('id-ID')}</span>
+                <span>{formatRupiah(selected.sale.total)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Cash Tendered</span>
-                <span>
-                  Rp {selected.sale.cash_tendered.toLocaleString('id-ID')}
+                <span className="text-muted-foreground">Metode Bayar</span>
+                <span className="flex items-center gap-1">
+                  {selected.sale.payment_method === 'qris' ? (
+                    <>
+                      <QrCode className="h-3 w-3 text-primary" />
+                      QRIS
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="h-3 w-3 text-green-600" />
+                      Tunai
+                    </>
+                  )}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Kembalian</span>
-                <span>
-                  Rp {selected.sale.change_amount.toLocaleString('id-ID')}
+                <span className="text-muted-foreground">
+                  {selected.sale.payment_method === 'qris'
+                    ? 'Total QRIS'
+                    : 'Tunai'}
                 </span>
+                <span>
+                  {selected.sale.payment_method === 'qris'
+                    ? formatRupiah(selected.sale.total)
+                    : formatRupiah(selected.sale.cash_tendered)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {selected.sale.payment_method === 'qris' ? 'Kembalian' : ''}
+                </span>
+                {selected.sale.payment_method !== 'qris' && (
+                  <span>{formatRupiah(selected.sale.change_amount)}</span>
+                )}
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>

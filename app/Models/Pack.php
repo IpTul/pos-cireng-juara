@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'price',
     'image',
     'is_active',
+    'max_items',
 ])]
 class Pack extends Model
 {
@@ -21,6 +22,7 @@ class Pack extends Model
         return [
             'price' => 'integer',
             'is_active' => 'boolean',
+            'max_items' => 'integer',
         ];
     }
 

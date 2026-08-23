@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { CartItem, PackCartItem, AddonSelection } from '@/types';
+import { CartItem, PackCartItem, AddonSelection, PackVariant } from '@/types';
 import { FreeItemSelection } from './use-cart';
 import {
   Dialog,
@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Package, Gift } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Package, Gift, QrCode } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -26,6 +27,7 @@ interface Props {
         freeQuantity?: number;
         totalQuantity?: number;
         freeItems?: FreeItemSelection[];
+        variants?: PackVariant[];
       })
   )[];
   cartAddons: AddonSelection[]; // Addon level-cart, sekali untuk seluruh transaksi
@@ -47,6 +49,7 @@ function isPackCartItem(item: Props['items'][0]): item is PackCartItem & {
   freeQuantity?: number;
   totalQuantity?: number;
   freeItems?: FreeItemSelection[];
+  variants?: PackVariant[];
 } {
   return 'pack' in item;
 }
@@ -65,14 +68,29 @@ export default function CheckoutDialog({
   onClose,
 }: Props) {
   const [cashInput, setCashInput] = useState('');
+  const [isQris, setIsQris] = useState(false); // FIX: state toggle QRIS
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const cash = parseFloat(cashInput) || 0;
   const change = cash - subtotal;
 
+  // FIX: kalau bayar QRIS, tidak butuh validasi tunai — anggap uang pas
+  const canSubmit = isQris
+    ? !processing
+    : !processing && !!cashInput && cash >= subtotal;
+
+  function handleQrisToggle(checked: boolean) {
+    setIsQris(checked);
+    setError(null);
+    if (checked) {
+      // Bersihkan input tunai supaya tidak ada sisa nilai lama saat toggle QRIS
+      setCashInput('');
+    }
+  }
+
   function handleCheckout() {
-    if (cash < subtotal) {
+    if (!isQris && cash < subtotal) {
       setError('Jumlah tunai kurang dari total.');
       return;
     }
@@ -89,9 +107,19 @@ export default function CheckoutDialog({
       quantity: i.quantity,
     }));
 
+    interface PackCheckoutItem {
+      pack_id: number;
+      quantity: number;
+      variants: { product_id: number; quantity: number }[];
+    }
+
     const packItems = items.filter(isPackCartItem).map((i) => ({
       pack_id: i.pack.id,
       quantity: i.quantity,
+      variants: (i.variants || []).map((v) => ({
+        product_id: v.product_id,
+        quantity: v.quantity,
+      })),
     }));
 
     // Addon sekarang level-cart, langsung dari cartAddons
@@ -109,12 +137,15 @@ export default function CheckoutDialog({
         packs: packItems,
         free_items: allFreeItems,
         addons: allAddons,
-        cash_tendered: cash,
+        // FIX: kalau QRIS, cash_tendered dikirim sama dengan subtotal (uang pas, tidak ada kembalian)
+        payment_method: isQris ? 'qris' : 'cash',
+        cash_tendered: isQris ? subtotal : cash,
       },
       {
         onSuccess: () => {
           setProcessing(false);
           setCashInput('');
+          setIsQris(false);
           onSuccess();
         },
         onError: (errors) => {
@@ -215,25 +246,45 @@ export default function CheckoutDialog({
               </div>
             </div>
           </div>
-          {/* Cash input */}
-          <div>
-            <Label htmlFor="cash">Uang Tunai</Label>
-            <Input
-              id="cash"
-              type="number"
-              step="500"
-              min={Math.round(subtotal)}
-              placeholder="0"
-              value={cashInput}
-              onChange={(e) => {
-                setCashInput(e.target.value);
-                setError(null);
-              }}
-              autoFocus
+
+          {/* FIX: toggle metode pembayaran QRIS */}
+          <div className="flex items-center gap-2 rounded-lg border p-3">
+            <Checkbox
+              id="qris"
+              checked={isQris}
+              onCheckedChange={(checked) => handleQrisToggle(checked === true)}
             />
+            <Label
+              htmlFor="qris"
+              className="flex flex-1 cursor-pointer items-center gap-2 text-sm font-medium"
+            >
+              <QrCode className="h-4 w-4" />
+              Bayar dengan QRIS
+            </Label>
           </div>
-          {/* Change */}
-          {cashInput && (
+
+          {/* Cash input — disembunyikan/dinonaktifkan kalau bayar QRIS */}
+          {!isQris && (
+            <div>
+              <Label htmlFor="cash">Uang Tunai</Label>
+              <Input
+                id="cash"
+                type="number"
+                step="500"
+                min={Math.round(subtotal)}
+                placeholder="0"
+                value={cashInput}
+                onChange={(e) => {
+                  setCashInput(e.target.value);
+                  setError(null);
+                }}
+                autoFocus
+              />
+            </div>
+          )}
+
+          {/* Change — hanya relevan untuk pembayaran tunai */}
+          {!isQris && cashInput && (
             <div className="flex justify-between text-lg font-bold">
               <span>Kembalian</span>
               <span
@@ -244,12 +295,20 @@ export default function CheckoutDialog({
             </div>
           )}
 
+          {/* Info ringkas kalau QRIS dipilih */}
+          {isQris && (
+            <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
+              <span className="text-muted-foreground">Total via QRIS</span>
+              <span className="font-bold">{formatRupiah(subtotal)}</span>
+            </div>
+          )}
+
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button
             className="w-full"
             size="lg"
-            disabled={processing || !cashInput || cash < subtotal}
+            disabled={!canSubmit}
             onClick={handleCheckout}
           >
             {processing ? 'Memproses…' : 'Selesaikan Transaksi'}

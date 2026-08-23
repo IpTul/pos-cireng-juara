@@ -70,6 +70,7 @@ class SaleHistoryController extends Controller
                         'total' => $sale->total,
                         'cash_tendered' => $sale->cash_tendered,
                         'change_amount' => $sale->change_amount,
+                        'payment_method' => $sale->payment_method ?? 'cash',
                         'status' => $sale->status,
                         'created_at' => $sale->created_at,
                         'user' => [
@@ -96,6 +97,7 @@ class SaleHistoryController extends Controller
                             'total' => $sale->total,
                             'cash_tendered' => $sale->cash_tendered,
                             'change_amount' => $sale->change_amount,
+                            'payment_method' => $sale->payment_method ?? 'cash',
                             'status' => $sale->status,
                             'created_at' => $sale->created_at,
                             'user' => [

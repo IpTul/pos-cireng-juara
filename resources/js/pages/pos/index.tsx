@@ -1,5 +1,5 @@
 import { Input } from '@/components/ui/input';
-import { Product, Pack, Addon } from '@/types';
+import { Product, Pack, Addon, PackVariant } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { LayoutGrid, Search, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
@@ -7,6 +7,7 @@ import ProductGrid from './product-grid';
 import CartPanel from './cart-panel';
 import { useCart } from './use-cart';
 import CheckoutDialog from './checkout-dialog';
+import PackVariantModal from './pack-variant-modal';
 
 interface Props {
   products: Product[];
@@ -37,8 +38,16 @@ export default function PosIndex({ products, packs, addons }: Props) {
     addAddon,
     removeAddon,
     clear,
+    setPackVariants,
   } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [packVariantModal, setPackVariantModal] = useState<{
+    open: boolean;
+    pack: Pack | null;
+  }>({
+    open: false,
+    pack: null,
+  });
 
   const filteredProducts = products.filter(
     (p) =>
@@ -47,6 +56,22 @@ export default function PosIndex({ products, packs, addons }: Props) {
   );
 
   const [mobileTab, setMobileTab] = useState<'produk' | 'keranjang'>('produk');
+
+  function handleAddPack(pack: Pack) {
+    // Open variant selection modal
+    setPackVariantModal({ open: true, pack });
+  }
+
+  function handlePackVariantConfirm(variants: PackVariant[]) {
+    if (packVariantModal.pack) {
+      addPack(packVariantModal.pack, variants);
+    }
+    setPackVariantModal({ open: false, pack: null });
+  }
+
+  function handlePackVariantCancel() {
+    setPackVariantModal({ open: false, pack: null });
+  }
 
   return (
     <>
@@ -108,7 +133,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
               products={filteredProducts}
               packs={packs}
               onAddProduct={addProduct}
-              onAddPack={addPack}
+              onAddPack={handleAddPack}
             />
           ) : (
             <CartPanel
@@ -127,6 +152,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
               onSetFreeItems={setFreeItems}
               onAddAddon={addAddon}
               onRemoveAddon={removeAddon}
+              onSetPackVariants={setPackVariants}
             />
           )}
         </div>
@@ -137,7 +163,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
             products={filteredProducts}
             packs={packs}
             onAddProduct={addProduct}
-            onAddPack={addPack}
+            onAddPack={handleAddPack}
           />
           <CartPanel
             items={items}
@@ -155,6 +181,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
             onSetFreeItems={setFreeItems}
             onAddAddon={addAddon}
             onRemoveAddon={removeAddon}
+            onSetPackVariants={setPackVariants}
           />
         </div>
       </div>
@@ -167,6 +194,16 @@ export default function PosIndex({ products, packs, addons }: Props) {
         onSuccess={clear}
         onClose={() => setShowCheckout(false)}
       />
+      {/* FIX: hanya render modal kalau pack sudah terisi (bukan null) */}
+      {packVariantModal.pack && (
+        <PackVariantModal
+          open={packVariantModal.open}
+          onClose={handlePackVariantCancel}
+          onConfirm={handlePackVariantConfirm}
+          pack={packVariantModal.pack}
+          products={products}
+        />
+      )}
     </>
   );
 }

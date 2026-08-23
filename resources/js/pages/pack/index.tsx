@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Product, Pack, PackItem } from '@/types';
+import { Product, Pack, PackItem, Category } from '@/types';
 import { toast } from 'sonner';
 import { Pencil, Plus, Trash2, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface Props {
   packs: Pack[];
   products: Product[];
+  categories?: Category[];
 }
 
 export default function PackIndex({ packs, products, categories }: Props) {
@@ -30,6 +31,7 @@ export default function PackIndex({ packs, products, categories }: Props) {
     price: '',
     image: '',
     is_active: true,
+    max_items: 5,
     items: [] as { product_id: number; quantity: number }[],
   });
 
@@ -41,6 +43,7 @@ export default function PackIndex({ packs, products, categories }: Props) {
       price: pack.price,
       image: pack.image || '',
       is_active: pack.is_active,
+      max_items: pack.max_items || 5,
       items: pack.pack_items?.map((item: PackItem) => ({
         product_id: item.product_id,
         quantity: item.quantity,
@@ -69,6 +72,7 @@ export default function PackIndex({ packs, products, categories }: Props) {
       price: '',
       image: '',
       is_active: true,
+      max_items: 5,
       items: [],
     });
   }
@@ -253,6 +257,20 @@ export default function PackIndex({ packs, products, categories }: Props) {
                   <Label htmlFor="is_active" className="cursor-pointer">
                     Aktif
                   </Label>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="max_items">Maksimal Item yang Bisa Dipilih</Label>
+                  <Input
+                    id="max_items"
+                    type="number"
+                    value={formData.max_items}
+                    onChange={(e) => setFormData({ ...formData, max_items: parseInt(e.target.value) || 5 })}
+                    min="1"
+                    max="20"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Jumlah maksimal item yang bisa dipilih pelanggan (default: 5)</p>
                 </div>
 
                 <div className="space-y-4 border-t pt-4">

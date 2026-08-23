@@ -55,6 +55,7 @@ class PackController extends Controller
             'price' => ['required', 'integer', 'min:0'],
             'image' => ['nullable', 'string'],
             'is_active' => ['boolean'],
+            'max_items' => ['required', 'integer', 'min:1', 'max:20'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -66,6 +67,7 @@ class PackController extends Controller
             'price' => $validated['price'],
             'image' => $validated['image'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
+            'max_items' => $validated['max_items'],
         ]);
 
         foreach ($validated['items'] as $item) {
@@ -89,6 +91,7 @@ class PackController extends Controller
             'price' => ['required', 'integer', 'min:0'],
             'image' => ['nullable', 'string'],
             'is_active' => ['boolean'],
+            'max_items' => ['required', 'integer', 'min:1', 'max:20'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -100,6 +103,7 @@ class PackController extends Controller
             'price' => $validated['price'],
             'image' => $validated['image'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
+            'max_items' => $validated['max_items'],
         ]);
 
         // Delete existing pack items and recreate

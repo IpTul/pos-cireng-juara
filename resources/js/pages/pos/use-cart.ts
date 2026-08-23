@@ -6,6 +6,7 @@ import {
   Pack,
   Addon,
   AddonSelection,
+  PackVariant,
 } from '@/types';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ interface CartItemWithFree extends CartItem {
 }
 
 interface PackCartItemWithFree extends PackCartItem {
+  variants: PackVariant[];
   freeQuantity: number;
   totalQuantity: number;
   freeItems: FreeItemSelection[];
@@ -32,11 +34,12 @@ interface CartState {
 
 type CartAction =
   | { type: 'ADD_PRODUCT'; product: Product }
-  | { type: 'ADD_PACK'; pack: Pack }
+  | { type: 'ADD_PACK'; pack: Pack; variants: PackVariant[] }
   | { type: 'REMOVE_PRODUCT'; productId: number }
   | { type: 'REMOVE_PACK'; packId: number }
   | { type: 'SET_QTY_PRODUCT'; productId: number; quantity: number }
   | { type: 'SET_QTY_PACK'; packId: number; quantity: number }
+  | { type: 'SET_PACK_VARIANTS'; packId: number; variants: PackVariant[] }
   | { type: 'SET_FREE_ITEMS'; freeItems: FreeItemSelection[] }
   | { type: 'ADD_ADDON'; addon: Addon }
   | { type: 'REMOVE_ADDON'; addonId: number }
@@ -47,8 +50,8 @@ function isCartItem(item: CartItemUnion): item is CartItem {
   return 'product' in item;
 }
 
-function isPackCartItem(item: CartItemUnion): item is PackCartItem {
-  return 'pack' in item;
+function isPackCartItem(item: CartItemUnion): item is PackCartItem & { variants: PackVariant[] } {
+  return 'pack' in item && 'variants' in item;
 }
 
 // Calculate free quantity (1 free per 10 purchased) - GLOBAL across all items
@@ -119,16 +122,19 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
     case 'ADD_PACK': {
       const existing = state.items.find(
-        (i) => isPackCartItem(i) && i.pack.id === action.pack.id,
+        (i): i is PackCartItemWithFree => isPackCartItem(i) && i.pack.id === action.pack.id,
       );
       if (existing) {
         const newQty = existing.quantity + 1;
-        for (const packItem of action.pack.pack_items || []) {
-          const required = packItem.quantity * newQty;
-          if (packItem.product.stock < required) {
-            toast.error(
-              `Stok "${packItem.product.name}" tidak mencukupi untuk paket "${action.pack.name}"`,
-            );
+        // Check stock for all selected variants
+        const requiredStock: Record<number, number> = {};
+        for (const variant of existing.variants) {
+          requiredStock[variant.product_id] = (requiredStock[variant.product_id] || 0) + variant.quantity * newQty;
+        }
+        for (const [productId, required] of Object.entries(requiredStock)) {
+          const product = action.pack.pack_items?.find(pi => pi.product_id === Number(productId))?.product;
+          if (product && product.stock < required) {
+            toast.error(`Stok "${product.name}" tidak mencukupi untuk paket "${action.pack.name}"`);
             return state;
           }
         }
@@ -138,9 +144,24 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : i,
         );
       } else {
-        for (const packItem of action.pack.pack_items || []) {
-          if (packItem.product.stock < packItem.quantity) {
-            toast.error(`Stok "${packItem.product.name}" tidak mencukupi`);
+        // Check stock for all selected variants
+        const variants = action.variants || [];
+        if (variants.length === 0) {
+          toast.error('Silakan pilih varian produk untuk paket ini');
+          return state;
+        }
+        if (variants.length > action.pack.max_items) {
+          toast.error(`Maksimal ${action.pack.max_items} item untuk paket ini`);
+          return state;
+        }
+        const requiredStock: Record<number, number> = {};
+        for (const variant of variants) {
+          requiredStock[variant.product_id] = (requiredStock[variant.product_id] || 0) + variant.quantity;
+        }
+        for (const [productId, required] of Object.entries(requiredStock)) {
+          const product = action.pack.pack_items?.find(pi => pi.product_id === Number(productId))?.product;
+          if (!product || product.stock < required) {
+            toast.error(`Stok "${product?.name || 'produk'}" tidak mencukupi`);
             return state;
           }
         }
@@ -149,6 +170,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           {
             pack: action.pack,
             quantity: 1,
+            variants: variants,
             freeQuantity: 0,
             totalQuantity: 1,
             freeItems: [],
@@ -227,6 +249,30 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: distributeFreeQuantity(newItems, globalFreeQty),
       };
+    }
+
+    case 'SET_PACK_VARIANTS': {
+      newItems = state.items.map((i) => {
+        if (!isPackCartItem(i) || i.pack.id !== action.packId) return i;
+        // Check stock for new variants
+        const requiredStock: Record<number, number> = {};
+        for (const variant of action.variants) {
+          requiredStock[variant.product_id] = (requiredStock[variant.product_id] || 0) + variant.quantity * i.quantity;
+        }
+        for (const [productId, required] of Object.entries(requiredStock)) {
+          const product = i.pack.pack_items?.find(pi => pi.product_id === Number(productId))?.product;
+          if (product && product.stock < required) {
+            toast.error(`Stok "${product.name}" tidak mencukupi`);
+            return i;
+          }
+        }
+        if (action.variants.length > i.pack.max_items) {
+          toast.error(`Maksimal ${i.pack.max_items} item untuk paket ini`);
+          return i;
+        }
+        return { ...i, variants: action.variants };
+      });
+      return { ...state, items: newItems };
     }
 
     case 'SET_FREE_ITEMS': {
@@ -344,8 +390,12 @@ export function useCart() {
     dispatch({ type: 'ADD_PRODUCT', product });
   }
 
-  function addPack(pack: Pack) {
-    dispatch({ type: 'ADD_PACK', pack });
+  function addPack(pack: Pack, variants: PackVariant[] = []) {
+    dispatch({ type: 'ADD_PACK', pack, variants });
+  }
+
+  function setPackVariants(packId: number, variants: PackVariant[]) {
+    dispatch({ type: 'SET_PACK_VARIANTS', packId, variants });
   }
 
   function setProductQuantity(productId: number, quantity: number) {
@@ -386,6 +436,7 @@ export function useCart() {
     removePack: (packId: number) => dispatch({ type: 'REMOVE_PACK', packId }),
     setProductQuantity,
     setPackQuantity,
+    setPackVariants,
     setFreeItems,
     addAddon,
     removeAddon,

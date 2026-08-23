@@ -5,7 +5,7 @@ interface Props {
   products: Product[];
   packs: Pack[];
   onAddProduct: (product: Product) => void;
-  onAddPack: (pack: Pack) => void;
+  onAddPack: (pack: Pack, variants?: any[]) => void;
 }
 
 export default function ProductGrid({

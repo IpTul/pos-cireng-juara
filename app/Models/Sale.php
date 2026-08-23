@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'total',
     'cash_tendered',
     'change_amount',
+    'payment_method',
     'status',
     'notes',
 ])]
@@ -21,6 +22,7 @@ class Sale extends Model
         'total' => 'integer',
         'cash_tendered' => 'integer',
         'change_amount' => 'integer',
+        'payment_method' => 'string',
     ];
 
     public function items(): HasMany

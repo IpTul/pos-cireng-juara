@@ -1,13 +1,19 @@
 import { Head, Link } from '@inertiajs/react';
 import type { Sale } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, QrCode, DollarSign } from 'lucide-react';
 
 interface Props {
   sale: Sale;
 }
 
+function formatRupiah(value: number) {
+  return `Rp${Math.round(value).toLocaleString('id-ID')}`;
+}
+
 export default function Receipt({ sale }: Props) {
+  const isQris = sale.payment_method === 'qris';
+
   return (
     <>
       <Head title={`Receipt #${sale.id}`} />
@@ -56,15 +62,38 @@ export default function Receipt({ sale }: Props) {
         <div className="space-y-1 border-t border-dashed pt-3">
           <div className="flex justify-between text-base font-bold">
             <span>TOTAL</span>
-            <span>Rp{sale.total.toLocaleString('id-ID')}</span>
+            <span>{formatRupiah(sale.total)}</span>
           </div>
-          <div className="flex justify-between">
-            <span>Cash</span>
-            <span>Rp{sale.cash_tendered.toLocaleString('id-ID')}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Change</span>
-            <span>Rp{sale.change_amount.toLocaleString('id-ID')}</span>
+
+          {/* Payment method info */}
+          <div className="flex items-center gap-2 justify-between text-sm">
+            <span className="flex items-center gap-1 text-muted-foreground">
+              {isQris ? (
+                <>
+                  <QrCode className="h-3 w-3" />
+                  QRIS
+                </>
+              ) : (
+                <>
+                  <DollarSign className="h-3 w-3" />
+                  Tunai
+                </>
+              )}
+            </span>
+            {isQris ? (
+              <span className="font-medium">{formatRupiah(sale.total)}</span>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span>Tunai</span>
+                  <span>{formatRupiah(sale.cash_tendered)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Kembalian</span>
+                  <span>{formatRupiah(sale.change_amount)}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

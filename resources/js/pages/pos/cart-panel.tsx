@@ -8,8 +8,10 @@ import {
   Product,
   Addon,
   AddonSelection,
+  PackVariant,
 } from '@/types';
 import FreeProductModal from './free-product-modal';
+import PackVariantModal from './pack-variant-modal';
 import { FreeItemSelection } from './use-cart';
 import { Badge } from '@/components/ui/badge';
 
@@ -24,6 +26,7 @@ interface Props {
         freeQuantity?: number;
         totalQuantity?: number;
         freeItems?: FreeItemSelection[];
+        variants?: PackVariant[];
       })
   )[];
   subtotal: number;
@@ -40,6 +43,7 @@ interface Props {
   onSetFreeItems: (freeItems: FreeItemSelection[]) => void;
   onAddAddon: (addon: Addon) => void;
   onRemoveAddon: (addonId: number) => void;
+  onSetPackVariants: (packId: number, variants: PackVariant[]) => void;
 }
 
 function isCartItem(item: Props['items'][0]): item is CartItem & {
@@ -54,6 +58,7 @@ function isPackCartItem(item: Props['items'][0]): item is PackCartItem & {
   freeQuantity?: number;
   totalQuantity?: number;
   freeItems?: FreeItemSelection[];
+  variants?: PackVariant[];
 } {
   return 'pack' in item;
 }
@@ -78,6 +83,7 @@ export default function CartPanel({
   onSetFreeItems,
   onAddAddon,
   onRemoveAddon,
+  onSetPackVariants,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
@@ -86,6 +92,30 @@ export default function CartPanel({
   const [selectedCurrentFree, setSelectedCurrentFree] = useState<
     FreeItemSelection[]
   >([]);
+  const [packVariantModal, setPackVariantModal] = useState<{ open: boolean; pack: any | null; variants: PackVariant[] | null }>({
+    open: false,
+    pack: null,
+    variants: null,
+  });
+
+  function openPackVariantModal(packItem: any, variants: PackVariant[] = []) {
+    setPackVariantModal({
+      open: true,
+      pack: packItem.pack,
+      variants: variants,
+    });
+  }
+
+  function handlePackVariantsConfirm(variants: PackVariant[]) {
+    if (packVariantModal.pack && packVariantModal.variants !== null) {
+      onSetPackVariants(packVariantModal.pack.id, variants);
+    }
+    setPackVariantModal({ open: false, pack: null, variants: null });
+  }
+
+  function handlePackVariantsCancel() {
+    setPackVariantModal({ open: false, pack: null, variants: null });
+  }
 
   function openFreeModal(item: Props['items'][0]) {
     const freeQty = item.freeQuantity || 0;
@@ -144,11 +174,31 @@ export default function CartPanel({
                         {formatRupiah(item.product.price)}
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {item.pack.pack_items
-                          ?.map((pi) => `${pi.product.name} x${pi.quantity}`)
-                          .join(', ')}
-                      </p>
+                      <>
+                        {/* Show selected variants or default pack items */}
+                        {item.variants && item.variants.length > 0 ? (
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            {item.variants.map((variant, idx) => (
+                              <p key={idx}>{variant.product.name} x{variant.quantity}</p>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {item.pack.pack_items
+                              ?.map((pi) => `${pi.product.name} x${pi.quantity}`)
+                              .join(', ')}
+                          </p>
+                        )}
+                        {/* Edit variants button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 p-0 text-xs mt-1 hover:text-primary"
+                          onClick={() => openPackVariantModal(item, item.variants || [])}
+                        >
+                          <span className="text-[10px]">Edit</span>
+                        </Button>
+                      </>
                     )}
                     {(item.freeQuantity ?? 0) > 0 && (
                       <div className="mt-1 flex items-center gap-2">
@@ -313,6 +363,14 @@ export default function CartPanel({
         itemName={selectedItemName}
         itemId={selectedItemId || 0}
         currentSelections={selectedCurrentFree}
+      />
+      <PackVariantModal
+        open={packVariantModal.open}
+        onClose={handlePackVariantsCancel}
+        onConfirm={handlePackVariantsConfirm}
+        pack={packVariantModal.pack!}
+        products={products}
+        currentVariants={packVariantModal.variants || []}
       />
     </>
   );

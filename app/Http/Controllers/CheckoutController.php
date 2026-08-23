@@ -23,6 +23,9 @@ class CheckoutController extends Controller
             'packs'                     => ['sometimes', 'array'],
             'packs.*.pack_id'           => ['required', 'exists:packs,id'],
             'packs.*.quantity'          => ['required', 'integer', 'min:1'],
+            'packs.*.variants'          => ['sometimes', 'array'],
+            'packs.*.variants.*.product_id' => ['required', 'exists:products,id'],
+            'packs.*.variants.*.quantity'   => ['required', 'integer', 'min:1'],
             'free_items'                => ['sometimes', 'array'],
             'free_items.*.product_id'   => ['required', 'exists:products,id'],
             'free_items.*.quantity'     => ['required', 'integer', 'min:1'],
@@ -30,6 +33,7 @@ class CheckoutController extends Controller
             'addons.*.addon_id'         => ['required', 'exists:addons,id'],
             'addons.*.quantity'         => ['required', 'integer', 'min:1'],
             'cash_tendered'             => ['required', 'integer', 'min:1'],
+            'payment_method'            => ['sometimes', 'string', 'in:cash,qris'],
         ]);
 
         // Ensure at least one item or pack
@@ -86,32 +90,81 @@ class CheckoutController extends Controller
                     ]);
                 }
 
-                // Check stock for all items in pack (paid only)
-                foreach ($pack->packItems as $pi) {
-                    $requiredStock = $pi->quantity * $packQty;
-                    if (! $pi->product->is_active || $pi->product->stock < $requiredStock) {
+                // Handle variants if provided (new flexible pack system)
+                $variants = $packItem['variants'] ?? [];
+
+                if (! empty($variants)) {
+                    // Validate variants count
+                    if (count($variants) > $pack->max_items) {
                         throw ValidationException::withMessages([
-                            'packs' => "Stok tidak mencukupi untuk \"{$pi->product->name}\" (diperlukan: {$requiredStock}).",
+                            'packs' => "Maksimal {$pack->max_items} item untuk paket \"{$pack->name}\".",
                         ]);
                     }
-                }
 
-                // Add pack to sale items
-                $subtotal    = (float) $pack->price * $packQty;
-                $total      += $subtotal;
-                $saleItems[] = [
-                    'product_id'   => null,
-                    'pack_id'      => $pack->id,
-                    'product_name' => "[Paket] {$pack->name}",
-                    'unit_price'   => $pack->price,
-                    'quantity'     => $packQty,
-                    'subtotal'     => round($subtotal),
-                    'is_free'      => false,
-                ];
+                    // Calculate required stock per product from variants
+                    $requiredStock = [];
+                    foreach ($variants as $variant) {
+                        $productId = $variant['product_id'];
+                        $qty = $variant['quantity'] * $packQty;
+                        $requiredStock[$productId] = ($requiredStock[$productId] ?? 0) + $qty;
+                    }
 
-                // Decrement stock for each item in pack (paid)
-                foreach ($pack->packItems as $pi) {
-                    $pi->product->decrement('stock', $pi->quantity * $packQty);
+                    // Check stock for each variant
+                    foreach ($requiredStock as $productId => $required) {
+                        $product = Product::lockForUpdate()->findOrFail($productId);
+                        if (! $product->is_active || $product->stock < $required) {
+                            throw ValidationException::withMessages([
+                                'packs' => "Stok tidak mencukupi untuk \"{$product->name}\" (diperlukan: {$required}).",
+                            ]);
+                        }
+                    }
+
+                    // Add pack to sale items
+                    $subtotal    = (float) $pack->price * $packQty;
+                    $total      += $subtotal;
+                    $saleItems[] = [
+                        'product_id'   => null,
+                        'pack_id'      => $pack->id,
+                        'product_name' => "[Paket] {$pack->name}",
+                        'unit_price'   => $pack->price,
+                        'quantity'     => $packQty,
+                        'subtotal'     => round($subtotal),
+                        'is_free'      => false,
+                    ];
+
+                    // Decrement stock for each variant
+                    foreach ($requiredStock as $productId => $required) {
+                        $product = Product::lockForUpdate()->findOrFail($productId);
+                        $product->decrement('stock', $required);
+                    }
+                } else {
+                    // Legacy: Check stock for all items in pack (paid only)
+                    foreach ($pack->packItems as $pi) {
+                        $requiredStock = $pi->quantity * $packQty;
+                        if (! $pi->product->is_active || $pi->product->stock < $requiredStock) {
+                            throw ValidationException::withMessages([
+                                'packs' => "Stok tidak mencukupi untuk \"{$pi->product->name}\" (diperlukan: {$requiredStock}).",
+                            ]);
+                        }
+                    }
+
+                    // Add pack to sale items
+                    $subtotal    = (float) $pack->price * $packQty;
+                    $total      += $subtotal;
+                    $saleItems[] = [
+                        'product_id'   => null,
+                        'pack_id'      => $pack->id,
+                        'product_name' => "[Paket] {$pack->name}",
+                        'unit_price'   => $pack->price,
+                        'quantity'     => $packQty,
+                        'subtotal'     => round($subtotal),
+                        'is_free'      => false,
+                    ];
+
+                    // Decrement stock for each item in pack (paid)
+                    foreach ($pack->packItems as $pi) {
+                        $pi->product->decrement('stock', $pi->quantity * $packQty);
+                    }
                 }
             }
 
@@ -170,11 +223,14 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            $paymentMethod = $validated['payment_method'] ?? 'cash';
+
             $sale = Sale::create([
-                'user_id'       => $request->user()->id,
-                'total'         => round($total),
-                'cash_tendered' => $cash,
-                'change_amount' => round($cash - $total),
+                'user_id'        => $request->user()->id,
+                'total'          => round($total),
+                'cash_tendered'  => $cash,
+                'change_amount'  => round($cash - $total),
+                'payment_method' => $paymentMethod,
             ]);
 
             $sale->items()->createMany($saleItems);

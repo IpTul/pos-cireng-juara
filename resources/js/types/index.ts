@@ -33,9 +33,16 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface PackVariant {
+  product_id: number;
+  product: Product;
+  quantity: number;
+}
+
 export interface PackCartItem {
   pack: Pack;
   quantity: number;
+  variants: PackVariant[]; // Selected variants for this pack
 }
 
 export interface AddonSelection {
@@ -60,6 +67,7 @@ export interface Sale {
   total: number;
   cash_tendered: number;
   change_amount: number;
+  payment_method: 'cash' | 'qris';
   status: string;
   created_at: string;
   items: SaleItem[];
@@ -80,5 +88,6 @@ export interface Pack {
   price: string;
   image: string | null;
   is_active: boolean;
+  max_items: number;
   pack_items: PackItem[];
 }
