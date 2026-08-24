@@ -7,6 +7,7 @@ use App\Models\SalesItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 
@@ -32,17 +33,29 @@ class SaleHistoryController extends Controller
         }
     }
 
-    public function index()
+    // FIX: query dasar sales dipisah jadi method sendiri supaya bisa dipakai
+    // ulang oleh index() (dengan pagination) dan exportData() (tanpa pagination),
+    // tanpa duplikasi logic filter tanggal.
+    private function baseSalesQuery(Request $request)
     {
-        $this->authorizeOwnerOnly();
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-        // Get all sales with their items (no pagination on Sale level)
-        $sales = Sale::with(['items.product.category', 'items.pack', 'user'])
-            ->latest()
-            ->get();
+        return Sale::with(['items.product.category', 'items.pack', 'user'])
+            ->when($startDate, function ($query) use ($startDate) {
+                $query->whereDate('created_at', '>=', $startDate);
+            })
+            ->when($endDate, function ($query) use ($endDate) {
+                $query->whereDate('created_at', '<=', $endDate);
+            })
+            ->latest();
+    }
 
-        // Process each sale to combine free items with their main items
-        $saleItems = $sales->flatMap(function ($sale) {
+    // FIX: logic penggabungan item gratis dengan item berbayar dipindah ke
+    // method terpisah, dipakai bersama oleh index() dan exportData().
+    private function combineSaleItems(Collection $sales): Collection
+    {
+        return $sales->flatMap(function ($sale) {
             $items = $sale->items;
             $paidItems = $items->where('is_free', false);
             $freeItems = $items->where('is_free', true);
@@ -118,6 +131,21 @@ class SaleHistoryController extends Controller
 
             return $combined;
         })->values();
+    }
+
+    public function index(Request $request)
+    {
+        $this->authorizeOwnerOnly();
+
+        // FIX: default rentang tanggal — kalau tidak ada query param, tampilkan bulan berjalan
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->toDateString());
+        $request->merge(['start_date' => $startDate, 'end_date' => $endDate]);
+
+        // Get all sales with their items, sudah difilter tanggal (no pagination on Sale level)
+        $sales = $this->baseSalesQuery($request)->get();
+
+        $saleItems = $this->combineSaleItems($sales);
 
         // Apply manual pagination to the combined items
         $perPage = 15;
@@ -143,7 +171,25 @@ class SaleHistoryController extends Controller
             ],
             'can' => [
                 'create' => Auth::user()->can('create', Sale::class),
-            ]
+            ],
+            // FIX: kirim balik filter yang aktif supaya frontend bisa isi ulang input tanggal
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
         ]);
+    }
+
+    // FIX: endpoint baru khusus untuk Export Excel — tanpa pagination,
+    // mengembalikan SEMUA baris dalam rentang tanggal terpilih sebagai JSON.
+    public function exportData(Request $request)
+    {
+        $this->authorizeOwnerOnly();
+
+        $sales = $this->baseSalesQuery($request)->get();
+
+        $saleItems = $this->combineSaleItems($sales);
+
+        return response()->json($saleItems->values());
     }
 }

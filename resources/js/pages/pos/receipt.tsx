@@ -65,31 +65,36 @@ export default function Receipt({ sale }: Props) {
             <span>{formatRupiah(sale.total)}</span>
           </div>
 
-          {/* Payment method info */}
-          <div className="flex items-center gap-2 justify-between text-sm">
-            <span className="flex items-center gap-1 text-muted-foreground">
-              {isQris ? (
-                <>
-                  <QrCode className="h-3 w-3" />
-                  QRIS
-                </>
-              ) : (
-                <>
-                  <DollarSign className="h-3 w-3" />
-                  Tunai
-                </>
-              )}
-            </span>
+          {/* FIX: setiap baris info pembayaran sekarang jadi flex-row sendiri, */}
+          {/* ditumpuk vertikal — bukan digabung jadi 3 flex-item dalam satu baris */}
+          <div className="space-y-1 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1 text-muted-foreground">
+                {isQris ? (
+                  <>
+                    <QrCode className="h-3 w-3" />
+                    Metode
+                  </>
+                ) : (
+                  <>Metode</>
+                )}
+              </span>
+              <span className="font-medium">{isQris ? 'QRIS' : 'Tunai'}</span>
+            </div>
+
             {isQris ? (
-              <span className="font-medium">{formatRupiah(sale.total)}</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Dibayar</span>
+                <span className="font-medium">{formatRupiah(sale.total)}</span>
+              </div>
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span>Tunai</span>
+                  <span className="text-muted-foreground">Tunai</span>
                   <span>{formatRupiah(sale.cash_tendered)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Kembalian</span>
+                  <span className="text-muted-foreground">Kembalian</span>
                   <span>{formatRupiah(sale.change_amount)}</span>
                 </div>
               </>

@@ -1,9 +1,19 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Pencil, Eye, Package, QrCode, DollarSign } from 'lucide-react';
+import {
+  Pencil,
+  Eye,
+  Package,
+  QrCode,
+  DollarSign,
+  Printer,
+  FileSpreadsheet,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { SimplePagination } from '@/components/ui/pagination';
+import * as XLSX from 'xlsx';
 
 interface FreeItemInfo {
   id: number;
@@ -62,11 +73,21 @@ interface Props {
   saleItems: PaginatedData<SaleItemRow>;
   user: { id: number; name: string; email: string; role: 'owner' | 'kasir' };
   can: { create: boolean };
+  // FIX: filter tanggal dikirim dari backend, sama seperti pola di KeuanganIndex
+  filters?: {
+    start_date: string;
+    end_date: string;
+  };
 }
 
-export default function History({ saleItems, user, can }: Props) {
+export default function History({ saleItems, user, can, filters }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState<SaleItemRow | null>(null);
+
+  // FIX: state rentang tanggal, default dari filters yang dikirim backend (atau kosong)
+  const [startDate, setStartDate] = useState(filters?.start_date ?? '');
+  const [endDate, setEndDate] = useState(filters?.end_date ?? '');
+  const [exporting, setExporting] = useState(false);
 
   function handleViewDetail(sale: SaleItemRow) {
     setSelected(sale);
@@ -84,13 +105,128 @@ export default function History({ saleItems, user, can }: Props) {
     window.open(`/receipt/${sale.sale.id}`, '_blank');
   }
 
+  // FIX: terapkan filter rentang tanggal — reload halaman via Inertia dengan query param
+  function handleFilter() {
+    router.get(
+      '/history',
+      { start_date: startDate, end_date: endDate },
+      { preserveState: true, preserveScroll: true },
+    );
+  }
+
+  // FIX: print seluruh tabel riwayat (bukan struk per-transaksi) — pakai CSS print:hidden/print:block
+  function handlePrint_() {
+    window.print();
+  }
+
+  // FIX: export ke Excel. Karena tabel di-paginate, kita fetch semua baris
+  // dalam rentang tanggal terpilih ke endpoint khusus sebelum di-export,
+  // supaya file Excel-nya lengkap (bukan cuma 1 halaman yang lagi tampil).
+  async function handleExportExcel() {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({
+        start_date: startDate,
+        end_date: endDate,
+      });
+      const response = await fetch(
+        `/history/export-data?${params.toString()}`,
+        {
+          headers: { Accept: 'application/json' },
+        },
+      );
+      if (!response.ok) throw new Error('Gagal mengambil data export');
+      const rows: SaleItemRow[] = await response.json();
+
+      const sheetData = rows.map((row) => ({
+        Tanggal: new Date(row.sale.created_at).toLocaleString('id-ID'),
+        Item: row.pack
+          ? `Paket - ${row.pack.name}`
+          : (row.product?.name ?? '-'),
+        Kategori: row.pack ? 'Paket' : (row.product?.category?.name ?? '-'),
+        Kasir: row.sale.user?.name ?? '-',
+        Qty: row.quantity,
+        'Harga Satuan': row.unit_price,
+        Subtotal: row.subtotal,
+        'Total Transaksi': row.sale.total,
+        Pembayaran: row.sale.payment_method === 'qris' ? 'QRIS' : 'Tunai',
+        Tunai: row.sale.payment_method === 'qris' ? '' : row.sale.cash_tendered,
+        Kembalian:
+          row.sale.payment_method === 'qris' ? '' : row.sale.change_amount,
+        Status: row.sale.status,
+        Gratis: row.is_free ? 'Ya' : 'Tidak',
+      }));
+
+      const workbook = XLSX.utils.book_new();
+      const sheet = XLSX.utils.aoa_to_sheet([
+        ['Riwayat Penjualan Cireng Juara'],
+        [`Periode: ${startDate || 'awal'} s/d ${endDate || 'sekarang'}`],
+        [],
+      ]);
+      XLSX.utils.sheet_add_json(sheet, sheetData, { origin: 'A4' });
+      XLSX.utils.book_append_sheet(workbook, sheet, 'Riwayat');
+
+      XLSX.writeFile(
+        workbook,
+        `riwayat-penjualan-${startDate || 'semua'}_${endDate || 'semua'}.xlsx`,
+      );
+    } catch (err) {
+      toast.error('Export gagal. Silakan coba lagi.');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <>
       <Head title="Riwayat Penjualan" />
-      <div className="p-6">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="p-6 print:p-0">
+        <div className="mb-4 flex items-center justify-between print:mb-4">
           <h1 className="text-2xl font-bold">Riwayat Penjualan</h1>
+          <p className="hidden text-sm text-muted-foreground print:block">
+            Periode: {startDate || 'awal'} s/d {endDate || 'sekarang'}
+          </p>
         </div>
+
+        {/* FIX: toolbar Print & Export Excel — disembunyikan saat print */}
+        <div className="mb-4 flex gap-2 print:hidden">
+          <Button variant="outline" onClick={handlePrint_}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportExcel}
+            disabled={exporting}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {exporting ? 'Mengekspor…' : 'Export Excel'}
+          </Button>
+        </div>
+
+        {/* FIX: filter rentang tanggal — sama seperti di halaman Keuangan */}
+        <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border p-4 print:hidden">
+          <div className="space-y-1">
+            <Label htmlFor="start_date">Dari Tanggal</Label>
+            <Input
+              id="start_date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="end_date">Sampai Tanggal</Label>
+            <Input
+              id="end_date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleFilter}>Terapkan Filter</Button>
+        </div>
+
         <div className="rounded-lg border">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50">
@@ -103,14 +239,14 @@ export default function History({ saleItems, user, can }: Props) {
                 <th className="px-4 py-3 text-center">Cash Tendered</th>
                 <th className="px-4 py-3 text-center">Change</th>
                 <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-center">Action</th>
+                <th className="px-4 py-3 text-center print:hidden">Action</th>
               </tr>
             </thead>
             <tbody>
               {saleItems.data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={9}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     No sale history found.
@@ -171,13 +307,12 @@ export default function History({ saleItems, user, can }: Props) {
                       </td>
                       <td className="px-4 py-3 text-center">
                         {sale.sale.payment_method === 'qris' ? (
-                          <span className="flex items-center gap-1 justify-center text-primary">
+                          <span className="flex items-center justify-center gap-1 text-primary">
                             <QrCode className="h-3 w-3" />
                             QRIS
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 justify-center text-green-600">
-                            <DollarSign className="h-3 w-3" />
+                          <span className="flex items-center justify-center gap-1 text-green-600">
                             Tunai
                           </span>
                         )}
@@ -205,7 +340,7 @@ export default function History({ saleItems, user, can }: Props) {
                           {sale.sale.status}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right print:hidden">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -228,7 +363,7 @@ export default function History({ saleItems, user, can }: Props) {
             </tbody>
           </table>
           {saleItems.last_page > 1 && (
-            <div className="border-t p-4">
+            <div className="border-t p-4 print:hidden">
               <SimplePagination
                 currentPage={saleItems.current_page}
                 totalPages={saleItems.last_page}
@@ -326,14 +461,12 @@ export default function History({ saleItems, user, can }: Props) {
                     : formatRupiah(selected.sale.cash_tendered)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {selected.sale.payment_method === 'qris' ? 'Kembalian' : ''}
-                </span>
-                {selected.sale.payment_method !== 'qris' && (
+              {selected.sale.payment_method !== 'qris' && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Kembalian</span>
                   <span>{formatRupiah(selected.sale.change_amount)}</span>
-                )}
-              </div>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
                 <Badge
