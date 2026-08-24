@@ -318,3 +318,7 @@ export default function AddonIndex() {
     </>
   );
 }
+
+AddonIndex.layout = {
+  breadcrumbs: [{ title: 'Addons', href: '/addons' }],
+};

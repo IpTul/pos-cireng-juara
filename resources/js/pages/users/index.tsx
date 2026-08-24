@@ -115,10 +115,10 @@ export default function UserIndex({ users, user }: Props) {
 
   return (
     <>
-      <Head title="Manajemen User" />
+      <Head title="Manajemen Pengguna" />
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Manajemen User</h1>
+          <h1 className="text-2xl font-bold">Manajemen Pengguna</h1>
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
             Tambah User
@@ -137,18 +137,24 @@ export default function UserIndex({ users, user }: Props) {
             <tbody>
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                  <td
+                    colSpan={4}
+                    className="px-4 py-8 text-center text-muted-foreground"
+                  >
                     Belum ada user.
                   </td>
                 </tr>
               )}
               {users.map((u) => (
-                <tr key={u.id} className="border-b last:border-0 hover:bg-muted/25">
+                <tr
+                  key={u.id}
+                  className="border-b last:border-0 hover:bg-muted/25"
+                >
                   <td className="px-4 py-3 font-medium">{u.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
                         u.role === 'owner'
                           ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
                           : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
@@ -159,7 +165,11 @@ export default function UserIndex({ users, user }: Props) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(u)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEdit(u)}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
@@ -219,12 +229,16 @@ export default function UserIndex({ users, user }: Props) {
             </div>
             {!editing && (
               <div>
-                <Label htmlFor="user-password-confirm">Konfirmasi Password</Label>
+                <Label htmlFor="user-password-confirm">
+                  Konfirmasi Password
+                </Label>
                 <Input
                   id="user-password-confirm"
                   type="password"
                   value={data.password_confirmation}
-                  onChange={(e) => setData('password_confirmation', e.target.value)}
+                  onChange={(e) =>
+                    setData('password_confirmation', e.target.value)
+                  }
                 />
                 <InputError message={errors.password_confirmation} />
               </div>
@@ -261,5 +275,5 @@ export default function UserIndex({ users, user }: Props) {
 }
 
 UserIndex.layout = {
-  breadcrumbs: [{ title: 'Manajemen User', href: '/users' }],
+  breadcrumbs: [{ title: 'Manajemen Pengguna', href: '/users' }],
 };

@@ -41,10 +41,10 @@ export default function ProductIndex({ products, categories, user }: Props) {
 
   return (
     <>
-      <Head title="Products" />
+      <Head title="Produk" />
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Products</h1>
+          <h1 className="text-2xl font-bold">Produk</h1>
           {user.role === 'owner' && (
             <Button
               onClick={() => {
@@ -143,5 +143,5 @@ export default function ProductIndex({ products, categories, user }: Props) {
 }
 
 ProductIndex.layout = {
-  breadcrumbs: [{ title: 'Products', href: '/products' }],
+  breadcrumbs: [{ title: 'Produk', href: '/products' }],
 };

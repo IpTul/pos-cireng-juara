@@ -254,15 +254,13 @@ export default function KeuanganIndex({
                 ) : (
                   topItems.map((row, i) => (
                     <tr key={i} className="border-b last:border-0">
-                      <td className="px-4 py-2 font-medium">
-                        {row.name}
-                      </td>
+                      <td className="px-4 py-2 font-medium">{row.name}</td>
                       <td className="px-4 py-2 text-center">
                         <span
                           className={
                             row.type === 'paket'
-                              ? 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800'
-                              : 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'
+                              ? 'inline-flex items-center rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800'
+                              : 'inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800'
                           }
                         >
                           {row.type === 'paket' ? 'Paket' : 'Produk'}
@@ -285,5 +283,5 @@ export default function KeuanganIndex({
 }
 
 KeuanganIndex.layout = {
-  breadcrumbs: [{ title: 'Keuangan', href: '/keuangan' }],
+  breadcrumbs: [{ title: 'Laporan Keuangan', href: '/keuangan' }],
 };
