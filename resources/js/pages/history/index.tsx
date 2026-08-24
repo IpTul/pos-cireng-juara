@@ -20,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { SimplePagination } from '@/components/ui/pagination';
 import * as XLSX from 'xlsx';
 
 interface FreeItemInfo {
@@ -59,8 +58,11 @@ function formatRupiah(value: number) {
   return `Rp${Math.round(value).toLocaleString('id-ID')}`;
 }
 
+// FIX: tambah field `links` (format standar Laravel paginator) supaya
+// pagination-nya bisa dirender persis seperti di addon-index.
 interface PaginatedData<T> {
   data: T[];
+  links: { url: string | null; label: string; active: boolean }[];
   current_page: number;
   last_page: number;
   per_page: number;
@@ -73,7 +75,6 @@ interface Props {
   saleItems: PaginatedData<SaleItemRow>;
   user: { id: number; name: string; email: string; role: 'owner' | 'kasir' };
   can: { create: boolean };
-  // FIX: filter tanggal dikirim dari backend, sama seperti pola di KeuanganIndex
   filters?: {
     start_date: string;
     end_date: string;
@@ -84,7 +85,6 @@ export default function History({ saleItems, user, can, filters }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState<SaleItemRow | null>(null);
 
-  // FIX: state rentang tanggal, default dari filters yang dikirim backend (atau kosong)
   const [startDate, setStartDate] = useState(filters?.start_date ?? '');
   const [endDate, setEndDate] = useState(filters?.end_date ?? '');
   const [exporting, setExporting] = useState(false);
@@ -105,7 +105,6 @@ export default function History({ saleItems, user, can, filters }: Props) {
     window.open(`/receipt/${sale.sale.id}`, '_blank');
   }
 
-  // FIX: terapkan filter rentang tanggal — reload halaman via Inertia dengan query param
   function handleFilter() {
     router.get(
       '/history',
@@ -114,14 +113,10 @@ export default function History({ saleItems, user, can, filters }: Props) {
     );
   }
 
-  // FIX: print seluruh tabel riwayat (bukan struk per-transaksi) — pakai CSS print:hidden/print:block
   function handlePrint_() {
     window.print();
   }
 
-  // FIX: export ke Excel. Karena tabel di-paginate, kita fetch semua baris
-  // dalam rentang tanggal terpilih ke endpoint khusus sebelum di-export,
-  // supaya file Excel-nya lengkap (bukan cuma 1 halaman yang lagi tampil).
   async function handleExportExcel() {
     setExporting(true);
     try {
@@ -188,7 +183,6 @@ export default function History({ saleItems, user, can, filters }: Props) {
           </p>
         </div>
 
-        {/* FIX: toolbar Print & Export Excel — disembunyikan saat print */}
         <div className="mb-4 flex gap-2 print:hidden">
           <Button variant="outline" onClick={handlePrint_}>
             <Printer className="mr-2 h-4 w-4" />
@@ -204,9 +198,8 @@ export default function History({ saleItems, user, can, filters }: Props) {
           </Button>
         </div>
 
-        {/* FIX: filter rentang tanggal — sama seperti di halaman Keuangan */}
         <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border p-4 print:hidden">
-          <div className="space-y-1">
+          <div className="p space-y-1">
             <Label htmlFor="start_date">Dari Tanggal</Label>
             <Input
               id="start_date"
@@ -279,10 +272,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
                   ) : null;
 
                   return (
-                    <tr
-                      key={sale.id}
-                      // className={`border-b ${isFree ? 'bg-green-50' : ''}`}
-                    >
+                    <tr key={sale.id}>
                       <td className="px-4 py-3">
                         {new Date(sale.sale.created_at).toLocaleString()}
                       </td>
@@ -362,13 +352,48 @@ export default function History({ saleItems, user, can, filters }: Props) {
               )}
             </tbody>
           </table>
-          {saleItems.last_page > 1 && (
-            <div className="border-t p-4 print:hidden">
-              <SimplePagination
-                currentPage={saleItems.current_page}
-                totalPages={saleItems.last_page}
-                baseUrl="/history"
-              />
+
+          {saleItems.data.length > 0 && (
+            <div className="flex items-center justify-between border-t px-4 py-3 print:hidden">
+              <span className="text-sm text-muted-foreground">
+                Menampilkan {saleItems.from} - {saleItems.to} dari{' '}
+                {saleItems.total} transaksi
+              </span>
+              {saleItems.links.length > 1 && (
+                <nav
+                  className="flex items-center gap-1"
+                  aria-label="Pagination"
+                >
+                  {saleItems.links.map((link, idx) =>
+                    link.url ? (
+                      <Button
+                        key={`${link.label}-${idx}`}
+                        variant="ghost"
+                        size="sm"
+                        className={link.active ? 'bg-muted' : ''}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          router.get(
+                            link.url!,
+                            {},
+                            { preserveState: true, preserveScroll: true },
+                          );
+                        }}
+                      >
+                        <span
+                          dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
+                      </Button>
+                    ) : (
+                      <span
+                        key={`${link.label}-${idx}`}
+                        className="px-2 text-muted-foreground"
+                        dangerouslySetInnerHTML={{ __html: link.label }}
+                      />
+                    ),
+                  )}
+                </nav>
+              )}
             </div>
           )}
         </div>

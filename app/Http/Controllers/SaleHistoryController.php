@@ -142,13 +142,11 @@ class SaleHistoryController extends Controller
         $endDate = $request->input('end_date', now()->toDateString());
         $request->merge(['start_date' => $startDate, 'end_date' => $endDate]);
 
-        // Get all sales with their items, sudah difilter tanggal (no pagination on Sale level)
         $sales = $this->baseSalesQuery($request)->get();
 
         $saleItems = $this->combineSaleItems($sales);
 
-        // Apply manual pagination to the combined items
-        $perPage = 15;
+        $perPage = 6;
         $currentPage = request()->get('page', 1);
         $total = $saleItems->count();
         $paginatedItems = $saleItems->forPage($currentPage, $perPage)->values();
@@ -158,7 +156,13 @@ class SaleHistoryController extends Controller
             $total,
             $perPage,
             $currentPage,
-            ['path' => request()->url(), 'query' => request()->query()]
+            [
+                'path' => request()->url(),
+                'query' => array_merge(request()->query(), [
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                ]),
+            ]
         );
 
         return Inertia::render('history/index', [
