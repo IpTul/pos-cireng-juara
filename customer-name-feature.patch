@@ -1,0 +1,222 @@
+diff --git a/app/Http/Controllers/CheckoutController.php b/app/Http/Controllers/CheckoutController.php
+index b8e3820..c00bafb 100644
+--- a/app/Http/Controllers/CheckoutController.php
++++ b/app/Http/Controllers/CheckoutController.php
+@@ -17,6 +17,7 @@ class CheckoutController extends Controller
+     public function store(Request $request): RedirectResponse
+     {
+         $validated = $request->validate([
++            'customer_name'             => ['nullable', 'string', 'max:255'],
+             'items'                     => ['sometimes', 'array'],
+             'items.*.product_id'        => ['required', 'exists:products,id'],
+             'items.*.quantity'          => ['required', 'integer', 'min:1'],
+@@ -227,6 +228,7 @@ public function store(Request $request): RedirectResponse
+ 
+             $sale = Sale::create([
+                 'user_id'        => $request->user()->id,
++                'customer_name'  => $validated['customer_name'] ?? null,
+                 'total'          => round($total),
+                 'cash_tendered'  => $cash,
+                 'change_amount'  => round($cash - $total),
+diff --git a/app/Http/Controllers/SaleHistoryController.php b/app/Http/Controllers/SaleHistoryController.php
+index 64ba722..8ede725 100644
+--- a/app/Http/Controllers/SaleHistoryController.php
++++ b/app/Http/Controllers/SaleHistoryController.php
+@@ -80,6 +80,7 @@ private function combineSaleItems(Collection $sales): Collection
+                     'id' => $paidItem->id,
+                     'sale' => [
+                         'id' => $sale->id,
++                        'customer_name' => $sale->customer_name,
+                         'total' => $sale->total,
+                         'cash_tendered' => $sale->cash_tendered,
+                         'change_amount' => $sale->change_amount,
+@@ -107,6 +108,7 @@ private function combineSaleItems(Collection $sales): Collection
+                         'id' => $freeItem->id,
+                         'sale' => [
+                             'id' => $sale->id,
++                            'customer_name' => $sale->customer_name,
+                             'total' => $sale->total,
+                             'cash_tendered' => $sale->cash_tendered,
+                             'change_amount' => $sale->change_amount,
+diff --git a/app/Models/Sale.php b/app/Models/Sale.php
+index 3a8ebb3..1dc7e1b 100644
+--- a/app/Models/Sale.php
++++ b/app/Models/Sale.php
+@@ -9,6 +9,7 @@
+ 
+ #[Fillable([
+     'user_id',
++    'customer_name',
+     'total',
+     'cash_tendered',
+     'change_amount',
+diff --git a/database/migrations/2026_08_28_090000_add_customer_name_to_sales_table.php b/database/migrations/2026_08_28_090000_add_customer_name_to_sales_table.php
+new file mode 100644
+index 0000000..0aa4152
+--- /dev/null
++++ b/database/migrations/2026_08_28_090000_add_customer_name_to_sales_table.php
+@@ -0,0 +1,28 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    /**
++     * Run the migrations.
++     */
++    public function up(): void
++    {
++        Schema::table('sales', function (Blueprint $table) {
++            $table->string('customer_name')->nullable()->after('user_id');
++        });
++    }
++
++    /**
++     * Reverse the migrations.
++     */
++    public function down(): void
++    {
++        Schema::table('sales', function (Blueprint $table) {
++            $table->dropColumn('customer_name');
++        });
++    }
++};
+diff --git a/resources/js/pages/history/index.tsx b/resources/js/pages/history/index.tsx
+index 6b25ad3..1701ea9 100644
+--- a/resources/js/pages/history/index.tsx
++++ b/resources/js/pages/history/index.tsx
+@@ -32,6 +32,7 @@ interface SaleItemRow {
+   id: number;
+   sale: {
+     id: number;
++    customer_name?: string | null;
+     total: number;
+     cash_tendered: number;
+     change_amount: number;
+@@ -139,6 +140,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
+           ? `Paket - ${row.pack.name}`
+           : (row.product?.name ?? '-'),
+         Kategori: row.pack ? 'Paket' : (row.product?.category?.name ?? '-'),
++        Customer: row.sale.customer_name || '-',
+         Kasir: row.sale.user?.name ?? '-',
+         Qty: row.quantity,
+         'Harga Satuan': row.unit_price,
+@@ -226,6 +228,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
+               <tr>
+                 <th className="px-4 py-3 text-left">Date</th>
+                 <th className="px-4 py-3 text-left">Product</th>
++                <th className="px-4 py-3 text-left">Customer</th>
+                 <th className="px-4 py-3 text-left">User Name</th>
+                 <th className="px-4 py-3 text-left">Total</th>
+                 <th className="px-4 py-3 text-center">Payment</th>
+@@ -239,7 +242,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
+               {saleItems.data.length === 0 ? (
+                 <tr>
+                   <td
+-                    colSpan={9}
++                    colSpan={10}
+                     className="px-4 py-8 text-center text-muted-foreground"
+                   >
+                     No sale history found.
+@@ -289,6 +292,9 @@ export default function History({ saleItems, user, can, filters }: Props) {
+                           </Badge>
+                         )}
+                       </td>
++                      <td className="px-4 py-3 text-muted-foreground">
++                        {sale.sale.customer_name || '-'}
++                      </td>
+                       <td className="px-4 py-3 text-muted-foreground">
+                         {sale.sale.user.name}
+                       </td>
+@@ -437,6 +443,10 @@ export default function History({ saleItems, user, can, filters }: Props) {
+                   </span>
+                 </div>
+               )}
++              <div className="flex justify-between">
++                <span className="text-muted-foreground">Customer</span>
++                <span>{selected.sale.customer_name || '-'}</span>
++              </div>
+               <div className="flex justify-between">
+                 <span className="text-muted-foreground">Kasir</span>
+                 <span>{selected.sale.user?.name ?? '-'}</span>
+diff --git a/resources/js/pages/pos/checkout-dialog.tsx b/resources/js/pages/pos/checkout-dialog.tsx
+index ae83007..904b8d6 100644
+--- a/resources/js/pages/pos/checkout-dialog.tsx
++++ b/resources/js/pages/pos/checkout-dialog.tsx
+@@ -68,6 +68,7 @@ export default function CheckoutDialog({
+   onClose,
+ }: Props) {
+   const [cashInput, setCashInput] = useState('');
++  const [customerName, setCustomerName] = useState('');
+   const [isQris, setIsQris] = useState(false); // FIX: state toggle QRIS
+   const [processing, setProcessing] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+@@ -133,6 +134,7 @@ export default function CheckoutDialog({
+     router.post(
+       '/checkout',
+       {
++        customer_name: customerName.trim() || null,
+         items: regularItems,
+         packs: packItems,
+         free_items: allFreeItems,
+@@ -145,6 +147,7 @@ export default function CheckoutDialog({
+         onSuccess: () => {
+           setProcessing(false);
+           setCashInput('');
++          setCustomerName('');
+           setIsQris(false);
+           onSuccess();
+         },
+@@ -247,6 +250,19 @@ export default function CheckoutDialog({
+             </div>
+           </div>
+ 
++          {/* Nama customer (opsional) */}
++          <div>
++            <Label htmlFor="customer_name">Nama Customer (opsional)</Label>
++            <Input
++              id="customer_name"
++              type="text"
++              placeholder="Masukkan nama customer"
++              value={customerName}
++              onChange={(e) => setCustomerName(e.target.value)}
++              maxLength={255}
++            />
++          </div>
++
+           {/* FIX: toggle metode pembayaran QRIS */}
+           <div className="flex items-center gap-2 rounded-lg border p-3">
+             <Checkbox
+diff --git a/resources/js/pages/pos/receipt.tsx b/resources/js/pages/pos/receipt.tsx
+index 0bc38f0..ae64012 100644
+--- a/resources/js/pages/pos/receipt.tsx
++++ b/resources/js/pages/pos/receipt.tsx
+@@ -43,6 +43,13 @@ export default function Receipt({ sale }: Props) {
+           <p className="text-xs text-muted-foreground">Receipt #{sale.id}</p>
+         </div>
+ 
++        {sale.customer_name && (
++          <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
++            <span className="text-muted-foreground">Customer</span>
++            <span className="font-medium">{sale.customer_name}</span>
++          </div>
++        )}
++
+         <div className="mb-3 space-y-2 border-t border-dashed pt-3">
+           {sale.items.map((item) => (
+             <div key={item.id}>
+diff --git a/resources/js/types/index.ts b/resources/js/types/index.ts
+index 40746e2..0964626 100644
+--- a/resources/js/types/index.ts
++++ b/resources/js/types/index.ts
+@@ -64,6 +64,7 @@ export interface SaleItem {
+ 
+ export interface Sale {
+   id: number;
++  customer_name?: string | null;
+   total: number;
+   cash_tendered: number;
+   change_amount: number;

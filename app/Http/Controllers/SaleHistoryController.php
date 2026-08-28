@@ -80,6 +80,7 @@ class SaleHistoryController extends Controller
                     'id' => $paidItem->id,
                     'sale' => [
                         'id' => $sale->id,
+                        'customer_name' => $sale->customer_name,
                         'total' => $sale->total,
                         'cash_tendered' => $sale->cash_tendered,
                         'change_amount' => $sale->change_amount,
@@ -107,6 +108,7 @@ class SaleHistoryController extends Controller
                         'id' => $freeItem->id,
                         'sale' => [
                             'id' => $sale->id,
+                            'customer_name' => $sale->customer_name,
                             'total' => $sale->total,
                             'cash_tendered' => $sale->cash_tendered,
                             'change_amount' => $sale->change_amount,

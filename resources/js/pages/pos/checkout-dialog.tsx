@@ -68,6 +68,7 @@ export default function CheckoutDialog({
   onClose,
 }: Props) {
   const [cashInput, setCashInput] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [isQris, setIsQris] = useState(false); // FIX: state toggle QRIS
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +134,7 @@ export default function CheckoutDialog({
     router.post(
       '/checkout',
       {
+        customer_name: customerName.trim() || null,
         items: regularItems,
         packs: packItems,
         free_items: allFreeItems,
@@ -145,6 +147,7 @@ export default function CheckoutDialog({
         onSuccess: () => {
           setProcessing(false);
           setCashInput('');
+          setCustomerName('');
           setIsQris(false);
           onSuccess();
         },
@@ -245,6 +248,19 @@ export default function CheckoutDialog({
                 <span>{formatRupiah(subtotal)}</span>
               </div>
             </div>
+          </div>
+
+          {/* Nama customer (opsional) */}
+          <div>
+            <Label htmlFor="customer_name">Nama Customer (opsional)</Label>
+            <Input
+              id="customer_name"
+              type="text"
+              placeholder="Masukkan nama customer"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              maxLength={255}
+            />
           </div>
 
           {/* FIX: toggle metode pembayaran QRIS */}

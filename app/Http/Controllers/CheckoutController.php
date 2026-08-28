@@ -17,6 +17,7 @@ class CheckoutController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'customer_name'             => ['nullable', 'string', 'max:255'],
             'items'                     => ['sometimes', 'array'],
             'items.*.product_id'        => ['required', 'exists:products,id'],
             'items.*.quantity'          => ['required', 'integer', 'min:1'],
@@ -227,6 +228,7 @@ class CheckoutController extends Controller
 
             $sale = Sale::create([
                 'user_id'        => $request->user()->id,
+                'customer_name'  => $validated['customer_name'] ?? null,
                 'total'          => round($total),
                 'cash_tendered'  => $cash,
                 'change_amount'  => round($cash - $total),

@@ -40,11 +40,6 @@ export function AppSidebar() {
       href: '/dashboard',
       icon: LayoutGrid,
     },
-    {
-      title: 'Riwayat Transaksi',
-      href: '/history',
-      icon: History,
-    },
   ];
 
   const catalogItems: NavItem[] = [
@@ -76,8 +71,14 @@ export function AppSidebar() {
       href: '/categories',
       icon: Tag,
     },
+    {
+      title: 'Riwayat Transaksi',
+      href: '/history',
+      icon: History,
+    },
     { title: 'Keuangan', href: '/keuangan', icon: Wallet },
     { title: 'Manajemen Pengguna', href: '/users', icon: Users },
+    { title: 'Manajemen Member', href: '/', icon: Users },
   ];
 
   // const financeItems: NavItem[] = [

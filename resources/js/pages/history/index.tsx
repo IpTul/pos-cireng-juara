@@ -32,6 +32,7 @@ interface SaleItemRow {
   id: number;
   sale: {
     id: number;
+    customer_name?: string | null;
     total: number;
     cash_tendered: number;
     change_amount: number;
@@ -139,6 +140,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
           ? `Paket - ${row.pack.name}`
           : (row.product?.name ?? '-'),
         Kategori: row.pack ? 'Paket' : (row.product?.category?.name ?? '-'),
+        Customer: row.sale.customer_name || '-',
         Kasir: row.sale.user?.name ?? '-',
         Qty: row.quantity,
         'Harga Satuan': row.unit_price,
@@ -226,6 +228,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
               <tr>
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-left">Product</th>
+                <th className="px-4 py-3 text-left">Customer</th>
                 <th className="px-4 py-3 text-left">User Name</th>
                 <th className="px-4 py-3 text-left">Total</th>
                 <th className="px-4 py-3 text-center">Payment</th>
@@ -239,7 +242,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
               {saleItems.data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     No sale history found.
@@ -288,6 +291,9 @@ export default function History({ saleItems, user, can, filters }: Props) {
                             Gratis
                           </Badge>
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {sale.sale.customer_name || '-'}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {sale.sale.user.name}
@@ -437,6 +443,10 @@ export default function History({ saleItems, user, can, filters }: Props) {
                   </span>
                 </div>
               )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Customer</span>
+                <span>{selected.sale.customer_name || '-'}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Kasir</span>
                 <span>{selected.sale.user?.name ?? '-'}</span>

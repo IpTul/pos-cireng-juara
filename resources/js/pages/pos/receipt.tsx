@@ -43,6 +43,13 @@ export default function Receipt({ sale }: Props) {
           <p className="text-xs text-muted-foreground">Receipt #{sale.id}</p>
         </div>
 
+        {sale.customer_name && (
+          <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
+            <span className="text-muted-foreground">Customer</span>
+            <span className="font-medium">{sale.customer_name}</span>
+          </div>
+        )}
+
         <div className="mb-3 space-y-2 border-t border-dashed pt-3">
           {sale.items.map((item) => (
             <div key={item.id}>
