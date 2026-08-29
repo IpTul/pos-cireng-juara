@@ -17,7 +17,7 @@ class CheckoutController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'customer_name'             => ['nullable', 'string', 'max:255'],
+            'customer_name'             => ['required', 'string', 'max:255'],
             'items'                     => ['sometimes', 'array'],
             'items.*.product_id'        => ['required', 'exists:products,id'],
             'items.*.quantity'          => ['required', 'integer', 'min:1'],

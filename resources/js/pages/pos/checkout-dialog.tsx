@@ -30,7 +30,7 @@ interface Props {
         variants?: PackVariant[];
       })
   )[];
-  cartAddons: AddonSelection[]; // Addon level-cart, sekali untuk seluruh transaksi
+  cartAddons: AddonSelection[];
   subtotal: number;
   totalItems: number;
   onSuccess: () => void;
@@ -69,28 +69,32 @@ export default function CheckoutDialog({
 }: Props) {
   const [cashInput, setCashInput] = useState('');
   const [customerName, setCustomerName] = useState('');
-  const [isQris, setIsQris] = useState(false); // FIX: state toggle QRIS
+  const [isQris, setIsQris] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const cash = parseFloat(cashInput) || 0;
   const change = cash - subtotal;
 
-  // FIX: kalau bayar QRIS, tidak butuh validasi tunai — anggap uang pas
+  const isCustomerNameFilled = customerName.trim().length > 0;
+
   const canSubmit = isQris
-    ? !processing
-    : !processing && !!cashInput && cash >= subtotal;
+    ? !processing && isCustomerNameFilled
+    : !processing && !!cashInput && cash >= subtotal && isCustomerNameFilled;
 
   function handleQrisToggle(checked: boolean) {
     setIsQris(checked);
     setError(null);
     if (checked) {
-      // Bersihkan input tunai supaya tidak ada sisa nilai lama saat toggle QRIS
       setCashInput('');
     }
   }
 
   function handleCheckout() {
+    if (!isCustomerNameFilled) {
+      setError('Nama customer wajib diisi.');
+      return;
+    }
     if (!isQris && cash < subtotal) {
       setError('Jumlah tunai kurang dari total.');
       return;
@@ -134,12 +138,11 @@ export default function CheckoutDialog({
     router.post(
       '/checkout',
       {
-        customer_name: customerName.trim() || null,
+        customer_name: customerName.trim(),
         items: regularItems,
         packs: packItems,
         free_items: allFreeItems,
         addons: allAddons,
-        // FIX: kalau QRIS, cash_tendered dikirim sama dengan subtotal (uang pas, tidak ada kembalian)
         payment_method: isQris ? 'qris' : 'cash',
         cash_tendered: isQris ? subtotal : cash,
       },
@@ -252,14 +255,19 @@ export default function CheckoutDialog({
 
           {/* Nama customer (opsional) */}
           <div>
-            <Label htmlFor="customer_name">Nama Customer (opsional)</Label>
+            <Label htmlFor="customer_name">Nama Customer (wajib)</Label>
             <Input
               id="customer_name"
               type="text"
               placeholder="Masukkan nama customer"
               value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
+              onChange={(e) => {
+                setCustomerName(e.target.value);
+                setError(null);
+              }}
               maxLength={255}
+              required
+              autoFocus
             />
           </div>
 
@@ -294,7 +302,6 @@ export default function CheckoutDialog({
                   setCashInput(e.target.value);
                   setError(null);
                 }}
-                autoFocus
               />
             </div>
           )}
