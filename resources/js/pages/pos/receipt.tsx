@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import type { Sale } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, QrCode, DollarSign } from 'lucide-react';
+import { Printer, ArrowLeft, QrCode, Bike } from 'lucide-react';
 
 interface Props {
   sale: Sale;
@@ -13,6 +13,8 @@ function formatRupiah(value: number) {
 
 export default function Receipt({ sale }: Props) {
   const isQris = sale.payment_method === 'qris';
+  const isGrab = sale.payment_method === 'grab';
+  const isSettled = isQris || isGrab;
 
   return (
     <>
@@ -82,11 +84,18 @@ export default function Receipt({ sale }: Props) {
                     <QrCode className="h-3 w-3" />
                     Metode
                   </>
+                ) : isGrab ? (
+                  <>
+                    <Bike className="h-3 w-3" />
+                    Metode
+                  </>
                 ) : (
                   <>Metode</>
                 )}
               </span>
-              <span className="font-medium">{isQris ? 'QRIS' : 'Tunai'}</span>
+              <span className="font-medium">
+                {isQris ? 'QRIS' : isGrab ? 'GRAB' : 'Tunai'}
+              </span>
             </div>
 
             {isQris ? (

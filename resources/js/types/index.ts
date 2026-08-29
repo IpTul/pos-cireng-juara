@@ -24,7 +24,7 @@ export interface Addon {
   id: number;
   name: string;
   description: string | null;
-  price: string; // or number if we want to treat as numeric
+  price: string;
   is_active: boolean;
 }
 
@@ -42,7 +42,7 @@ export interface PackVariant {
 export interface PackCartItem {
   pack: Pack;
   quantity: number;
-  variants: PackVariant[]; // Selected variants for this pack
+  variants: PackVariant[];
 }
 
 export interface AddonSelection {
@@ -58,8 +58,8 @@ export interface SaleItem {
   subtotal: number;
   is_free?: boolean;
   category_name?: string;
-  addon_name?: string; // For display: name of the addon if this is an addon item
-  addon_id?: number; // Reference to addons table
+  addon_name?: string;
+  addon_id?: number;
 }
 
 export interface Sale {
@@ -68,7 +68,7 @@ export interface Sale {
   total: number;
   cash_tendered: number;
   change_amount: number;
-  payment_method: 'cash' | 'qris';
+  payment_method: 'cash' | 'qris' | 'grab';
   status: string;
   created_at: string;
   items: SaleItem[];

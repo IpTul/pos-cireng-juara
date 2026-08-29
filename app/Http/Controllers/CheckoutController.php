@@ -34,7 +34,7 @@ class CheckoutController extends Controller
             'addons.*.addon_id'         => ['required', 'exists:addons,id'],
             'addons.*.quantity'         => ['required', 'integer', 'min:1'],
             'cash_tendered'             => ['required', 'integer', 'min:1'],
-            'payment_method'            => ['sometimes', 'string', 'in:cash,qris'],
+            'payment_method'            => ['sometimes', 'string', 'in:cash,qris,grab'],
         ]);
 
         // Ensure at least one item or pack

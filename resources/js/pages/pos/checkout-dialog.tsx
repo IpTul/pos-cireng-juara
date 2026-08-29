@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Package, Gift, QrCode } from 'lucide-react';
+import { Package, Gift, QrCode, Bike } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -72,21 +72,33 @@ export default function CheckoutDialog({
   const [isQris, setIsQris] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGrab, setIsGrab] = useState(false);
 
   const cash = parseFloat(cashInput) || 0;
   const change = cash - subtotal;
 
   const isCustomerNameFilled = customerName.trim().length > 0;
 
-  const canSubmit = isQris
-    ? !processing && isCustomerNameFilled
-    : !processing && !!cashInput && cash >= subtotal && isCustomerNameFilled;
+  const canSubmit =
+    isQris || isGrab
+      ? !processing && isCustomerNameFilled
+      : !processing && !!cashInput && cash >= subtotal && isCustomerNameFilled;
 
   function handleQrisToggle(checked: boolean) {
     setIsQris(checked);
     setError(null);
     if (checked) {
       setCashInput('');
+      setIsGrab(false);
+    }
+  }
+
+  function handleGrabToggle(checked: boolean) {
+    setIsGrab(checked);
+    setError(null);
+    if (checked) {
+      setCashInput('');
+      setIsQris(false);
     }
   }
 
@@ -95,7 +107,7 @@ export default function CheckoutDialog({
       setError('Nama customer wajib diisi.');
       return;
     }
-    if (!isQris && cash < subtotal) {
+    if (!isQris && !isGrab && cash < subtotal) {
       setError('Jumlah tunai kurang dari total.');
       return;
     }
@@ -143,8 +155,8 @@ export default function CheckoutDialog({
         packs: packItems,
         free_items: allFreeItems,
         addons: allAddons,
-        payment_method: isQris ? 'qris' : 'cash',
-        cash_tendered: isQris ? subtotal : cash,
+        payment_method: isQris ? 'qris' : isGrab ? 'grab' : 'cash',
+        cash_tendered: isQris ? subtotal : isGrab ? subtotal : cash,
       },
       {
         onSuccess: () => {
@@ -152,6 +164,7 @@ export default function CheckoutDialog({
           setCashInput('');
           setCustomerName('');
           setIsQris(false);
+          setIsGrab(false);
           onSuccess();
         },
         onError: (errors) => {
@@ -287,8 +300,23 @@ export default function CheckoutDialog({
             </Label>
           </div>
 
+          <div className="flex items-center gap-2 rounded-lg border p-3">
+            <Checkbox
+              id="grab"
+              checked={isGrab}
+              onCheckedChange={(checked) => handleGrabToggle(checked === true)}
+            />
+            <Label
+              htmlFor="grab"
+              className="flex flex-1 cursor-pointer items-center gap-2 text-sm font-medium"
+            >
+              <QrCode className="h-4 w-4" />
+              Pesanan GRAB
+            </Label>
+          </div>
+
           {/* Cash input — disembunyikan/dinonaktifkan kalau bayar QRIS */}
-          {!isQris && (
+          {!isQris && !isGrab && (
             <div>
               <Label htmlFor="cash">Uang Tunai</Label>
               <Input
@@ -307,7 +335,7 @@ export default function CheckoutDialog({
           )}
 
           {/* Change — hanya relevan untuk pembayaran tunai */}
-          {!isQris && cashInput && (
+          {!isQris && !isGrab && cashInput && (
             <div className="flex justify-between text-lg font-bold">
               <span>Kembalian</span>
               <span
@@ -322,6 +350,16 @@ export default function CheckoutDialog({
           {isQris && (
             <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
               <span className="text-muted-foreground">Total via QRIS</span>
+              <span className="font-bold">{formatRupiah(subtotal)}</span>
+            </div>
+          )}
+
+          {/* Info ringkas kalau pesanan Grab dipilih — settle langsung, bukan tunai/QRIS */}
+          {isGrab && (
+            <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
+              <span className="text-muted-foreground">
+                Total via Grab (Settle)
+              </span>
               <span className="font-bold">{formatRupiah(subtotal)}</span>
             </div>
           )}

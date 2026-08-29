@@ -7,6 +7,7 @@ import {
   Package,
   QrCode,
   DollarSign,
+  Bike,
   Printer,
   FileSpreadsheet,
 } from 'lucide-react';
@@ -36,7 +37,7 @@ interface SaleItemRow {
     total: number;
     cash_tendered: number;
     change_amount: number;
-    payment_method: 'cash' | 'qris';
+    payment_method: 'cash' | 'qris' | 'grab';
     status: string;
     created_at: string;
     user: { id: number; name: string };
@@ -146,10 +147,22 @@ export default function History({ saleItems, user, can, filters }: Props) {
         'Harga Satuan': row.unit_price,
         Subtotal: row.subtotal,
         'Total Transaksi': row.sale.total,
-        Pembayaran: row.sale.payment_method === 'qris' ? 'QRIS' : 'Tunai',
-        Tunai: row.sale.payment_method === 'qris' ? '' : row.sale.cash_tendered,
+        Pembayaran:
+          row.sale.payment_method === 'qris'
+            ? 'QRIS'
+            : row.sale.payment_method === 'grab'
+              ? 'Grab'
+              : 'Tunai',
+        Tunai:
+          row.sale.payment_method === 'qris' ||
+          row.sale.payment_method === 'grab'
+            ? ''
+            : row.sale.cash_tendered,
         Kembalian:
-          row.sale.payment_method === 'qris' ? '' : row.sale.change_amount,
+          row.sale.payment_method === 'qris' ||
+          row.sale.payment_method === 'grab'
+            ? ''
+            : row.sale.change_amount,
         Status: row.sale.status,
         Gratis: row.is_free ? 'Ya' : 'Tidak',
       }));
@@ -307,6 +320,11 @@ export default function History({ saleItems, user, can, filters }: Props) {
                             <QrCode className="h-3 w-3" />
                             QRIS
                           </span>
+                        ) : sale.sale.payment_method === 'grab' ? (
+                          <span className="flex items-center justify-center gap-1 text-green-700">
+                            <Bike className="h-3 w-3" />
+                            Grab
+                          </span>
                         ) : (
                           <span className="flex items-center justify-center gap-1 text-green-600">
                             Tunai
@@ -314,12 +332,14 @@ export default function History({ saleItems, user, can, filters }: Props) {
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {sale.sale.payment_method === 'qris'
+                        {sale.sale.payment_method === 'qris' ||
+                        sale.sale.payment_method === 'grab'
                           ? formatRupiah(sale.sale.total)
                           : formatRupiah(sale.sale.cash_tendered)}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {sale.sale.payment_method === 'qris'
+                        {sale.sale.payment_method === 'qris' ||
+                        sale.sale.payment_method === 'grab'
                           ? 'Rp0'
                           : formatRupiah(sale.sale.change_amount)}
                       </td>
@@ -476,6 +496,11 @@ export default function History({ saleItems, user, can, filters }: Props) {
                       <QrCode className="h-3 w-3 text-primary" />
                       QRIS
                     </>
+                  ) : selected.sale.payment_method === 'grab' ? (
+                    <>
+                      <Bike className="h-3 w-3 text-green-700" />
+                      Grab
+                    </>
                   ) : (
                     <>
                       <DollarSign className="h-3 w-3 text-green-600" />
@@ -488,20 +513,24 @@ export default function History({ saleItems, user, can, filters }: Props) {
                 <span className="text-muted-foreground">
                   {selected.sale.payment_method === 'qris'
                     ? 'Total QRIS'
-                    : 'Tunai'}
+                    : selected.sale.payment_method === 'grab'
+                      ? 'Total Grab'
+                      : 'Tunai'}
                 </span>
                 <span>
-                  {selected.sale.payment_method === 'qris'
+                  {selected.sale.payment_method === 'qris' ||
+                  selected.sale.payment_method === 'grab'
                     ? formatRupiah(selected.sale.total)
                     : formatRupiah(selected.sale.cash_tendered)}
                 </span>
               </div>
-              {selected.sale.payment_method !== 'qris' && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Kembalian</span>
-                  <span>{formatRupiah(selected.sale.change_amount)}</span>
-                </div>
-              )}
+              {selected.sale.payment_method !== 'qris' &&
+                selected.sale.payment_method !== 'grab' && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Kembalian</span>
+                    <span>{formatRupiah(selected.sale.change_amount)}</span>
+                  </div>
+                )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
                 <Badge
