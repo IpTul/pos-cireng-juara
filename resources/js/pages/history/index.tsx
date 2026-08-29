@@ -21,6 +21,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import * as XLSX from 'xlsx';
 
 interface FreeItemInfo {
@@ -80,6 +87,7 @@ interface Props {
   filters?: {
     start_date: string;
     end_date: string;
+    payment_method: string;
   };
 }
 
@@ -89,6 +97,9 @@ export default function History({ saleItems, user, can, filters }: Props) {
 
   const [startDate, setStartDate] = useState(filters?.start_date ?? '');
   const [endDate, setEndDate] = useState(filters?.end_date ?? '');
+  const [paymentMethod, setPaymentMethod] = useState(
+    filters?.payment_method ?? 'all',
+  );
   const [exporting, setExporting] = useState(false);
 
   function handleViewDetail(sale: SaleItemRow) {
@@ -110,7 +121,11 @@ export default function History({ saleItems, user, can, filters }: Props) {
   function handleFilter() {
     router.get(
       '/history',
-      { start_date: startDate, end_date: endDate },
+      {
+        start_date: startDate,
+        end_date: endDate,
+        payment_method: paymentMethod,
+      },
       { preserveState: true, preserveScroll: true },
     );
   }
@@ -125,6 +140,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
       const params = new URLSearchParams({
         start_date: startDate,
         end_date: endDate,
+        payment_method: paymentMethod,
       });
       const response = await fetch(
         `/history/export-data?${params.toString()}`,
@@ -231,6 +247,20 @@ export default function History({ saleItems, user, can, filters }: Props) {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="payment_method">Metode Pembayaran</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger id="payment_method" className="w-[160px]">
+                <SelectValue placeholder="Semua Metode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua</SelectItem>
+                <SelectItem value="cash">Tunai</SelectItem>
+                <SelectItem value="qris">QRIS</SelectItem>
+                <SelectItem value="grab">Grab</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={handleFilter}>Terapkan Filter</Button>
         </div>

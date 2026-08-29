@@ -33,13 +33,11 @@ class SaleHistoryController extends Controller
         }
     }
 
-    // FIX: query dasar sales dipisah jadi method sendiri supaya bisa dipakai
-    // ulang oleh index() (dengan pagination) dan exportData() (tanpa pagination),
-    // tanpa duplikasi logic filter tanggal.
     private function baseSalesQuery(Request $request)
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $paymentMethod = $request->input('payment_method');
 
         return Sale::with(['items.product.category', 'items.pack', 'user'])
             ->when($startDate, function ($query) use ($startDate) {
@@ -48,11 +46,12 @@ class SaleHistoryController extends Controller
             ->when($endDate, function ($query) use ($endDate) {
                 $query->whereDate('created_at', '<=', $endDate);
             })
+            ->when($paymentMethod && $paymentMethod !== 'all', function ($query) use ($paymentMethod) {
+                $query->where('payment_method', $paymentMethod);
+            })
             ->latest();
     }
 
-    // FIX: logic penggabungan item gratis dengan item berbayar dipindah ke
-    // method terpisah, dipakai bersama oleh index() dan exportData().
     private function combineSaleItems(Collection $sales): Collection
     {
         return $sales->flatMap(function ($sale) {
@@ -139,10 +138,10 @@ class SaleHistoryController extends Controller
     {
         $this->authorizeOwnerOnly();
 
-        // FIX: default rentang tanggal — kalau tidak ada query param, tampilkan bulan berjalan
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
-        $request->merge(['start_date' => $startDate, 'end_date' => $endDate]);
+        $paymentMethod = $request->input('payment_method', 'all');
+        $request->merge(['start_date' => $startDate, 'end_date' => $endDate, 'payment_method' => $paymentMethod]);
 
         $sales = $this->baseSalesQuery($request)->get();
 
@@ -152,6 +151,7 @@ class SaleHistoryController extends Controller
         $currentPage = request()->get('page', 1);
         $total = $saleItems->count();
         $paginatedItems = $saleItems->forPage($currentPage, $perPage)->values();
+
 
         $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
             $paginatedItems,
@@ -163,6 +163,7 @@ class SaleHistoryController extends Controller
                 'query' => array_merge(request()->query(), [
                     'start_date' => $startDate,
                     'end_date' => $endDate,
+                    'payment_method' => $paymentMethod,
                 ]),
             ]
         );
@@ -182,6 +183,7 @@ class SaleHistoryController extends Controller
             'filters' => [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'payment_method' => $paymentMethod,
             ],
         ]);
     }
