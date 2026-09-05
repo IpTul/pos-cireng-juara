@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import type { PaginatedData } from '@/types';
 import {
   Pencil,
   Eye,
@@ -69,19 +70,6 @@ interface SaleItemRow {
 
 function formatRupiah(value: number) {
   return `Rp${Math.round(value).toLocaleString('id-ID')}`;
-}
-
-// FIX: tambah field `links` (format standar Laravel paginator) supaya
-// pagination-nya bisa dirender persis seperti di addon-index.
-interface PaginatedData<T> {
-  data: T[];
-  links: { url: string | null; label: string; active: boolean }[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
-  from: number | null;
-  to: number | null;
 }
 
 interface Props {
@@ -507,7 +495,9 @@ export default function History({ saleItems, user, can, filters }: Props) {
                     <User className="h-3 w-3" />
                     Member
                   </span>
-                  <span className="font-medium">{selected.sale.member.name}</span>
+                  <span className="font-medium">
+                    {selected.sale.member.name}
+                  </span>
                 </div>
               )}
               {selected.sale.member && (
@@ -516,7 +506,9 @@ export default function History({ saleItems, user, can, filters }: Props) {
                     <Award className="h-3 w-3" />
                     Poin Member
                   </span>
-                  <span className="font-medium">{selected.sale.member.points} poin</span>
+                  <span className="font-medium">
+                    {selected.sale.member.points} poin
+                  </span>
                 </div>
               )}
               <div className="flex justify-between">

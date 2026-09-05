@@ -56,10 +56,7 @@ export default function MemberIndex({ members, search }: Props) {
   }, [debouncedSearch]);
 
   function openCreate() {
-    reset({
-      name: '',
-      phone: '',
-    });
+    reset();
     setEditing(null);
     setShowForm(true);
   }
