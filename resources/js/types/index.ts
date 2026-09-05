@@ -65,6 +65,8 @@ export interface SaleItem {
 export interface Sale {
   id: number;
   customer_name?: string | null;
+  member_id?: number | null;
+  member?: Member | null;
   total: number;
   cash_tendered: number;
   change_amount: number;
@@ -91,4 +93,14 @@ export interface Pack {
   is_active: boolean;
   max_items: number;
   pack_items: PackItem[];
+}
+
+export interface Member {
+  id: number;
+  name: string;
+  phone: string;
+  points: number;
+  last_purchase_at: string | null;
+  is_deleted: boolean;
+  created_at: string;
 }

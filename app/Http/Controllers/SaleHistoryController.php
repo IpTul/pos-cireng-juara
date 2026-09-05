@@ -39,7 +39,7 @@ class SaleHistoryController extends Controller
         $endDate = $request->input('end_date');
         $paymentMethod = $request->input('payment_method');
 
-        return Sale::with(['items.product.category', 'items.pack', 'user'])
+        return Sale::with(['items.product.category', 'items.pack', 'user', 'member'])
             ->when($startDate, function ($query) use ($startDate) {
                 $query->whereDate('created_at', '>=', $startDate);
             })
@@ -80,6 +80,13 @@ class SaleHistoryController extends Controller
                     'sale' => [
                         'id' => $sale->id,
                         'customer_name' => $sale->customer_name,
+                        'member_id' => $sale->member_id,
+                        'member' => $sale->member ? [
+                            'id' => $sale->member->id,
+                            'name' => $sale->member->name,
+                            'phone' => $sale->member->phone,
+                            'points' => $sale->member->points,
+                        ] : null,
                         'total' => $sale->total,
                         'cash_tendered' => $sale->cash_tendered,
                         'change_amount' => $sale->change_amount,
@@ -108,6 +115,13 @@ class SaleHistoryController extends Controller
                         'sale' => [
                             'id' => $sale->id,
                             'customer_name' => $sale->customer_name,
+                            'member_id' => $sale->member_id,
+                            'member' => $sale->member ? [
+                                'id' => $sale->member->id,
+                                'name' => $sale->member->name,
+                                'phone' => $sale->member->phone,
+                                'points' => $sale->member->points,
+                            ] : null,
                             'total' => $sale->total,
                             'cash_tendered' => $sale->cash_tendered,
                             'change_amount' => $sale->change_amount,

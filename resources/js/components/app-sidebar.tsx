@@ -10,6 +10,7 @@ import {
   Users,
   Activity,
   PlusCircle,
+  UserPlus,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -77,8 +78,12 @@ export function AppSidebar() {
       icon: History,
     },
     { title: 'Keuangan', href: '/keuangan', icon: Wallet },
+    {
+      title: 'Member',
+      href: '/members',
+      icon: UserPlus,
+    },
     { title: 'Manajemen Pengguna', href: '/users', icon: Users },
-    { title: 'Manajemen Member', href: '/', icon: Users },
   ];
 
   // const financeItems: NavItem[] = [

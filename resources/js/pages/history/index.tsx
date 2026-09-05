@@ -10,6 +10,8 @@ import {
   Bike,
   Printer,
   FileSpreadsheet,
+  User,
+  Award,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +43,8 @@ interface SaleItemRow {
   sale: {
     id: number;
     customer_name?: string | null;
+    member_id?: number | null;
+    member?: { id: number; name: string; phone: string; points: number } | null;
     total: number;
     cash_tendered: number;
     change_amount: number;
@@ -497,6 +501,24 @@ export default function History({ saleItems, user, can, filters }: Props) {
                 <span className="text-muted-foreground">Customer</span>
                 <span>{selected.sale.customer_name || '-'}</span>
               </div>
+              {selected.sale.member && (
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <User className="h-3 w-3" />
+                    Member
+                  </span>
+                  <span className="font-medium">{selected.sale.member.name}</span>
+                </div>
+              )}
+              {selected.sale.member && (
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Award className="h-3 w-3" />
+                    Poin Member
+                  </span>
+                  <span className="font-medium">{selected.sale.member.points} poin</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Kasir</span>
                 <span>{selected.sale.user?.name ?? '-'}</span>

@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Pack;
 use App\Models\Sale;
 use App\Models\Addon;
+use App\Models\Member;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'customer_name'             => ['required', 'string', 'max:255'],
+            'member_id'                 => ['sometimes', 'integer', 'exists:members,id'],
             'items'                     => ['sometimes', 'array'],
             'items.*.product_id'        => ['required', 'exists:products,id'],
             'items.*.quantity'          => ['required', 'integer', 'min:1'],
@@ -226,9 +228,34 @@ class CheckoutController extends Controller
 
             $paymentMethod = $validated['payment_method'] ?? 'cash';
 
+            // Calculate total cireng items for points (products + pack variants only)
+            $totalCirengItems = 0;
+
+            // Regular products
+            foreach ($validated['items'] ?? [] as $item) {
+                $totalCirengItems += $item['quantity'];
+            }
+
+            // Pack variants (each variant quantity counts as items)
+            foreach ($validated['packs'] ?? [] as $packItem) {
+                $variants = $packItem['variants'] ?? [];
+                if (! empty($variants)) {
+                    foreach ($variants as $variant) {
+                        $totalCirengItems += $variant['quantity'] * $packItem['quantity'];
+                    }
+                } else {
+                    // Legacy: count pack items
+                    $pack = Pack::findOrFail($packItem['pack_id']);
+                    foreach ($pack->packItems as $pi) {
+                        $totalCirengItems += $pi->quantity * $packItem['quantity'];
+                    }
+                }
+            }
+
             $sale = Sale::create([
                 'user_id'        => $request->user()->id,
                 'customer_name'  => $validated['customer_name'] ?? null,
+                'member_id'      => $validated['member_id'] ?? null,
                 'total'          => round($total),
                 'cash_tendered'  => $cash,
                 'change_amount'  => round($cash - $total),
@@ -237,6 +264,16 @@ class CheckoutController extends Controller
 
             $sale->items()->createMany($saleItems);
 
+            // Add points to member if provided
+            if (! empty($validated['member_id']) && $totalCirengItems > 0) {
+                $member = Member::lockForUpdate()->findOrFail($validated['member_id']);
+
+                if (! $member->is_deleted) {
+                    $member->addPoints($totalCirengItems);
+                    $member->updateLastPurchase();
+                }
+            }
+
             return $sale->id;
         });
 
@@ -244,7 +281,7 @@ class CheckoutController extends Controller
     }
 
     public function receipt(Sale $sale){
-        $sale->load('items');
+        $sale->load(['items', 'member']);
 
         return Inertia::render('pos/receipt',[
             'sale' => $sale

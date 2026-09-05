@@ -57,7 +57,7 @@ export default function AddonIndex() {
     setEditingAddon(addon);
     setFormData({
       name: addon.name,
-      description: addon.description || '',
+      description: addon.description ?? '',
       price: parseFloat(addon.price),
       is_active: addon.is_active,
     });
@@ -143,9 +143,8 @@ export default function AddonIndex() {
                       checked={addon.is_active}
                       onCheckedChange={(checked: boolean) => {
                         router.put(`/addons/${addon.id}`, {
-                          ...formData,
                           name: addon.name,
-                          description: addon.description,
+                          description: addon.description ?? '',
                           price: parseFloat(addon.price),
                           is_active: checked,
                         });

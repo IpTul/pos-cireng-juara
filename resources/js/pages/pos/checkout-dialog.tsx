@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { CartItem, PackCartItem, AddonSelection, PackVariant } from '@/types';
 import { FreeItemSelection } from './use-cart';
+import type { Member } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Package, Gift, QrCode, Bike } from 'lucide-react';
+import { Package, Gift, QrCode, User, Search, X, Award } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -74,6 +75,13 @@ export default function CheckoutDialog({
   const [error, setError] = useState<string | null>(null);
   const [isGrab, setIsGrab] = useState(false);
 
+  // Member search
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberResults, setMemberResults] = useState<Member[]>([]);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [memberSearchLoading, setMemberSearchLoading] = useState(false);
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+
   const cash = parseFloat(cashInput) || 0;
   const change = cash - subtotal;
 
@@ -83,6 +91,68 @@ export default function CheckoutDialog({
     isQris || isGrab
       ? !processing && isCustomerNameFilled
       : !processing && !!cashInput && cash >= subtotal && isCustomerNameFilled;
+
+  // Calculate estimated points from cart
+  const calculateEstimatedPoints = useCallback(() => {
+    let points = 0;
+    // Regular products
+    items.filter(isCartItem).forEach((i) => {
+      points += i.quantity;
+    });
+    // Pack variants
+    items.filter(isPackCartItem).forEach((i) => {
+      if (i.variants && i.variants.length > 0) {
+        i.variants.forEach((v) => {
+          points += v.quantity * i.quantity;
+        });
+      } else if (i.pack.pack_items) {
+        i.pack.pack_items.forEach((pi) => {
+          points += pi.quantity * i.quantity;
+        });
+      }
+    });
+    return points;
+  }, [items]);
+
+  const estimatedPoints = calculateEstimatedPoints();
+
+  // Debounced member search
+  useEffect(() => {
+    if (!memberSearch.trim() || memberSearch.length < 2) {
+      setMemberResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setMemberSearchLoading(true);
+      try {
+        const response = await fetch(`/members/search?q=${encodeURIComponent(memberSearch)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setMemberResults(data);
+        }
+      } catch (e) {
+        console.error('Member search failed:', e);
+      } finally {
+        setMemberSearchLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [memberSearch]);
+
+  function handleMemberSelect(member: Member) {
+    setSelectedMember(member);
+    setMemberSearch('');
+    setMemberResults([]);
+    setShowMemberDropdown(false);
+  }
+
+  function handleMemberClear() {
+    setSelectedMember(null);
+    setMemberSearch('');
+    setMemberResults([]);
+  }
 
   function handleQrisToggle(checked: boolean) {
     setIsQris(checked);
@@ -124,12 +194,6 @@ export default function CheckoutDialog({
       quantity: i.quantity,
     }));
 
-    interface PackCheckoutItem {
-      pack_id: number;
-      quantity: number;
-      variants: { product_id: number; quantity: number }[];
-    }
-
     const packItems = items.filter(isPackCartItem).map((i) => ({
       pack_id: i.pack.id,
       quantity: i.quantity,
@@ -151,6 +215,7 @@ export default function CheckoutDialog({
       '/checkout',
       {
         customer_name: customerName.trim(),
+        member_id: selectedMember?.id ?? undefined,
         items: regularItems,
         packs: packItems,
         free_items: allFreeItems,
@@ -266,7 +331,7 @@ export default function CheckoutDialog({
             </div>
           </div>
 
-          {/* Nama customer (opsional) */}
+          {/* Nama customer (wajib) */}
           <div>
             <Label htmlFor="customer_name">Nama Customer (wajib)</Label>
             <Input
@@ -282,6 +347,89 @@ export default function CheckoutDialog({
               required
               autoFocus
             />
+          </div>
+
+          {/* Member search */}
+          <div>
+            <Label htmlFor="member_search">Member (opsional)</Label>
+            <div className="relative">
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="member_search"
+                type="text"
+                placeholder="Cari member by nama atau no HP..."
+                value={memberSearch}
+                onChange={(e) => {
+                  setMemberSearch(e.target.value);
+                  setShowMemberDropdown(true);
+                }}
+                onFocus={() => setShowMemberDropdown(memberResults.length > 0)}
+                onBlur={() => setTimeout(() => setShowMemberDropdown(false), 200)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Selected member display */}
+            {selectedMember && (
+              <div className="mt-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-800">{selectedMember.name}</p>
+                      <p className="text-xs text-green-600">{selectedMember.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1 text-sm font-bold text-green-800">
+                      <Award className="h-3.5 w-3.5" />
+                      {selectedMember.points} poin
+                    </span>
+                    {estimatedPoints > 0 && (
+                      <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                        +{estimatedPoints} poin
+                      </span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={handleMemberClear}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Member search results dropdown */}
+            {showMemberDropdown && memberResults.length > 0 && (
+              <div className="mt-1 z-10 rounded-lg border bg-popover p-1 shadow-md max-h-60 overflow-y-auto">
+                {memberResults.map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    className="w-full px-3 py-2 text-left hover:bg-accent rounded transition-colors"
+                    onClick={() => handleMemberSelect(member)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">{member.phone}</p>
+                      </div>
+                      <span className="text-xs font-medium text-primary">
+                        {member.points} poin
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {showMemberDropdown && memberResults.length === 0 && memberSearch.length >= 2 && !memberSearchLoading && (
+              <p className="mt-1 text-xs text-muted-foreground">Member tidak ditemukan</p>
+            )}
           </div>
 
           {/* FIX: toggle metode pembayaran QRIS */}

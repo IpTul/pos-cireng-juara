@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import type { Sale } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, QrCode, Bike } from 'lucide-react';
+import { Printer, ArrowLeft, QrCode, Bike, User, Award } from 'lucide-react';
 
 interface Props {
   sale: Sale;
@@ -49,6 +49,26 @@ export default function Receipt({ sale }: Props) {
           <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
             <span className="text-muted-foreground">Customer</span>
             <span className="font-medium">{sale.customer_name}</span>
+          </div>
+        )}
+
+        {sale.member && (
+          <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <User className="h-3 w-3" />
+              Member
+            </span>
+            <span className="font-medium">{sale.member.name}</span>
+          </div>
+        )}
+
+        {sale.member && (
+          <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Award className="h-3 w-3" />
+              Poin Member
+            </span>
+            <span className="font-medium">{sale.member.points} poin</span>
           </div>
         )}
 

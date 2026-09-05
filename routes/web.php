@@ -12,6 +12,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\PackController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\AddonController;
+use App\Http\Controllers\MemberController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -50,6 +51,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('addons', AddonController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware('role:owner');
+
+    Route::resource('members', MemberController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('role:owner,kasir');
+
+    Route::get('members/search', [MemberController::class, 'search'])
+        ->middleware('role:owner,kasir')
+        ->name('members.search');
 });
 
 require __DIR__.'/settings.php';
