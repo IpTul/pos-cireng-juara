@@ -50,7 +50,7 @@ export function AppSidebar() {
       icon: Package,
     },
     {
-      title: 'Stok Cireng',
+      title: 'Riwayat Stok',
       href: '/stok',
       icon: Activity,
     },
@@ -63,6 +63,11 @@ export function AppSidebar() {
       title: 'Addon',
       href: '/addons',
       icon: PlusCircle,
+    },
+    {
+      title: 'Member',
+      href: '/members',
+      icon: UserPlus,
     },
   ];
 
@@ -78,11 +83,6 @@ export function AppSidebar() {
       icon: History,
     },
     { title: 'Keuangan', href: '/keuangan', icon: Wallet },
-    {
-      title: 'Member',
-      href: '/members',
-      icon: UserPlus,
-    },
     { title: 'Manajemen Pengguna', href: '/users', icon: Users },
   ];
 

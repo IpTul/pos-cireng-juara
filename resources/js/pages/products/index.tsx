@@ -62,7 +62,7 @@ export default function ProductIndex({ products, categories, user }: Props) {
             <thead className="border-b bg-muted/50">
               <tr>
                 <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Category</th>
+                <th className="px-4 py-3 text-left">Cabang</th>
                 <th className="px-4 py-3 text-right">Price</th>
                 <th className="px-4 py-3 text-right">Stock</th>
                 <th className="px-4 py-3 text-center">Status</th>

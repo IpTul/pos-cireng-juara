@@ -2,9 +2,22 @@
 [DONE] +10 cireng dapat bonus 1
 [DONE] tambah update stok
 
-tambahan add on (mentai)
+[DONE] tambahan add on (mentai)
 
 [DONE] nama customer
 [DONE] receipt grab
-member setiap pembelian 1 cireng dapat 1 point. 100 point 1 porsi cireng (10 item)
-tambah paket mentah
+[DONE] member setiap pembelian 1 cireng dapat 1 point. 100 point 1 porsi cireng (10 item)
+[DONE] tambah paket mentah
+
+tambah filter di produk
+1 kasir di set 1 cabang
+owner pilih cabang untuk mengatur semuanya
+Alasan riwayat stok di buat required
+keranjang jangan sampai hilang
+pencarian member jangan pake nama tapi no hp
+di pos jika stok habis jangan di hilangin, tetap ada tapi tidak bisa dipilih krena stok habis
+kasir tidak bisa mengedit addon
+tambahin riwayat member + kasih filter po
+dashboard hilangin semua pendapatan dan harga, tapi di owner tidak
+kasir bisa ngeliat riwayat transaksi untuk mencegah struk tidak bisa di print
+4 cabang hanya 4 akun tapi namanya bisa di edit contoh (iptul / sahran) di 1 akun

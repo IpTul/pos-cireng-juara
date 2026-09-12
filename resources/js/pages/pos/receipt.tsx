@@ -47,7 +47,7 @@ export default function Receipt({ sale }: Props) {
 
         {sale.customer_name && (
           <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
-            <span className="text-muted-foreground">Customer</span>
+            <span className="text-muted-foreground">Nama Customer</span>
             <span className="font-medium">{sale.customer_name}</span>
           </div>
         )}
@@ -139,7 +139,10 @@ export default function Receipt({ sale }: Props) {
         </div>
 
         <div className="mt-6 text-center text-xs text-muted-foreground">
-          <p>Thank you for your purchase!</p>
+          <p>Terima kasih datang kembali ya heart</p>
+          <p>Kritik Saran & Terima Pesanan</p>
+          <p>IG : Cirengjuara.smd</p>
+          <p>WA : 082211495774</p>
         </div>
       </div>
     </>
