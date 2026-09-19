@@ -50,7 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('addons', AddonController::class)
         ->only(['index', 'store', 'update', 'destroy'])
-        ->middleware('role:owner,kasir');
+        ->middleware('role:owner');
 
     Route::resource('members', MemberController::class)
         ->only(['index', 'store', 'update', 'destroy'])

@@ -60,11 +60,6 @@ export function AppSidebar() {
       icon: Package,
     },
     {
-      title: 'Addon',
-      href: '/addons',
-      icon: PlusCircle,
-    },
-    {
       title: 'Member',
       href: '/members',
       icon: UserPlus,
@@ -72,6 +67,11 @@ export function AppSidebar() {
   ];
 
   const managementItems: NavItem[] = [
+    {
+      title: 'Addon',
+      href: '/addons',
+      icon: PlusCircle,
+    },
     {
       title: 'Cabang',
       href: '/cabangs',
