@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CabangController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\SaleHistoryController;
 use App\Http\Controllers\CheckoutController;
@@ -23,7 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('pack', PackController::class)->except(['create', 'show', 'edit']);
     Route::resource('products', ProductController::class)->except(['create', 'show', 'edit']);
-    Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
+    Route::resource('cabangs', CabangController::class)->except(['create', 'show', 'edit']);
 
     Route::get('pos', [PosController::class, 'index'])
         ->name('pos.index')

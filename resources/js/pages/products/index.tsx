@@ -1,15 +1,24 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Category, Product } from '@/types';
+import { Cabang, Product } from '@/types';
 import { toast } from 'sonner';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectValue,
+} from '@/components/ui/select';
 import ProductForm from './product-form';
+import { Label } from '@/components/ui/label';
 
 interface Props {
   products: Product[];
-  categories: Category[];
+  cabangs: Cabang[];
   user: {
     id: number;
     name: string;
@@ -18,9 +27,11 @@ interface Props {
   };
 }
 
-export default function ProductIndex({ products, categories, user }: Props) {
+export default function ProductIndex({ products, cabangs, user }: Props) {
   const [ShowForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [cabangId, setCabangId] = useState<number | null>(null);
+  const [sort, setSort] = useState<'asc' | 'desc'>('asc');
 
   function handleEdit(product: Product) {
     setEditing(product);
@@ -37,6 +48,19 @@ export default function ProductIndex({ products, categories, user }: Props) {
   function handleClose() {
     setShowForm(false);
     setEditing(null);
+    setCabangId(null);
+    setSort('asc');
+  }
+
+  function applyFilters() {
+    router.get(
+      '/products',
+      {
+        cabang_id: cabangId,
+        sort,
+      },
+      { preserveState: true, preserveScroll: true },
+    );
   }
 
   return (
@@ -57,6 +81,58 @@ export default function ProductIndex({ products, categories, user }: Props) {
             </Button>
           )}
         </div>
+
+        <div className="mb-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="cabang-filter" className="w-16 shrink-0">
+              Cabang
+            </Label>
+            <Select
+              value={cabangId !== null ? cabangId.toString() : ''}
+              onValueChange={(value: string) => {
+                const id = value ? parseInt(value, 10) : null;
+                setCabangId(id);
+                applyFilters();
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Semua cabang" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Semua cabang</SelectItem>
+                {cabangs.map((cabang) => (
+                  <SelectItem key={cabang.id} value={cabang.id.toString()}>
+                    {cabang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label htmlFor="sort-stock" className="w-16 shrink-0">
+              Stok
+            </Label>
+            <Select
+              value={sort}
+              onValueChange={(value: string) => {
+                setSort(value as 'asc' | 'desc');
+                applyFilters();
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue>
+                  {sort === 'asc' ? 'Terkecil' : 'Terbesar'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Terkecil ke besar</SelectItem>
+                <SelectItem value="desc">Terbesar ke kecil</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <div className="rounded-lg border">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50">
@@ -87,7 +163,7 @@ export default function ProductIndex({ products, categories, user }: Props) {
                 >
                   <td className="px-4 py-3 font-medium">{product.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {product.category.name}
+                    {product.cabang.name}
                   </td>
                   <td className="px-4 py-3 text-right">
                     Rp{Number(product.price).toLocaleString('id-ID')}
@@ -130,14 +206,14 @@ export default function ProductIndex({ products, categories, user }: Props) {
             </tbody>
           </table>
         </div>
+        {ShowForm && (
+          <ProductForm
+            cabangs={cabangs}
+            product={editing}
+            onClose={handleClose}
+          />
+        )}
       </div>
-      {ShowForm && (
-        <ProductForm
-          categories={categories}
-          product={editing}
-          onClose={handleClose}
-        />
-      )}
     </>
   );
 }

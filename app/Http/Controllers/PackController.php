@@ -27,11 +27,11 @@ class PackController extends Controller
 
     public function index()
     {
-        $packs = Pack::with(['packItems.product.category'])
+        $packs = Pack::with(['packItems.product.cabang'])
             ->latest()
             ->get();
 
-        $products = Product::with('category')
+        $products = Product::with('cabang')
             ->where('is_active', true)
             ->orderBy('name')
             ->get();

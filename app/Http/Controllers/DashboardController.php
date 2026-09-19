@@ -49,7 +49,7 @@ class DashboardController extends Controller
         ]);
 
         // recent sales (paginated)
-        $recentSales = Sale::with(['items.product.category', 'items.pack'])
+        $recentSales = Sale::with(['items.product.cabang', 'items.pack'])
             ->latest()
             ->paginate(5)
             ->through(fn($sale) => [
@@ -63,7 +63,7 @@ class DashboardController extends Controller
                     'quantity'      => $item->quantity,
                     'subtotal'      => $item->subtotal,
                     'is_free'       => $item->is_free,
-                    'category_name' => $item->product?->category?->name ?? ($item->pack ? 'Paket' : '—'),
+                    'cabang_name' => $item->product?->cabang?->name ?? ($item->pack ? 'Paket' : '—'),
                 ]),
             ]);
 

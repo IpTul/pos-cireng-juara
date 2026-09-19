@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCategoryRequest;
-use App\Http\Requests\UpdateCategoryRequest;
-use App\Models\Category;
+use App\Http\Requests\StoreCabangRequest;
+use App\Http\Requests\UpdateCabangRequest;
+use App\Models\Cabang;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
-class CategoryController extends Controller
+class CabangController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -31,10 +31,10 @@ class CategoryController extends Controller
 
     public function index()
     {
-        $categories = Category::withCount('products')->orderby('name')->get();
+        $cabangs = Cabang::withCount('products')->orderby('name')->get();
 
-        return Inertia::render('categories/index', [
-            'categories' => $categories,
+        return Inertia::render('cabangs/index', [
+            'cabangs' => $cabangs,
             'user' => [
                 'id'    => $this->user->id,
                 'name'  => $this->user->name,
@@ -55,17 +55,17 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCategoryRequest $request)
+    public function store(StoreCabangRequest $request)
     {
         $this->authorizeOwnerOnly();
-        Category::create($request->validated());
-        return redirect()->route('categories.index')->with('success', 'Kategori berhasil dibuat.');
+        Cabang::create($request->validated());
+        return redirect()->route('cabangs.index')->with('success', 'Cabang berhasil dibuat.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Category $category)
+    public function show(Cabang $cabang)
     {
         //
     }
@@ -73,7 +73,7 @@ class CategoryController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Category $category)
+    public function edit(Cabang $cabang)
     {
         //
     }
@@ -81,20 +81,20 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCategoryRequest $request, Category $category)
+    public function update(UpdateCabangRequest $request, Cabang $cabang)
     {
         $this->authorizeOwnerOnly();
-        $category->update($request->validated());
-        return redirect()->route('categories.index')->with('success', 'Kategori berhasil diperbarui.');
+        $cabang->update($request->validated());
+        return redirect()->route('cabangs.index')->with('success', 'Cabang berhasil diperbarui.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category $category)
+    public function destroy(Cabang $cabang)
     {
         $this->authorizeOwnerOnly();
-        $category->delete();
-        return redirect()->route('categories.index')->with('success', 'Kategori berhasil dihapus.');
+        $cabang->delete();
+        return redirect()->route('cabangs.index')->with('success', 'Cabang berhasil dihapus.');
     }
 }

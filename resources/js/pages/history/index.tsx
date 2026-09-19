@@ -56,7 +56,7 @@ interface SaleItemRow {
   };
   product: {
     name: string;
-    category: { name: string };
+    cabang: { name: string };
   } | null;
   pack: {
     name: string;
@@ -148,7 +148,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
         Item: row.pack
           ? `Paket - ${row.pack.name}`
           : (row.product?.name ?? '-'),
-        Kategori: row.pack ? 'Paket' : (row.product?.category?.name ?? '-'),
+        Kategori: row.pack ? 'Paket' : (row.product?.cabang?.name ?? '-'),
         Customer: row.sale.customer_name || '-',
         Kasir: row.sale.user?.name ?? '-',
         Qty: row.quantity,
@@ -290,9 +290,9 @@ export default function History({ saleItems, user, can, filters }: Props) {
                   const itemName = isPack
                     ? sale.pack?.name
                     : sale.product?.name;
-                  const categoryName = isPack
+                  const cabangName = isPack
                     ? 'Paket'
-                    : sale.product?.category?.name;
+                    : sale.product?.cabang?.name;
                   const badgeIcon = isPack ? (
                     <Package className="mr-1 h-3 w-3" />
                   ) : null;
@@ -316,7 +316,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
                       </td>
                       <td className="px-4 py-3 text-left font-medium">
                         {badgeIcon}
-                        {categoryName} - {itemName}
+                        {cabangName} - {itemName}
                         {freeItemsDisplay}
                         {isFree && (
                           <Badge
@@ -464,7 +464,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
                     </span>
                   ) : (
                     <span>
-                      {selected.product?.category?.name} -{' '}
+                      {selected.product?.cabang?.name} -{' '}
                       {selected.product?.name}
                     </span>
                   )}

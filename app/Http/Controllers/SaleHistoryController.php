@@ -39,7 +39,7 @@ class SaleHistoryController extends Controller
         $endDate = $request->input('end_date');
         $paymentMethod = $request->input('payment_method');
 
-        return Sale::with(['items.product.category', 'items.pack', 'user', 'member'])
+        return Sale::with(['items.product.cabang', 'items.pack', 'user', 'member'])
             ->when($startDate, function ($query) use ($startDate) {
                 $query->whereDate('created_at', '>=', $startDate);
             })

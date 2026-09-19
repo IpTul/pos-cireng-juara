@@ -74,7 +74,7 @@ export function AppSidebar() {
   const managementItems: NavItem[] = [
     {
       title: 'Cabang',
-      href: '/categories',
+      href: '/cabangs',
       icon: Tag,
     },
     {

@@ -54,7 +54,7 @@ export default function FreeProductModal({
   const filteredProducts = products
     .filter((p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.name.toLowerCase().includes(search.toLowerCase()),
+      (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
     )
     .filter((p) => p.is_active && p.stock > 0);
 
@@ -154,7 +154,7 @@ export default function FreeProductModal({
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{product.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {product.category.name} • Stok: {product.stock}
+                        {(product.cabang?.name || '')} • Stok: {product.stock}
                       </p>
                       <p className="text-sm font-bold text-primary">{formatRupiah(product.price)}</p>
                     </div>

@@ -1,6 +1,6 @@
 // resource/js/pages/products/product-form.tsx
 
-import { Category, Product } from '@/types';
+import { Cabang, Product } from '@/types';
 import { useForm } from '@inertiajs/react';
 import {
   Select,
@@ -23,16 +23,16 @@ import { FormEvent } from 'react';
 import { toast } from 'sonner';
 
 interface Props {
-  categories: Category[];
+  cabangs: Cabang[];
   product?: Product | null;
   onClose: () => void;
 }
 
-export default function ProductForm({ categories, product, onClose }: Props) {
+export default function ProductForm({ cabangs, product, onClose }: Props) {
   const { data, setData, post, processing, errors, reset, transform } = useForm(
     {
       name: product?.name ?? '',
-      category_id: product?.category_id?.toString() ?? '',
+      cabang_id: product?.cabang_id?.toString() ?? '',
       description: product?.description ?? '',
       price: product?.price ?? '',
       stock: product?.stock?.toString() ?? '0',
@@ -92,23 +92,23 @@ export default function ProductForm({ categories, product, onClose }: Props) {
           </div>
 
           <div>
-            <Label>Category</Label>
+            <Label>Cabang</Label>
             <Select
-              value={data.category_id}
-              onValueChange={(v) => setData('category_id', v)}
+              value={data.cabang_id}
+              onValueChange={(v) => setData('cabang_id', v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder="Select cabang" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((c) => (
+                {cabangs.map((c) => (
                   <SelectItem key={c.id} value={c.id.toString()}>
                     {c.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <InputError message={errors.category_id} />
+            <InputError message={errors.cabang_id} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

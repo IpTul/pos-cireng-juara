@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name',
     'description',
 ])]
-class Category extends Model
+class Cabang extends Model
 {
     public function products(): HasMany
     {

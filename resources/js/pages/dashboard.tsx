@@ -35,7 +35,7 @@ interface SaleWithItems extends Sale {
     quantity: number;
     subtotal: number;
     is_free?: boolean;
-    category_name?: string;
+    cabang_name?: string;
   }>;
 }
 
@@ -147,7 +147,7 @@ export default function Dashboard({
                         {Object.entries(
                           sale.items.reduce(
                             (acc, i) => {
-                              const cat = i.category_name || 'Lainnya';
+                              const cat = i.cabang_name || 'Lainnya';
                               if (!acc[cat]) acc[cat] = [];
                               acc[cat].push(`${i.product_name} ×${i.quantity}`);
                               return acc;

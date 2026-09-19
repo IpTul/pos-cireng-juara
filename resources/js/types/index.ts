@@ -2,7 +2,7 @@ export type * from './auth';
 export type * from './navigation';
 export type * from './ui';
 
-export interface Category {
+export interface Cabang {
   id: number;
   name: string;
   description: string | null;
@@ -10,14 +10,14 @@ export interface Category {
 
 export interface Product {
   id: number;
-  category_id: number;
+  cabang_id: number;
   name: string;
   description: string | null;
   price: string;
   stock: number;
   image: string | null;
   is_active: boolean;
-  category: Category;
+  cabang: Cabang;
 }
 
 export interface Addon {
@@ -57,7 +57,7 @@ export interface SaleItem {
   quantity: number;
   subtotal: number;
   is_free?: boolean;
-  category_name?: string;
+  cabang_name?: string;
   addon_name?: string;
   addon_id?: number;
 }

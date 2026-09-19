@@ -52,7 +52,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.name.toLowerCase().includes(search.toLowerCase()),
+      (p.cabang?.name || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   const [mobileTab, setMobileTab] = useState<'produk' | 'keranjang'>('produk');

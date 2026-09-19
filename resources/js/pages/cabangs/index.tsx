@@ -1,6 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { Category } from '@/types';
+import { Cabang } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,10 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import InputError from '@/components/input-error';
 
-type CategoryWithCount = Category & { products_count: number };
+type CabangWithCount = Cabang & { products_count: number };
 
 interface Props {
-  categories: CategoryWithCount[];
+  cabangs: CabangWithCount[];
   user: {
     id: number;
     name: string;
@@ -26,9 +26,9 @@ interface Props {
   };
 }
 
-export default function CategoryIndex({ categories, user }: Props) {
+export default function CabangIndex({ cabangs, user }: Props) {
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<Category | null>(null);
+  const [editing, setEditing] = useState<Cabang | null>(null);
 
   const { data, setData, post, put, processing, errors, reset } = useForm({
     name: '',
@@ -41,7 +41,7 @@ export default function CategoryIndex({ categories, user }: Props) {
     setShowForm(true);
   }
 
-  function openEdit(cat: Category) {
+  function openEdit(cat: Cabang) {
     setData({ name: cat.name, description: cat.description ?? '' });
     setEditing(cat);
     setShowForm(true);
@@ -56,32 +56,32 @@ export default function CategoryIndex({ categories, user }: Props) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (editing) {
-      put(`/categories/${editing.id}`, {
+      put(`/cabangs/${editing.id}`, {
         onSuccess: () => {
-          toast.success('Category updated.');
+          toast.success('Cabang updated.');
           closeForm();
         },
       });
     } else {
-      post('/categories', {
+      post('/cabangs', {
         onSuccess: () => {
-          toast.success('Category created.');
+          toast.success('Cabang created.');
           closeForm();
         },
       });
     }
   }
 
-  function handleDelete(cat: CategoryWithCount) {
+  function handleDelete(cat: CabangWithCount) {
     if (cat.products_count > 0) {
       toast.error(
         `Cannot delete "${cat.name}" — it has ${cat.products_count} product(s). Reassign them first.`,
       );
       return;
     }
-    if (!confirm(`Delete category "${cat.name}"?`)) return;
-    router.delete(`/categories/${cat.id}`, {
-      onSuccess: () => toast.success('Category deleted.'),
+    if (!confirm(`Delete cabang "${cat.name}"?`)) return;
+    router.delete(`/cabangs/${cat.id}`, {
+      onSuccess: () => toast.success('Cabang deleted.'),
     });
   }
 
@@ -102,24 +102,24 @@ export default function CategoryIndex({ categories, user }: Props) {
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left">Nama Kategori</th>
+                <th className="px-4 py-3 text-left">Nama Cabang</th>
                 <th className="px-4 py-3 text-left">Deskripsi</th>
                 <th className="px-4 py-3 text-right">Produk</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {categories.length === 0 && (
+              {cabangs.length === 0 && (
                 <tr>
                   <td
                     colSpan={4}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    No categories yet. Add one to get started.
+                    No cabangs yet. Add one to get started.
                   </td>
                 </tr>
               )}
-              {categories.map((cat) => (
+              {cabangs.map((cat) => (
                 <tr
                   key={cat.id}
                   className="border-b last:border-0 hover:bg-muted/25"
@@ -194,6 +194,6 @@ export default function CategoryIndex({ categories, user }: Props) {
   );
 }
 
-CategoryIndex.layout = {
-  breadcrumbs: [{ title: 'Cabang', href: '/categories' }],
+CabangIndex.layout = {
+  breadcrumbs: [{ title: 'Cabang', href: '/cabangs' }],
 };

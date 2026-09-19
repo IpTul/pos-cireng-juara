@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
-use App\Models\Category;
+use App\Models\Cabang;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,21 +33,39 @@ class ProductController extends Controller
 
     public function index()
     {
-        $products = Product::with('category')
-        ->latest()
-        ->get();
+        $query = Product::with('cabang');
 
-        $categories = Category::orderBy('name')
+        // Filter by cabang
+        if (request()->has('cabang_id')) {
+            $query->where('cabang_id', request()->input('cabang_id'));
+        }
+
+        // Sort by stock
+        $sort = request()->input('sort', 'asc');
+
+        if ($sort === 'desc') {
+            $query->orderBy('stock', 'desc');
+        } else {
+            $query->orderBy('stock', 'asc');
+        }
+
+        $products = $query->get();
+
+        $cabangs = Cabang::orderBy('name')
         ->get();
 
         return Inertia::render('products/index', [
             'products' => $products,
-            'categories' => $categories,
+            'cabangs' => $cabangs,
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'email' => $this->user->email,
                 'role' => $this->user->role,
+            ],
+            'filters' => [
+                'cabang_id' => request()->input('cabang_id'),
+                'sort' => $sort,
             ]
         ]);
     }

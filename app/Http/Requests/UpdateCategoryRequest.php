@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateCategoryRequest extends FormRequest
+class UpdateCabangRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,7 +24,7 @@ class UpdateCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($this->category)],
+            'name' => ['required', 'string', 'max:255', Rule::unique('cabangs', 'name')->ignore($this->cabang)],
             'description' => ['nullable', 'string'],
         ];
     }

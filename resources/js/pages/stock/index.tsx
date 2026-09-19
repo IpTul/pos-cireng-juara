@@ -36,7 +36,7 @@ interface Product {
   id: number;
   name: string;
   stock: number;
-  category: { name: string };
+  cabang: { name: string };
 }
 
 interface Adjustment {
@@ -84,7 +84,7 @@ export default function StockIndex({
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.name.toLowerCase().includes(search.toLowerCase()),
+      (p.cabang?.name || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   function handleSubmit(e: React.FormEvent) {
@@ -189,7 +189,7 @@ export default function StockIndex({
                             <div className="flex flex-col">
                               <span>{product.name}</span>
                               <span className="text-xs text-muted-foreground">
-                                {product.category.name} • Stok: {product.stock}
+                                {(product.cabang?.name || "")} • Stok: {product.stock}
                               </span>
                             </div>
                           </SelectItem>

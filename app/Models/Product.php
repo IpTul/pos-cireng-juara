@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\relations\BelongsTo;
 
 #[Fillable([
-    'category_id',
+    'cabang_id',
     'name',
     'description',
     'price',
@@ -25,8 +25,8 @@ class Product extends Model
         ];
     }
 
-    public function category(): BelongsTo
+    public function cabang(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Cabang::class);
     }
 }

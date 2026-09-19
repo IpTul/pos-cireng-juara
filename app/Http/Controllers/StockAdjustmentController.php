@@ -20,11 +20,11 @@ class StockAdjustmentController extends Controller
 
     public function index()
     {
-        $adjustments = StockAdjustment::with(['product.category', 'user'])
+        $adjustments = StockAdjustment::with(['product.cabang', 'user'])
             ->latest()
             ->paginate(20);
 
-        $products = Product::with('category')->where('is_active', true)->get();
+        $products = Product::with('cabang')->where('is_active', true)->get();
 
         return Inertia::render('stock/index', [
             'adjustments' => $adjustments,
