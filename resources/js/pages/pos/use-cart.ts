@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from 'react';
+import { useReducer, useMemo, useEffect } from 'react';
 import {
   CartItem,
   PackCartItem,
@@ -9,6 +9,29 @@ import {
   PackVariant,
 } from '@/types';
 import { toast } from 'sonner';
+
+// Cart localStorage key
+const CART_STORAGE_KEY = 'cireng-juara-cart';
+
+function cartFromStorage(): CartState {
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Failed to load cart from localStorage', e);
+  }
+  return { items: [], addons: [] };
+}
+
+function saveCartToStorage(state: CartState) {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error('Failed to save cart to localStorage', e);
+  }
+}
 
 type CartItemUnion = CartItem | PackCartItem;
 
@@ -357,8 +380,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 }
 
 export function useCart() {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], addons: [] });
+  // Initialize cart state from localStorage, then persist changes back
+  const [state, dispatch] = useReducer(cartReducer, cartFromStorage());
   const { items, addons } = state;
+
+  // Save to localStorage on every state change
+  useEffect(() => {
+    saveCartToStorage(state);
+  }, [state]);
 
   const subtotal = useMemo(() => {
     let sum = 0;
