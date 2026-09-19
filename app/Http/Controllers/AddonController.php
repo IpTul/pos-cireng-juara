@@ -9,8 +9,23 @@ use Inertia\Response;
 
 class AddonController extends Controller
 {
+    protected $user;
+
+    public function __construct()
+    {
+        $this->user = auth()->user();
+    }
+
+    private function authorizeOwnerOnly()
+    {
+        if(! $this->user?->isOwner()) {
+            abort(403, 'Hanya owner yang boleh melakukan aksi ini.');
+        }
+    }
+    
     public function index(): Response
     {
+        $this->authorizeOwnerOnly();
         $addons = Addon::orderBy('name')->paginate(15);
 
         return Inertia::render('addons/index', [

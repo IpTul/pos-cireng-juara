@@ -29,7 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('pos.index')
         ->middleware('role:owner,kasir');
 
-    Route::get('/history', [SaleHistoryController::class, 'index'])->name('history.index');
+    Route::get('/history', [SaleHistoryController::class, 'index'])->name('history.index')->middleware('role:owner,kasir');
     Route::get('/history/export-data', [SaleHistoryController::class, 'exportData'])->name('history.export-data');
 
     Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout');

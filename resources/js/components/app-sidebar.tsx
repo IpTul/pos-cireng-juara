@@ -64,6 +64,11 @@ export function AppSidebar() {
       href: '/members',
       icon: UserPlus,
     },
+    {
+      title: 'Riwayat Transaksi',
+      href: '/history',
+      icon: History,
+    },
   ];
 
   const managementItems: NavItem[] = [
@@ -76,11 +81,6 @@ export function AppSidebar() {
       title: 'Cabang',
       href: '/cabangs',
       icon: Tag,
-    },
-    {
-      title: 'Riwayat Transaksi',
-      href: '/history',
-      icon: History,
     },
     { title: 'Keuangan', href: '/keuangan', icon: Wallet },
     { title: 'Manajemen Pengguna', href: '/users', icon: Users },

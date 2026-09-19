@@ -150,8 +150,6 @@ class SaleHistoryController extends Controller
 
     public function index(Request $request)
     {
-        $this->authorizeOwnerOnly();
-
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
         $paymentMethod = $request->input('payment_method', 'all');
