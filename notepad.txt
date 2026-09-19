@@ -9,7 +9,7 @@
 [DONE] member setiap pembelian 1 cireng dapat 1 point. 100 point 1 porsi cireng (10 item)
 [DONE] tambah paket mentah
 
-tambah filter di produk
+[DONE] tambah filter di produk
 1 kasir di set 1 cabang
 owner pilih cabang untuk mengatur semuanya
 Alasan riwayat stok di buat required

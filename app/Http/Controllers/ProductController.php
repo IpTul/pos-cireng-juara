@@ -35,15 +35,15 @@ class ProductController extends Controller
     {
         $query = Product::with('cabang');
 
-        // Filter by cabang
         if (request()->has('cabang_id')) {
             $query->where('cabang_id', request()->input('cabang_id'));
         }
 
-        // Sort by stock
         $sort = request()->input('sort', 'asc');
 
-        if ($sort === 'desc') {
+        if ($sort === 'low_stock') {
+            $query->where('stock', '<', 5)->orderBy('stock', 'asc');
+        } elseif ($sort === 'desc') {
             $query->orderBy('stock', 'desc');
         } else {
             $query->orderBy('stock', 'asc');

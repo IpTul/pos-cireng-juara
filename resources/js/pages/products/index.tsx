@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectContent,
   SelectItem,
-  SelectLabel,
   SelectValue,
 } from '@/components/ui/select';
 import ProductForm from './product-form';
@@ -31,7 +30,7 @@ export default function ProductIndex({ products, cabangs, user }: Props) {
   const [ShowForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [cabangId, setCabangId] = useState<number | null>(null);
-  const [sort, setSort] = useState<'asc' | 'desc'>('asc');
+  const [sort, setSort] = useState<'asc' | 'desc' | 'low_stock'>('asc');
 
   function handleEdit(product: Product) {
     setEditing(product);
@@ -52,15 +51,23 @@ export default function ProductIndex({ products, cabangs, user }: Props) {
     setSort('asc');
   }
 
-  function applyFilters() {
-    router.get(
-      '/products',
-      {
-        cabang_id: cabangId,
-        sort,
-      },
-      { preserveState: true, preserveScroll: true },
-    );
+  function applyFilters(overrides?: {
+    cabangId?: number | null;
+    sort?: 'asc' | 'desc' | 'low_stock';
+  }) {
+    const activeCabangId =
+      overrides?.cabangId !== undefined ? overrides.cabangId : cabangId;
+    const activeSort = overrides?.sort !== undefined ? overrides.sort : sort;
+
+    const params: Record<string, string> = { sort: activeSort };
+    if (activeCabangId !== null) {
+      params.cabang_id = String(activeCabangId);
+    }
+
+    router.get('/products', params, {
+      preserveState: true,
+      preserveScroll: true,
+    });
   }
 
   return (
@@ -82,55 +89,53 @@ export default function ProductIndex({ products, cabangs, user }: Props) {
           )}
         </div>
 
-        <div className="mb-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="cabang-filter" className="w-16 shrink-0">
-              Cabang
-            </Label>
-            <Select
-              value={cabangId !== null ? cabangId.toString() : ''}
-              onValueChange={(value: string) => {
-                const id = value ? parseInt(value, 10) : null;
-                setCabangId(id);
-                applyFilters();
-              }}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Semua cabang" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Semua cabang</SelectItem>
-                {cabangs.map((cabang) => (
-                  <SelectItem key={cabang.id} value={cabang.id.toString()}>
-                    {cabang.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="mb-4 grid w-fit grid-cols-[auto_1fr] items-center gap-x-3 gap-y-3">
+          <Label htmlFor="cabang-filter">Cabang</Label>
+          <Select
+            value={cabangId !== null ? cabangId.toString() : ''}
+            onValueChange={(value: string) => {
+              const id = value ? parseInt(value, 10) : null;
+              setCabangId(id);
+              applyFilters({ cabangId: id });
+            }}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Semua cabang" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Semua cabang</SelectItem>
+              {cabangs.map((cabang) => (
+                <SelectItem key={cabang.id} value={cabang.id.toString()}>
+                  {cabang.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <div className="flex items-center gap-2">
-            <Label htmlFor="sort-stock" className="w-16 shrink-0">
-              Stok
-            </Label>
-            <Select
-              value={sort}
-              onValueChange={(value: string) => {
-                setSort(value as 'asc' | 'desc');
-                applyFilters();
-              }}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue>
-                  {sort === 'asc' ? 'Terkecil' : 'Terbesar'}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">Terkecil ke besar</SelectItem>
-                <SelectItem value="desc">Terbesar ke kecil</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Label htmlFor="sort-stock">Stok</Label>
+          <Select
+            value={sort}
+            onValueChange={(value: string) => {
+              const newSort = value as 'asc' | 'desc' | 'low_stock';
+              setSort(newSort);
+              applyFilters({ sort: newSort });
+            }}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue>
+                {sort === 'asc'
+                  ? 'Terkecil'
+                  : sort === 'desc'
+                    ? 'Terbesar'
+                    : 'Stok di bawah 5'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">Terkecil ke besar</SelectItem>
+              <SelectItem value="desc">Terbesar ke kecil</SelectItem>
+              <SelectItem value="low_stock">Stok di bawah 5</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="rounded-lg border">
