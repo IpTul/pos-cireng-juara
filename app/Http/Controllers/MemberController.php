@@ -15,12 +15,9 @@ class MemberController extends Controller
         $query = Member::active();
 
         // Search by name or phone
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->where('phone', 'like', "%{$search}%");
         }
 
         $members = $query->latest()
@@ -70,19 +67,16 @@ class MemberController extends Controller
     public function search(Request $request): JsonResponse
     {
         $query = Member::active();
-
+    
         if ($request->filled('q')) {
             $search = $request->input('q');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            });
+            $query->where('phone', 'like', "%{$search}%");
         }
-
+    
         $members = $query->select('id', 'name', 'phone', 'points', 'last_purchase_at')
             ->limit(10)
             ->get();
-
+    
         return response()->json($members);
     }
 }

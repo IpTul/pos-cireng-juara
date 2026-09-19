@@ -126,7 +126,9 @@ export default function CheckoutDialog({
     const timer = setTimeout(async () => {
       setMemberSearchLoading(true);
       try {
-        const response = await fetch(`/members/search?q=${encodeURIComponent(memberSearch)}`);
+        const response = await fetch(
+          `/members/search?q=${encodeURIComponent(memberSearch)}`,
+        );
         if (response.ok) {
           const data = await response.json();
           setMemberResults(data);
@@ -356,28 +358,34 @@ export default function CheckoutDialog({
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="member_search"
-                type="text"
-                placeholder="Cari member by nama atau no HP..."
+                type="tel"
+                placeholder="Cari member by no HP..."
                 value={memberSearch}
                 onChange={(e) => {
                   setMemberSearch(e.target.value);
                   setShowMemberDropdown(true);
                 }}
                 onFocus={() => setShowMemberDropdown(memberResults.length > 0)}
-                onBlur={() => setTimeout(() => setShowMemberDropdown(false), 200)}
+                onBlur={() =>
+                  setTimeout(() => setShowMemberDropdown(false), 200)
+                }
                 className="pl-9"
               />
             </div>
 
             {/* Selected member display */}
             {selectedMember && (
-              <div className="mt-2 p-3 rounded-lg bg-green-50 border border-green-200">
+              <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-green-600" />
                     <div>
-                      <p className="font-medium text-green-800">{selectedMember.name}</p>
-                      <p className="text-xs text-green-600">{selectedMember.phone}</p>
+                      <p className="font-medium text-green-800">
+                        {selectedMember.name}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        {selectedMember.phone}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -386,7 +394,7 @@ export default function CheckoutDialog({
                       {selectedMember.points} poin
                     </span>
                     {estimatedPoints > 0 && (
-                      <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                      <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-600">
                         +{estimatedPoints} poin
                       </span>
                     )}
@@ -405,18 +413,20 @@ export default function CheckoutDialog({
 
             {/* Member search results dropdown */}
             {showMemberDropdown && memberResults.length > 0 && (
-              <div className="mt-1 z-10 rounded-lg border bg-popover p-1 shadow-md max-h-60 overflow-y-auto">
+              <div className="z-10 mt-1 max-h-60 overflow-y-auto rounded-lg border bg-popover p-1 shadow-md">
                 {memberResults.map((member) => (
                   <button
                     key={member.id}
                     type="button"
-                    className="w-full px-3 py-2 text-left hover:bg-accent rounded transition-colors"
+                    className="w-full rounded px-3 py-2 text-left transition-colors hover:bg-accent"
                     onClick={() => handleMemberSelect(member)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-sm">{member.name}</p>
-                        <p className="text-xs text-muted-foreground">{member.phone}</p>
+                        <p className="text-sm font-medium">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {member.phone}
+                        </p>
                       </div>
                       <span className="text-xs font-medium text-primary">
                         {member.points} poin
@@ -427,9 +437,14 @@ export default function CheckoutDialog({
               </div>
             )}
 
-            {showMemberDropdown && memberResults.length === 0 && memberSearch.length >= 2 && !memberSearchLoading && (
-              <p className="mt-1 text-xs text-muted-foreground">Member tidak ditemukan</p>
-            )}
+            {showMemberDropdown &&
+              memberResults.length === 0 &&
+              memberSearch.length >= 2 &&
+              !memberSearchLoading && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Nomor HP tidak ditemukan
+                </p>
+              )}
           </div>
 
           {/* FIX: toggle metode pembayaran QRIS */}
