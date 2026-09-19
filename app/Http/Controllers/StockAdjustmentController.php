@@ -47,7 +47,7 @@ class StockAdjustmentController extends Controller
             'product_id' => ['required', 'exists:products,id'],
             'type' => ['required', 'in:increase,decrease'],
             'quantity' => ['required', 'integer', 'min:1'],
-            'reason' => ['nullable', 'string', 'max:255'],
+            'reason' => ['required', 'string', 'max:255'],
         ]);
 
         $product = Product::lockForUpdate()->findOrFail($validated['product_id']);

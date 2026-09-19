@@ -12,7 +12,7 @@
 [DONE] tambah filter di produk
 1 kasir di set 1 cabang
 owner pilih cabang untuk mengatur semuanya
-Alasan riwayat stok di buat required
+[DONE ] Alasan riwayat stok di buat required
 keranjang jangan sampai hilang
 pencarian member jangan pake nama tapi no hp
 di pos jika stok habis jangan di hilangin, tetap ada tapi tidak bisa dipilih krena stok habis

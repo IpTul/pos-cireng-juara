@@ -84,12 +84,12 @@ export default function StockIndex({
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.cabang?.name || "").toLowerCase().includes(search.toLowerCase()),
+      (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
   );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedProductId || quantity <= 0) return;
+    if (!selectedProductId || quantity <= 0 || !reason.trim()) return;
 
     router.post(
       '/stok',
@@ -189,7 +189,8 @@ export default function StockIndex({
                             <div className="flex flex-col">
                               <span>{product.name}</span>
                               <span className="text-xs text-muted-foreground">
-                                {(product.cabang?.name || "")} • Stok: {product.stock}
+                                {product.cabang?.name || ''} • Stok:{' '}
+                                {product.stock}
                               </span>
                             </div>
                           </SelectItem>
@@ -235,7 +236,7 @@ export default function StockIndex({
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Alasan (Opsional)
+                    Alasan <span className="text-destructive">*</span>
                   </label>
                   <Input
                     placeholder="Contoh: Penjualan manual, Rusak, Koreksi stok..."
@@ -252,7 +253,12 @@ export default function StockIndex({
                 >
                   Batal
                 </Button>
-                <Button type="submit">
+                <Button
+                  type="submit"
+                  disabled={
+                    !selectedProductId || quantity <= 0 || !reason.trim()
+                  }
+                >
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Simpan Perubahan
                 </Button>
