@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 // Cart localStorage key
 const CART_STORAGE_KEY = 'cireng-juara-cart';
 
-function cartFromStorage(): CartState {
+function loadCartFromStorage(): CartState {
   try {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
@@ -73,7 +73,9 @@ function isCartItem(item: CartItemUnion): item is CartItem {
   return 'product' in item;
 }
 
-function isPackCartItem(item: CartItemUnion): item is PackCartItem & { variants: PackVariant[] } {
+function isPackCartItem(
+  item: CartItemUnion,
+): item is PackCartItem & { variants: PackVariant[] } {
   return 'pack' in item && 'variants' in item;
 }
 
@@ -124,14 +126,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : i,
         );
       } else {
-        if (action.product.stock <= 0) return state;
+        // When stock <= 0, still add the product to the cart list but it cannot be selected/increased
+        // The existing SET_QTY_PRODUCT logic will restrict quantity when product.stock <= 0
+        const initialQty = action.product.stock <= 0 ? 0 : 1;
         newItems = [
           ...state.items,
           {
             product: action.product,
-            quantity: 1,
+            quantity: initialQty,
             freeQuantity: 0,
-            totalQuantity: 1,
+            totalQuantity: initialQty,
             freeItems: [],
           },
         ];
@@ -145,19 +149,26 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
     case 'ADD_PACK': {
       const existing = state.items.find(
-        (i): i is PackCartItemWithFree => isPackCartItem(i) && i.pack.id === action.pack.id,
+        (i): i is PackCartItemWithFree =>
+          isPackCartItem(i) && i.pack.id === action.pack.id,
       );
       if (existing) {
         const newQty = existing.quantity + 1;
         // Check stock for all selected variants
         const requiredStock: Record<number, number> = {};
         for (const variant of existing.variants) {
-          requiredStock[variant.product_id] = (requiredStock[variant.product_id] || 0) + variant.quantity * newQty;
+          requiredStock[variant.product_id] =
+            (requiredStock[variant.product_id] || 0) +
+            variant.quantity * newQty;
         }
         for (const [productId, required] of Object.entries(requiredStock)) {
-          const product = action.pack.pack_items?.find(pi => pi.product_id === Number(productId))?.product;
+          const product = action.pack.pack_items?.find(
+            (pi) => pi.product_id === Number(productId),
+          )?.product;
           if (product && product.stock < required) {
-            toast.error(`Stok "${product.name}" tidak mencukupi untuk paket "${action.pack.name}"`);
+            toast.error(
+              `Stok "${product.name}" tidak mencukupi untuk paket "${action.pack.name}"`,
+            );
             return state;
           }
         }
@@ -179,10 +190,13 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         }
         const requiredStock: Record<number, number> = {};
         for (const variant of variants) {
-          requiredStock[variant.product_id] = (requiredStock[variant.product_id] || 0) + variant.quantity;
+          requiredStock[variant.product_id] =
+            (requiredStock[variant.product_id] || 0) + variant.quantity;
         }
         for (const [productId, required] of Object.entries(requiredStock)) {
-          const product = action.pack.pack_items?.find(pi => pi.product_id === Number(productId))?.product;
+          const product = action.pack.pack_items?.find(
+            (pi) => pi.product_id === Number(productId),
+          )?.product;
           if (!product || product.stock < required) {
             toast.error(`Stok "${product?.name || 'produk'}" tidak mencukupi`);
             return state;
@@ -280,10 +294,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         // Check stock for new variants
         const requiredStock: Record<number, number> = {};
         for (const variant of action.variants) {
-          requiredStock[variant.product_id] = (requiredStock[variant.product_id] || 0) + variant.quantity * i.quantity;
+          requiredStock[variant.product_id] =
+            (requiredStock[variant.product_id] || 0) +
+            variant.quantity * i.quantity;
         }
         for (const [productId, required] of Object.entries(requiredStock)) {
-          const product = i.pack.pack_items?.find(pi => pi.product_id === Number(productId))?.product;
+          const product = i.pack.pack_items?.find(
+            (pi) => pi.product_id === Number(productId),
+          )?.product;
           if (product && product.stock < required) {
             toast.error(`Stok "${product.name}" tidak mencukupi`);
             return i;
@@ -380,11 +398,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 }
 
 export function useCart() {
-  // Initialize cart state from localStorage, then persist changes back
-  const [state, dispatch] = useReducer(cartReducer, cartFromStorage());
+  const [state, dispatch] = useReducer(cartReducer, { items: [], addons: [] });
   const { items, addons } = state;
 
-  // Save to localStorage on every state change
+  // Load from localStorage on initialization, then sync to storage on every change
   useEffect(() => {
     saveCartToStorage(state);
   }, [state]);

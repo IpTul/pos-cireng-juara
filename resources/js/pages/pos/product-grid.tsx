@@ -35,8 +35,13 @@ export default function ProductGrid({
             {products.map((product) => (
               <button
                 key={`product-${product.id}`}
-                onClick={() => onAddProduct(product)}
-                className="group flex flex-col overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+                onClick={() => product.stock > 0 && onAddProduct(product)}
+                disabled={product.stock <= 0}
+                className={
+                  product.stock > 0
+                    ? 'group flex flex-col overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]'
+                    : 'group flex cursor-not-allowed flex-col overflow-hidden rounded-xl border bg-card text-left opacity-50 transition-all'
+                }
               >
                 {product.image ? (
                   <img
@@ -59,6 +64,11 @@ export default function ProductGrid({
                   <p className="text-[10px] text-muted-foreground sm:text-xs">
                     Stok: {product.stock}
                   </p>
+                  {product.stock <= 0 && (
+                    <span className="block text-xs font-medium text-destructive">
+                      Stok habis
+                    </span>
+                  )}
                 </div>
               </button>
             ))}
@@ -72,38 +82,54 @@ export default function ProductGrid({
             Paket Makanan
           </h3>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
-            {packs.map((pack) => (
-              <button
-                key={`pack-${pack.id}`}
-                onClick={() => onAddPack(pack)}
-                className="group flex flex-col overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
-              >
-                {pack.image ? (
-                  <img
-                    src={`/storage/${pack.image}`}
-                    alt={pack.name}
-                    className="aspect-square w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-square w-full items-center justify-center bg-primary/10 text-primary">
-                    <Package className="h-8 w-8 sm:h-10 sm:w-10" />
+            {packs.map((pack) => {
+              const isAvailable = pack.is_available !== false;
+
+              return (
+                <button
+                  key={`pack-${pack.id}`}
+                  onClick={() => isAvailable && onAddPack(pack)}
+                  disabled={!isAvailable}
+                  className={
+                    isAvailable
+                      ? 'group flex flex-col overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 text-left transition-all hover:border-primary hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]'
+                      : 'group flex cursor-not-allowed flex-col overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 text-left opacity-50 transition-all'
+                  }
+                >
+                  {pack.image ? (
+                    <img
+                      src={`/storage/${pack.image}`}
+                      alt={pack.name}
+                      className="aspect-square w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex aspect-square w-full items-center justify-center bg-primary/10 text-primary">
+                      <Package className="h-8 w-8 sm:h-10 sm:w-10" />
+                    </div>
+                  )}
+                  <div className="p-1.5 sm:p-2">
+                    <p className="truncate text-xs font-medium sm:text-sm">
+                      {pack.name}
+                    </p>
+                    <p className="text-xs font-bold text-primary sm:text-sm">
+                      Rp{parseFloat(pack.price).toLocaleString('id-ID')}
+                    </p>
+                    <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
+                      {pack.pack_items
+                        ?.map(
+                          (item) => `${item.product.name} x${item.quantity}`,
+                        )
+                        .join(', ')}
+                    </p>
+                    {!isAvailable && (
+                      <span className="block text-xs font-medium text-destructive">
+                        Stok tidak cukup
+                      </span>
+                    )}
                   </div>
-                )}
-                <div className="p-1.5 sm:p-2">
-                  <p className="truncate text-xs font-medium sm:text-sm">
-                    {pack.name}
-                  </p>
-                  <p className="text-xs font-bold text-primary sm:text-sm">
-                    Rp{parseFloat(pack.price).toLocaleString('id-ID')}
-                  </p>
-                  <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
-                    {pack.pack_items
-                      ?.map((item) => `${item.product.name} x${item.quantity}`)
-                      .join(', ')}
-                  </p>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

@@ -93,6 +93,7 @@ export interface Pack {
   is_active: boolean;
   max_items: number;
   pack_items: PackItem[];
+  is_available?: boolean;
 }
 
 export interface Member {

@@ -232,11 +232,19 @@ export default function CartPanel({
                           )}
                       </div>
                     )}
+                    {item.stock <= 0 && (
+                      <p className="mt-2 text-xs text-destructive">
+                        Stok habis — produk tidak dapat ditambahkan
+                      </p>
+                    )}
                   </div>
                   <Input
                     type="number"
                     min={1}
-                    max={isCartItem(item) ? item.product.stock : 999}
+                    max={
+                      item.stock <= 0 ? 0 : isCartItem(item) ? item.product.stock : 999
+                    }
+                    disabled={item.stock <= 0}
                     value={item.quantity}
                     onChange={(e) => {
                       const qty = parseInt(e.target.value) || 0;

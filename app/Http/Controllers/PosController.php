@@ -27,7 +27,6 @@ class PosController extends Controller
     {
         $products = Product::with('cabang')
             ->where('is_active', true)
-            ->where('stock', '>', 0)
             ->orderBy('name')
             ->get();
 
@@ -36,12 +35,14 @@ class PosController extends Controller
             ->get()
             ->filter(function ($pack) {
                 // Check if all items in pack have stock
+                $pack->is_available = true;
                 foreach ($pack->packItems as $item) {
                     if (!$item->product->is_active || $item->product->stock < $item->quantity) {
-                        return false;
+                        $pack->is_available = false;
+                        break;
                     }
                 }
-                return true;
+                return $pack;
             })
             ->values();
 
