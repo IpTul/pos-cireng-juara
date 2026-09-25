@@ -27,12 +27,16 @@ class PackController extends Controller
 
     public function index()
     {
+        $activeCabangId = $this->user->activeCabangId();
+
         $packs = Pack::with(['packItems.product.cabang'])
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->latest()
             ->get();
 
         $products = Product::with('cabang')
             ->where('is_active', true)
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->orderBy('name')
             ->get();
 
@@ -51,6 +55,7 @@ class PackController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'cabang_id' => ['required', 'exists:cabangs,id'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'integer', 'min:0'],
             'image' => ['nullable', 'string'],
@@ -63,6 +68,7 @@ class PackController extends Controller
 
         $pack = Pack::create([
             'name' => $validated['name'],
+            'cabang_id' => $validated['cabang_id'],
             'description' => $validated['description'],
             'price' => $validated['price'],
             'image' => $validated['image'] ?? null,
@@ -87,6 +93,7 @@ class PackController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'cabang_id' => ['required', 'exists:cabangs,id'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'integer', 'min:0'],
             'image' => ['nullable', 'string'],
@@ -99,6 +106,7 @@ class PackController extends Controller
 
         $pack->update([
             'name' => $validated['name'],
+            'cabang_id' => $validated['cabang_id'],
             'description' => $validated['description'],
             'price' => $validated['price'],
             'image' => $validated['image'] ?? null,

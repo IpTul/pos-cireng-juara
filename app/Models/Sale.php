@@ -9,8 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'user_id',
+    'cabang_id',
     'customer_name',
     'member_id',
+    'operator_name',
     'total',
     'cash_tendered',
     'change_amount',
@@ -40,5 +42,10 @@ class Sale extends Model
     public function member(): BelongsTo
     {
         return $this->belongsTo(Member::class);
+    }
+
+    public function cabang(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Cabang::class);
     }
 }

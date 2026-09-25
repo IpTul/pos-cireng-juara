@@ -20,6 +20,7 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string', Rule::in(['owner', 'kasir'])],
+            'cabang_id' => ['nullable', 'required_if:role, kasir', 'exists:cabangs,id'],
         ];
     }
 
@@ -28,6 +29,7 @@ class StoreUserRequest extends FormRequest
         return [
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'role.in' => 'Role harus owner atau kasir.',
+            'cabang_id.required_if' => 'Cabang wajib dipilih untuk akun kasir.',
         ];
     }
 }

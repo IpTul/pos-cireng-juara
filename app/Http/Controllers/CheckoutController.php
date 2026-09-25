@@ -39,24 +39,51 @@ class CheckoutController extends Controller
             'payment_method'            => ['sometimes', 'string', 'in:cash,qris,grab'],
         ]);
 
-        // Ensure at least one item or pack
-        if (empty($validated['items']) && empty($validated['packs'])) {
-            throw ValidationException::withMessages([
-                'items' => 'Minimal satu produk atau paket harus dipilih.',
-            ]);
-        }
+        if ($request->user()->isKasir()) {
+            $ownCabangId = $request->user()->cabang_id;
 
+            $productIds = collect($validated['items'] ?? [])->pluck('product_id')
+                ->merge(collect($validated['packs'] ?? [])->pluck('variants')->flatten(1)->pluck('product_id'))
+                ->merge(collect($validated['free_items'] ?? [])->pluck('product_id'))
+                ->filter()
+                ->unique();
+
+            if ($productIds->isNotEmpty()) {
+                $invalidProduct = \App\Models\Product::whereIn('id', $productIds)
+                    ->where('cabang_id', '!=', $ownCabangId)
+                    ->exists();
+                if ($invalidProduct) {
+                    abort(403, 'Ada produk dari cabang lain di keranjang.');
+                }
+            }
+
+            $packIds = collect($validated['packs'] ?? [])->pluck('pack_id')->filter()->unique();
+            if ($packIds->isNotEmpty()) {
+                $invalidPack = Pack::whereIn('id', $packIds)
+                    ->where('cabang_id', '!=', $ownCabangId)
+                    ->exists();
+                if ($invalidPack) {
+                    abort(403, 'Ada paket dari cabang lain di keranjang.');
+                }
+            }
+
+            if (! empty($validated['member_id'])) {
+                $member = Member::find($validated['member_id']);
+                if ($member && $member->cabang_id !== $ownCabangId) {
+                    abort(403, 'Member ini bukan milik cabang kamu.');
+                }
+            }
+        }
+        
         $saleId = DB::transaction(function() use ($validated, $request){
             $total     = 0;
             $saleItems = [];
 
-            // Collect all paid quantities per product (for stock validation of free items)
             $paidQuantitiesByProduct = [];
             foreach ($validated['items'] ?? [] as $item) {
                 $paidQuantitiesByProduct[$item['product_id']] = ($paidQuantitiesByProduct[$item['product_id']] ?? 0) + $item['quantity'];
             }
 
-            // Handle regular products
             foreach ($validated['items'] ?? [] as $item) {
                 $product = Product::lockForUpdate()->findOrFail($item['product_id']);
                 $paidQty = $item['quantity'];
@@ -78,11 +105,9 @@ class CheckoutController extends Controller
                     'is_free'      => false,
                 ];
 
-                // Decrement stock for paid items
                 $product->decrement('stock', $paidQty);
             }
 
-            // Handle packs
             foreach ($validated['packs'] ?? [] as $packItem) {
                 $pack = Pack::with('packItems.product')->lockForUpdate()->findOrFail($packItem['pack_id']);
                 $packQty = $packItem['quantity'];
@@ -93,18 +118,15 @@ class CheckoutController extends Controller
                     ]);
                 }
 
-                // Handle variants if provided (new flexible pack system)
                 $variants = $packItem['variants'] ?? [];
 
                 if (! empty($variants)) {
-                    // Validate variants count
                     if (count($variants) > $pack->max_items) {
                         throw ValidationException::withMessages([
                             'packs' => "Maksimal {$pack->max_items} item untuk paket \"{$pack->name}\".",
                         ]);
                     }
 
-                    // Calculate required stock per product from variants
                     $requiredStock = [];
                     foreach ($variants as $variant) {
                         $productId = $variant['product_id'];
@@ -112,7 +134,6 @@ class CheckoutController extends Controller
                         $requiredStock[$productId] = ($requiredStock[$productId] ?? 0) + $qty;
                     }
 
-                    // Check stock for each variant
                     foreach ($requiredStock as $productId => $required) {
                         $product = Product::lockForUpdate()->findOrFail($productId);
                         if (! $product->is_active || $product->stock < $required) {
@@ -122,7 +143,6 @@ class CheckoutController extends Controller
                         }
                     }
 
-                    // Add pack to sale items
                     $subtotal    = (float) $pack->price * $packQty;
                     $total      += $subtotal;
                     $saleItems[] = [
@@ -135,13 +155,11 @@ class CheckoutController extends Controller
                         'is_free'      => false,
                     ];
 
-                    // Decrement stock for each variant
                     foreach ($requiredStock as $productId => $required) {
                         $product = Product::lockForUpdate()->findOrFail($productId);
                         $product->decrement('stock', $required);
                     }
                 } else {
-                    // Legacy: Check stock for all items in pack (paid only)
                     foreach ($pack->packItems as $pi) {
                         $requiredStock = $pi->quantity * $packQty;
                         if (! $pi->product->is_active || $pi->product->stock < $requiredStock) {
@@ -151,7 +169,6 @@ class CheckoutController extends Controller
                         }
                     }
 
-                    // Add pack to sale items
                     $subtotal    = (float) $pack->price * $packQty;
                     $total      += $subtotal;
                     $saleItems[] = [
@@ -164,14 +181,12 @@ class CheckoutController extends Controller
                         'is_free'      => false,
                     ];
 
-                    // Decrement stock for each item in pack (paid)
                     foreach ($pack->packItems as $pi) {
                         $pi->product->decrement('stock', $pi->quantity * $packQty);
                     }
                 }
             }
 
-            // Handle global free items
             $freeItems = $validated['free_items'] ?? [];
             foreach ($freeItems as $fi) {
                 $freeProduct = Product::lockForUpdate()->findOrFail($fi['product_id']);
@@ -193,7 +208,6 @@ class CheckoutController extends Controller
                 $freeProduct->decrement('stock', $freeQty);
             }
 
-            // Handle addons
             $addons = $validated['addons'] ?? [];
             foreach ($addons as $addonItem) {
                 $addon = Addon::findOrFail($addonItem['addon_id']);
@@ -204,7 +218,6 @@ class CheckoutController extends Controller
                         'addons' => "Addon \"{$addon->name}\" tidak aktif.",
                     ]);
                 }
-                // Addons don't have stock, so no stock check needed
                 $saleItems[] = [
                     'product_id'   => null,
                     'pack_id'      => null,
@@ -215,7 +228,6 @@ class CheckoutController extends Controller
                     'subtotal'     => round($addon->price * $addonQty),
                     'is_free'      => false,
                 ];
-                // No stock decrement for addons
             }
 
             $cash = (float) $validated['cash_tendered'];
@@ -228,15 +240,12 @@ class CheckoutController extends Controller
 
             $paymentMethod = $validated['payment_method'] ?? 'cash';
 
-            // Calculate total cireng items for points (products + pack variants only)
             $totalCirengItems = 0;
 
-            // Regular products
             foreach ($validated['items'] ?? [] as $item) {
                 $totalCirengItems += $item['quantity'];
             }
 
-            // Pack variants (each variant quantity counts as items)
             foreach ($validated['packs'] ?? [] as $packItem) {
                 $variants = $packItem['variants'] ?? [];
                 if (! empty($variants)) {
@@ -244,16 +253,23 @@ class CheckoutController extends Controller
                         $totalCirengItems += $variant['quantity'] * $packItem['quantity'];
                     }
                 } else {
-                    // Legacy: count pack items
                     $pack = Pack::findOrFail($packItem['pack_id']);
                     foreach ($pack->packItems as $pi) {
                         $totalCirengItems += $pi->quantity * $packItem['quantity'];
                     }
                 }
             }
-
+            
+            $cabangId = $request->user()->activeCabangId();
+            if (! $cabangId && ! empty($saleItems)) {
+                $firstProductId = collect($saleItems)->firstWhere('product_id', '!=', null)['product_id'] ?? null;
+                $cabangId = $firstProductId
+                    ? \App\Models\Product::find($firstProductId)?->cabang_id
+                    : null;
+            }
             $sale = Sale::create([
                 'user_id'        => $request->user()->id,
+                'cabang_id'      => $cabangId,
                 'customer_name'  => $validated['customer_name'] ?? null,
                 'member_id'      => $validated['member_id'] ?? null,
                 'total'          => round($total),
@@ -264,7 +280,6 @@ class CheckoutController extends Controller
 
             $sale->items()->createMany($saleItems);
 
-            // Add points to member if provided
             if (! empty($validated['member_id']) && $totalCirengItems > 0) {
                 $member = Member::lockForUpdate()->findOrFail($validated['member_id']);
 

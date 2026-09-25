@@ -13,6 +13,8 @@ use App\Http\Controllers\PackController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\AddonController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\OperatorNameController;
+use App\Http\Controllers\CabangSwitchController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -59,6 +61,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('members/search', [MemberController::class, 'search'])
         ->middleware('role:owner,kasir')
         ->name('members.search');
+
+    Route::get('/operator-name', [OperatorNameController::class, 'show'])->name('operator-name.show');
+    Route::post('/operator-name', [OperatorNameController::class, 'store'])->name('operator-name.store');
+
+    Route::post('/switch-cabang', [CabangSwitchController::class, 'store'])
+        ->middleware('role:owner')
+        ->name('cabang.switch');
 });
 
 require __DIR__.'/settings.php';

@@ -35,6 +35,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -42,6 +44,12 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Daftar cabang buat dropdown switcher (owner) & form-form yang butuh pilih cabang
+            'cabangs' => $user ? \App\Models\Cabang::orderBy('name')->get(['id', 'name']) : [],
+            // Cabang yang sedang "aktif" dilihat user ini (null = semua cabang)
+            'activeCabangId' => $user?->activeCabangId(),
+            // Nama operator yang sedang login (kasir) — null kalau belum di-set / owner
+            'operatorName' => session('operator_name'),
         ];
     }
 }

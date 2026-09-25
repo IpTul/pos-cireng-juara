@@ -12,10 +12,16 @@ class Addon extends Model
         'description',
         'price',
         'is_active',
+        'cabang_id',
     ];
 
     protected $casts = [
         'price' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    public function cabang(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Cabang::class);
+    }
 }

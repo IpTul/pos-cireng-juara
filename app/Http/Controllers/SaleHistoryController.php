@@ -38,8 +38,12 @@ class SaleHistoryController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $paymentMethod = $request->input('payment_method');
+        $activeCabangId = $request->user()->activeCabangId();
 
-        return Sale::with(['items.product.cabang', 'items.pack', 'user', 'member'])
+        return Sale::with(['items.product.cabang', 'items.pack', 'user', 'member', 'cabang'])
+            ->when($activeCabangId, function ($query) use ($activeCabangId) {
+                $query->where('cabang_id', $activeCabangId);
+            })
             ->when($startDate, function ($query) use ($startDate) {
                 $query->whereDate('created_at', '>=', $startDate);
             })

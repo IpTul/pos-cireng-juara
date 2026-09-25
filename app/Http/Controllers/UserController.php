@@ -28,7 +28,7 @@ class UserController extends Controller
 
     public function index()
     {
-        $users = User::orderBy('name')->get();
+        $users = User::with('cabang')->orderBy('name')->get();
 
         return Inertia::render('users/index', [
             'users' => $users,

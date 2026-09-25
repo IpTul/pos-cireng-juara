@@ -23,6 +23,8 @@ export interface Product {
 export interface Addon {
   id: number;
   name: string;
+  cabang_id: number;
+  cabang?: Cabang;
   description: string | null;
   price: string;
   is_active: boolean;
@@ -87,6 +89,8 @@ export interface PackItem {
 export interface Pack {
   id: number;
   name: string;
+  cabang_id: number;
+  cabang?: Cabang;
   description: string | null;
   price: string;
   image: string | null;
@@ -99,6 +103,7 @@ export interface Pack {
 export interface Member {
   id: number;
   name: string;
+  cabang_id: number | null;
   phone: string;
   points: number;
   last_purchase_at: string | null;

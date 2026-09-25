@@ -27,7 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role', 'cabang_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -48,6 +48,20 @@ class User extends Authenticatable implements PasskeyUser
     public function isKasir(): bool
     {
         return $this->role === 'kasir';
+    }
+
+    public function cabang(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Cabang::class);
+    }
+
+    public function activeCabangId(): ?int
+    {
+        if ($this->isKasir()) {
+            return $this->cabang_id;
+        }
+
+        return session('active_cabang_id');
     }
 
     protected function casts(): array

@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
     'points',
     'last_purchase_at',
     'is_deleted',
+    'cabang_id',
 ])]
 class Member extends Model
 {
@@ -77,5 +78,10 @@ class Member extends Model
         $this->is_deleted = true;
         $this->points = 0;
         $this->save();
+    }
+
+    public function cabang(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Cabang::class);
     }
 }

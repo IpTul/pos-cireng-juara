@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import {
   LayoutGrid,
   Package,
@@ -22,10 +22,29 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
 } from '@/components/ui/sidebar';
-import type { NavItem } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { NavItem, Cabang } from '@/types';
 
 export function AppSidebar() {
-  const { auth } = usePage().props;
+  const { auth, cabangs, activeCabangId } = usePage().props as unknown as {
+    auth: { user: { role: 'owner' | 'kasir' } };
+    cabangs: Cabang[];
+    activeCabangId: number | null;
+  };
+
+  function handleCabangSwitch(value: string) {
+    router.post(
+      '/switch-cabang',
+      { cabang_id: value === 'all' ? null : value },
+      { preserveScroll: true },
+    );
+  }
 
   const posItems: NavItem[] = [
     {
@@ -103,9 +122,27 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold">Cireng Juara</span>
-            {/* <span className="text-xs text-muted-foreground">Cashier App</span> */}
           </div>
         </div>
+
+        {auth.user?.role === 'owner' && (
+          <Select
+            value={activeCabangId ? String(activeCabangId) : 'all'}
+            onValueChange={handleCabangSwitch}
+          >
+            <SelectTrigger className="mt-2 w-full">
+              <SelectValue placeholder="Semua Cabang  " />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Cabang</SelectItem>
+              {cabangs?.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </SidebarHeader>
 
       <SidebarContent className="gap-2 py-2">

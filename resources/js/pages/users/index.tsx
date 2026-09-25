@@ -1,6 +1,6 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { type User } from '@/types';
+import { type User, type Cabang } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -32,6 +32,7 @@ interface Props {
 }
 
 export default function UserIndex({ users, user }: Props) {
+  const { cabangs } = usePage().props as unknown as { cabangs: Cabang[] };
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
 
@@ -41,6 +42,7 @@ export default function UserIndex({ users, user }: Props) {
     password: '',
     password_confirmation: '',
     role: 'kasir',
+    cabang_id: '' as string | number,
   });
 
   function openCreate() {
@@ -50,6 +52,7 @@ export default function UserIndex({ users, user }: Props) {
       password: '',
       password_confirmation: '',
       role: 'kasir',
+      cabang_id: '',
     });
     setEditing(null);
     setShowForm(true);
@@ -62,6 +65,7 @@ export default function UserIndex({ users, user }: Props) {
       password: '',
       password_confirmation: '',
       role: u.role,
+      cabang_id: u.cabang_id ?? '',
     });
     setEditing(u);
     setShowForm(true);
@@ -164,6 +168,23 @@ export default function UserIndex({ users, user }: Props) {
                       {roleLabels[u.role]}
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
+                        u.role === 'owner'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      }`}
+                    >
+                      <Shield className="h-3 w-3" />
+                      {roleLabels[u.role]}
+                    </span>
+                    {u.role === 'kasir' && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {u.cabang?.name ?? '(belum ada cabang)'}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <Button
                       variant="ghost"
@@ -259,6 +280,27 @@ export default function UserIndex({ users, user }: Props) {
               </Select>
               <InputError message={errors.role} />
             </div>
+            {data.role === 'kasir' && (
+              <div>
+                <Label htmlFor="user-cabang">Cabang</Label>
+                <Select
+                  value={data.cabang_id ? String(data.cabang_id) : ''}
+                  onValueChange={(value) => setData('cabang_id', value)}
+                >
+                  <SelectTrigger id="user-cabang">
+                    <SelectValue placeholder="Pilih cabang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cabangs?.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <InputError message={errors.cabang_id} />
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={closeForm}>
                 Batal

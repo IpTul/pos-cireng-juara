@@ -20,11 +20,19 @@ class StockAdjustmentController extends Controller
 
     public function index()
     {
+        $activeCabangId = $this->user->activeCabangId();
+
         $adjustments = StockAdjustment::with(['product.cabang', 'user'])
+            ->when($activeCabangId, function ($q) use ($activeCabangId) {
+                $q->whereHas('product', fn ($p) => $p->where('cabang_id', $activeCabangId));
+            })
             ->latest()
             ->paginate(20);
 
-        $products = Product::with('cabang')->where('is_active', true)->get();
+        $products = Product::with('cabang')
+            ->where('is_active', true)
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+            ->get();
 
         return Inertia::render('stock/index', [
             'adjustments' => $adjustments,
@@ -51,6 +59,10 @@ class StockAdjustmentController extends Controller
         ]);
 
         $product = Product::lockForUpdate()->findOrFail($validated['product_id']);
+
+        if ($this->user->isKasir() && $product->cabang_id !== $this->user->cabang_id) {
+            abort(403, 'Produk ini bukan milik cabang kamu.');
+        }
 
         if (!$product->is_active) {
             throw ValidationException::withMessages([

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'image',
     'is_active',
     'max_items',
+    'cabang_id',
 ])]
 class Pack extends Model
 {
@@ -36,5 +37,10 @@ class Pack extends Model
         return $this->belongsToMany(Product::class, 'pack_items')
             ->withPivot('quantity')
             ->withTimestamps();
+    }
+
+    public function cabang(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Cabang::class);
     }
 }

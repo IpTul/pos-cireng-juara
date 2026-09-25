@@ -25,21 +25,24 @@ class PosController extends Controller
 
     public function index()
     {
+        $activeCabangId = $this->user->activeCabangId();
+
         $products = Product::with('cabang')
             ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->orderBy('name')
             ->get();
 
         $packs = Pack::with(['packItems.product'])
             ->where('is_active', true)
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->get()
             ->filter(function ($pack) {
-                // Check if all items in pack have stock
                 $pack->is_available = true;
                 foreach ($pack->packItems as $item) {
                     if (!$item->product->is_active || $item->product->stock < $item->quantity) {
-                        $pack->is_available = false;
-                        break;
+                        return false;
                     }
                 }
                 return $pack;
@@ -47,6 +50,7 @@ class PosController extends Controller
             ->values();
 
         $addons = Addon::where('is_active', true)
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->orderBy('name')
             ->get();
 

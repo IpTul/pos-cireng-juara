@@ -26,7 +26,11 @@ class AddonController extends Controller
     public function index(): Response
     {
         $this->authorizeOwnerOnly();
-        $addons = Addon::orderBy('name')->paginate(15);
+        $activeCabangId = $this->user->activeCabangId();
+        $addons = Addon::orderBy('name')->paginate(15)
+        ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+        ->orderBy('name')
+        ->paginate(15);
 
         return Inertia::render('addons/index', [
             'addons' => $addons,
@@ -37,6 +41,7 @@ class AddonController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'cabang_id' => 'required|exists:cabangs,id',
             'description' => 'nullable|string|max:500',
             'price' => 'required|integer|min:0',
             'is_active' => 'boolean',
@@ -51,6 +56,7 @@ class AddonController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'cabang_id' => 'required|exists:cabangs,id',
             'description' => 'nullable|string|max:500',
             'price' => 'required|integer|min:0',
             'is_active' => 'boolean',

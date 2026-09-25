@@ -1,7 +1,14 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState, useEffect, useCallback } from 'react';
-import type { Member, PaginatedData } from '@/types';
+import type { Member, PaginatedData, Cabang } from '@/types';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +27,10 @@ interface Props {
 }
 
 export default function MemberIndex({ members, search }: Props) {
+  const { auth, cabangs } = usePage().props as unknown as {
+    auth: { user: { role: 'owner' | 'kasir' } };
+    cabangs: Cabang[];
+  };
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [searchInput, setSearchInput] = useState(search);
@@ -28,6 +39,7 @@ export default function MemberIndex({ members, search }: Props) {
   const { data, setData, post, put, processing, errors, reset } = useForm({
     name: '',
     phone: '',
+    cabang_id: '' as string | number,
   });
 
   // Sync searchInput and debouncedSearch with server search prop
@@ -65,6 +77,7 @@ export default function MemberIndex({ members, search }: Props) {
     setData({
       name: m.name,
       phone: m.phone,
+      cabang_id: m.cabang_id ?? '',
     });
     setEditing(m);
     setShowForm(true);
@@ -270,6 +283,27 @@ export default function MemberIndex({ members, search }: Props) {
               />
               <InputError message={errors.phone} />
             </div>
+            {auth.user?.role === 'owner' && (
+              <div>
+                <Label htmlFor="member-cabang">Cabang</Label>
+                <Select
+                  value={data.cabang_id ? String(data.cabang_id) : ''}
+                  onValueChange={(value) => setData('cabang_id', value)}
+                >
+                  <SelectTrigger id="member-cabang">
+                    <SelectValue placeholder="Pilih cabang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cabangs?.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <InputError message={errors.cabang_id} />
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={closeForm}>
                 Batal

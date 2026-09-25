@@ -35,6 +35,11 @@ class ProductController extends Controller
     {
         $query = Product::with('cabang');
 
+        $activeCabangId = $this->user->activeCabangId();
+        if ($activeCabangId) {
+            $query->where('cabang_id', $activeCabangId);
+        }
+
         if (request()->has('cabang_id')) {
             $query->where('cabang_id', request()->input('cabang_id'));
         }
@@ -134,6 +139,7 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        $this->authorizeOwnerOnly();
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
