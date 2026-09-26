@@ -33,6 +33,7 @@ export default function PackIndex({ packs, products, cabangs }: Props) {
   const [editing, setEditing] = useState<Pack | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    cabang_id: '' as string | number,
     description: '',
     price: '',
     image: '',
@@ -45,6 +46,7 @@ export default function PackIndex({ packs, products, cabangs }: Props) {
     setEditing(pack);
     setFormData({
       name: pack.name,
+      cabang_id: pack.cabang_id ?? '',
       description: pack.description || '',
       price: pack.price,
       image: pack.image || '',
@@ -75,6 +77,7 @@ export default function PackIndex({ packs, products, cabangs }: Props) {
   function resetForm() {
     setFormData({
       name: '',
+      cabang_id: '',
       description: '',
       price: '',
       image: '',
@@ -254,6 +257,27 @@ export default function PackIndex({ packs, products, cabangs }: Props) {
                     placeholder="Contoh: Paket Hemat 1"
                     required
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="pack-cabang">Cabang</Label>
+                  <Select
+                    value={formData.cabang_id ? String(formData.cabang_id) : ''}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, cabang_id: value })
+                    }
+                  >
+                    <SelectTrigger id="pack-cabang">
+                      <SelectValue placeholder="Pilih cabang" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cabangs?.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-2">

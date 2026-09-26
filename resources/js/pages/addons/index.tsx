@@ -16,16 +16,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import Heading from '@/components/heading';
 import { formatRupiah } from '@/lib/utils';
-import type { Addon } from '@/types';
+import type { Addon, Cabang } from '@/types';
 
 interface PaginatedAddons {
   data: Addon[];
@@ -36,11 +35,15 @@ interface PaginatedAddons {
 }
 
 export default function AddonIndex() {
-  const { addons } = usePage().props as unknown as { addons: PaginatedAddons };
+  const { addons, cabangs } = usePage().props as unknown as {
+    addons: PaginatedAddons;
+    cabangs: Cabang[];
+  };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAddon, setEditingAddon] = useState<Addon | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    cabang_id: '' as string | number,
     description: '',
     price: 0,
     is_active: true,
@@ -49,7 +52,13 @@ export default function AddonIndex() {
 
   function openCreateDialog() {
     setEditingAddon(null);
-    setFormData({ name: '', description: '', price: 0, is_active: true });
+    setFormData({
+      name: '',
+      cabang_id: '',
+      description: '',
+      price: 0,
+      is_active: true,
+    });
     setIsDialogOpen(true);
   }
 
@@ -57,6 +66,7 @@ export default function AddonIndex() {
     setEditingAddon(addon);
     setFormData({
       name: addon.name,
+      cabang_id: addon.cabang_id ?? '',
       description: addon.description ?? '',
       price: parseFloat(addon.price),
       is_active: addon.is_active,
@@ -67,7 +77,13 @@ export default function AddonIndex() {
   function closeDialog() {
     setIsDialogOpen(false);
     setEditingAddon(null);
-    setFormData({ name: '', description: '', price: 0, is_active: true });
+    setFormData({
+      name: '',
+      cabang_id: '',
+      description: '',
+      price: 0,
+      is_active: true,
+    });
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -246,6 +262,28 @@ export default function AddonIndex() {
                     disabled={submitting}
                   />
                 </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="addon-cabang">Cabang *</Label>
+                  <Select
+                    value={formData.cabang_id ? String(formData.cabang_id) : ''}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, cabang_id: value })
+                    }
+                  >
+                    <SelectTrigger id="addon-cabang" disabled={submitting}>
+                      <SelectValue placeholder="Pilih cabang" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cabangs?.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="description">Deskripsi</Label>
                   <Textarea
