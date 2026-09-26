@@ -52,6 +52,7 @@ interface SaleItemRow {
     payment_method: 'cash' | 'qris' | 'grab';
     status: string;
     created_at: string;
+    operator_name?: string | null;
     user: { id: number; name: string };
   };
   product: {
@@ -150,7 +151,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
           : (row.product?.name ?? '-'),
         Kategori: row.pack ? 'Paket' : (row.product?.cabang?.name ?? '-'),
         Customer: row.sale.customer_name || '-',
-        Kasir: row.sale.user?.name ?? '-',
+        Operator: row.sale.operator_name || '-',
         Qty: row.quantity,
         'Harga Satuan': row.unit_price,
         Subtotal: row.subtotal,
@@ -264,7 +265,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-left">Product</th>
                 <th className="px-4 py-3 text-left">Customer</th>
-                <th className="px-4 py-3 text-left">User Name</th>
+                <th className="px-4 py-3 text-left">Operator</th>
                 <th className="px-4 py-3 text-left">Total</th>
                 <th className="px-4 py-3 text-center">Payment</th>
                 <th className="px-4 py-3 text-center">Cash Tendered</th>
@@ -331,7 +332,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
                         {sale.sale.customer_name || '-'}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {sale.sale.user.name}
+                        {sale.sale.operator_name || '-'}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {formatRupiah(sale.sale.total)}
@@ -512,8 +513,8 @@ export default function History({ saleItems, user, can, filters }: Props) {
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Kasir</span>
-                <span>{selected.sale.user?.name ?? '-'}</span>
+                <span className="text-muted-foreground">Operator</span>
+                <span>{selected.sale.operator_name || '-'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Qty</span>

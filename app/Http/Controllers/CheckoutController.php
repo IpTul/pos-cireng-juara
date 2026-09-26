@@ -270,6 +270,7 @@ class CheckoutController extends Controller
             $sale = Sale::create([
                 'user_id'        => $request->user()->id,
                 'cabang_id'      => $cabangId,
+                'operator_name'  => session('operator_name') ?? $request->user()->name,
                 'customer_name'  => $validated['customer_name'] ?? null,
                 'member_id'      => $validated['member_id'] ?? null,
                 'total'          => round($total),

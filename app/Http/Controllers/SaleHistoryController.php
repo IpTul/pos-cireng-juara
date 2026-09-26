@@ -97,6 +97,7 @@ class SaleHistoryController extends Controller
                         'payment_method' => $sale->payment_method ?? 'cash',
                         'status' => $sale->status,
                         'created_at' => $sale->created_at,
+                        'operator_name' => $sale->operator_name,
                         'user' => [
                             'id' => $sale->user->id,
                             'name' => $sale->user->name,
@@ -132,6 +133,7 @@ class SaleHistoryController extends Controller
                             'payment_method' => $sale->payment_method ?? 'cash',
                             'status' => $sale->status,
                             'created_at' => $sale->created_at,
+                            'operator_name' => $sale->operator_name,
                             'user' => [
                                 'id' => $sale->user->id,
                                 'name' => $sale->user->name,
