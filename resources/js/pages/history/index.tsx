@@ -332,7 +332,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
                         {sale.sale.customer_name || '-'}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {sale.sale.operator_name || '-'}
+                        {sale.sale.operator_name || sale.sale.user.name}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {formatRupiah(sale.sale.total)}
