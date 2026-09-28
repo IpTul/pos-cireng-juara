@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureOperatorNameSet
@@ -22,16 +23,18 @@ class EnsureOperatorNameSet
     {
         $user = $request->user();
 
-        // Cuma berlaku buat kasir yang sudah login — owner & tamu dilewati
+        // Hanya berlaku untuk kasir yang sudah login — owner & tamu dilewati
         if (! $user || ! $user->isKasir()) {
             return $next($request);
         }
 
+        // Jika sedang mengakses route yang terkecuali, lanjutkan tanpa redirect
         if ($request->routeIs($this->except)) {
             return $next($request);
         }
 
-        if (! session()->has('operator_name')) {
+        // Cek operator name di session; jika tidak ada, redirect ke form input
+        if (! session('operator_name')) {
             return redirect()->route('operator-name.show');
         }
 

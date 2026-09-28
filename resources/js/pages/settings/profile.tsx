@@ -34,7 +34,7 @@ export default function Profile({
         <Heading
           variant="small"
           title="Profile"
-          description="Update your name and email address aaaaaaaaaaaaaaa"
+          description="Update your name and email address"
         />
 
         <Form
@@ -79,6 +79,28 @@ export default function Profile({
                 <InputError className="mt-2" message={errors.email} />
               </div>
 
+              {auth.user.role === 'kasir' && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="operator_name">Operator Name</Label>
+
+                    <Input
+                      id="operator_name"
+                      className="mt-1 block w-full"
+                      defaultValue={auth.user.operator_name ?? ''}
+                      name="operator_name"
+                      autoComplete="operator-name"
+                      placeholder="Operator name"
+                    />
+
+                    <InputError
+                      className="mt-2"
+                      message={errors.operator_name}
+                    />
+                  </div>
+                </>
+              )}
+
               {mustVerifyEmail && auth.user.email_verified_at === null && (
                 <div>
                   <p className="-mt-4 text-sm text-muted-foreground">
@@ -111,7 +133,6 @@ export default function Profile({
         </Form>
       </div>
 
-      <DeleteUser />
       {auth.user.role !== 'kasir' && <DeleteUser />}
     </>
   );

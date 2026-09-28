@@ -49,7 +49,7 @@ class HandleInertiaRequests extends Middleware
             // Cabang yang sedang "aktif" dilihat user ini (null = semua cabang)
             'activeCabangId' => $user?->activeCabangId(),
             // Nama operator yang sedang login (kasir) — null kalau belum di-set / owner
-            'operatorName' => session('operator_name'),
+            'operatorName' => $user?->operator_name ?? session('operator_name'),
         ];
     }
 }
