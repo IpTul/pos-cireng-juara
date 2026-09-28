@@ -81,6 +81,7 @@ class DashboardController extends Controller
                 'name'  => $this->user->name,
                 'email' => $this->user->email,
                 'role'  => $this->user->role,
+                'operator_name' => $this->user->operator_name,
             ],
         ]);
     }

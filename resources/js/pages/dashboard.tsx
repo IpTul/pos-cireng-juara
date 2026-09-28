@@ -2,7 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { dashboard } from '@/routes';
 import { SimplePagination } from '@/components/ui/pagination';
-import type { Sale } from '@/types';
+import type { Sale, User } from '@/types';
 
 interface Stats {
   today_revenue: number;
@@ -48,6 +48,7 @@ interface Props {
     name: string;
     email: string;
     role: 'owner' | 'kasir';
+    operator_name?: string | null;
   };
 }
 
@@ -65,13 +66,20 @@ export default function Dashboard({
           Halaman Utama
           <p className="mb-4 text-sm text-muted-foreground">
             Anda login sebagai{' '}
-            <strong>{user.role === 'owner' ? 'Owner' : 'Kasir'}</strong>
+            {user.operator_name && user.operator_name.trim() !== ''
+              ? user.operator_name
+              : user.name}
+            {/* <strong>{user.role === 'owner' ? 'Owner' : 'Kasir'}</strong> */}
           </p>
         </h1>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             title="Pendapatan Hari Ini"
-            value={user.role === 'owner' ? `Rp ${stats.today_revenue.toLocaleString('id-ID')}` : '*****'}
+            value={
+              user.role === 'owner'
+                ? `Rp ${stats.today_revenue.toLocaleString('id-ID')}`
+                : '*****'
+            }
           />
           <StatCard
             title="Transaksi Hari Ini"
@@ -97,7 +105,9 @@ export default function Dashboard({
                 <tr>
                   <th className="px-4 py-2 text-left">Produk</th>
                   <th className="px-4 py-2 text-right">Unit</th>
-                  <th className="px-4 py-2 text-right">{user.role === 'owner' ? 'Pendapatan' : '-'}</th>
+                  <th className="px-4 py-2 text-right">
+                    {user.role === 'owner' ? 'Pendapatan' : '-'}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -116,7 +126,9 @@ export default function Dashboard({
                       <td className="px-4 py-2">{p.product_name}</td>
                       <td className="px-4 py-2 text-right">{p.total_qty}</td>
                       <td className="px-4 py-2 text-right">
-                        {user.role === 'owner' ? `Rp ${p.total_revenue.toLocaleString('id-ID')}` : '*****'}
+                        {user.role === 'owner'
+                          ? `Rp ${p.total_revenue.toLocaleString('id-ID')}`
+                          : '*****'}
                       </td>
                     </tr>
                   ))
@@ -161,7 +173,9 @@ export default function Dashboard({
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">
-                        {user.role === 'owner' ? `Rp ${sale.total.toLocaleString('id-ID')}` : '*****'}
+                        {user.role === 'owner'
+                          ? `Rp ${sale.total.toLocaleString('id-ID')}`
+                          : '*****'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(sale.created_at).toLocaleTimeString()}

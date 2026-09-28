@@ -29,13 +29,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { NavItem, Cabang } from '@/types';
+import type { NavItem, Cabang, User } from '@/types';
 
 export function AppSidebar() {
-  const { auth, cabangs, activeCabangId } = usePage().props as unknown as {
-    auth: { user: { role: 'owner' | 'kasir' } };
+  const { auth, cabangs, activeCabangId, operatorName } = usePage()
+    .props as unknown as {
+    auth: { user: User };
     cabangs: Cabang[];
     activeCabangId: number | null;
+    operatorName: string | null;
   };
 
   function handleCabangSwitch(value: string) {
@@ -122,6 +124,11 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold">Cireng Juara</span>
+            {operatorName && (
+              <span className="text-xs text-muted-foreground">
+                Operator : {operatorName}
+              </span>
+            )}
           </div>
         </div>
 
