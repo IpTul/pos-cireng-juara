@@ -112,11 +112,6 @@ export default function UserIndex({ users, user }: Props) {
     kasir: 'Kasir',
   };
 
-  const roleIcons: Record<string, typeof Shield> = {
-    owner: Shield,
-    kasir: Shield,
-  };
-
   return (
     <>
       <Head title="Manajemen Pengguna" />
@@ -135,6 +130,7 @@ export default function UserIndex({ users, user }: Props) {
                 <th className="px-4 py-3 text-left">Nama</th>
                 <th className="px-4 py-3 text-left">Email</th>
                 <th className="px-4 py-3 text-left">Role</th>
+                <th className="px-4 py-3 text-left">Cabang</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
@@ -142,7 +138,7 @@ export default function UserIndex({ users, user }: Props) {
               {users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     Belum ada user.
@@ -168,22 +164,10 @@ export default function UserIndex({ users, user }: Props) {
                       {roleLabels[u.role]}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                        u.role === 'owner'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                      }`}
-                    >
-                      <Shield className="h-3 w-3" />
-                      {roleLabels[u.role]}
-                    </span>
-                    {u.role === 'kasir' && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {u.cabang?.name ?? '(belum ada cabang)'}
-                      </span>
-                    )}
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {u.role === 'kasir'
+                      ? (u.cabang?.name ?? '(belum ada cabang)')
+                      : 'Semua cabang'}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button
