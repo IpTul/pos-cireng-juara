@@ -27,11 +27,11 @@ class AddonController extends Controller
     {
         $this->authorizeOwnerOnly();
         $activeCabangId = $this->user->activeCabangId();
-        $addons = Addon::orderBy('name')->paginate(15)
-        ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
-        ->orderBy('name')
-        ->paginate(15)
-        ->get();
+        $addons = Addon::query()
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
 
         return Inertia::render('addons/index', [
             'addons' => $addons,

@@ -42,7 +42,7 @@ interface Product {
 interface Adjustment {
   id: number;
   product: Product;
-  user: { name: string };
+  user: { name: string; operator_name: string };
   type: 'increase' | 'decrease';
   quantity: number;
   reason: string | null;
@@ -62,7 +62,13 @@ interface Props {
     to: number;
   };
   products: Product[];
-  user: { id: number; name: string; email: string; role: 'owner' | 'kasir' };
+  user: {
+    id: number;
+    name: string;
+    opeartor_name: string;
+    email: string;
+    role: 'owner' | 'kasir';
+  };
   can: { create: boolean };
 }
 
@@ -322,7 +328,11 @@ export default function StockIndex({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-left">{adj.reason || '-'}</td>
-                    <td className="px-4 py-3 text-center">{adj.user.name}</td>
+                    <td className="px-4 py-3 text-center">
+                      {adj.user
+                        ? (adj.user.operator_name ?? adj.user.name)
+                        : 'User dihapus'}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       {formatDate(adj.created_at)}
                     </td>
