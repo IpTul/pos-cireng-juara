@@ -30,7 +30,8 @@ class AddonController extends Controller
         $addons = Addon::orderBy('name')->paginate(15)
         ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
         ->orderBy('name')
-        ->paginate(15);
+        ->paginate(15)
+        ->get();
 
         return Inertia::render('addons/index', [
             'addons' => $addons,
