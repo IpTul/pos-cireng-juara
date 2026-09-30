@@ -28,9 +28,11 @@ export default function Login({ status, canResetPassword }: Props) {
       <div className="flex flex-col gap-8">
         {/* Brand mark */}
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Store className="size-6" />
-          </div>
+          <img
+            src="/logo-cireng.png"
+            alt="Cireng Juara"
+            className="my-2 size-24 object-contain"
+          />
           <div>
             <h1 className="text-xl font-semibold tracking-tight">
               Selamat datang kembali
@@ -133,7 +135,7 @@ export default function Login({ status, canResetPassword }: Props) {
   );
 }
 
-Login.layout = {
-  title: 'Masuk ke akun Anda',
-  description: 'Masukkan email atau username dan kata sandi Anda untuk masuk',
-};
+// Login.layout = {
+//   title: 'Masuk ke akun Anda',
+//   description: 'Masukkan email atau username dan kata sandi Anda untuk masuk',
+// };

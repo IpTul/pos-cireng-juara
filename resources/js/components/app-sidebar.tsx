@@ -119,9 +119,11 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b px-3 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Store className="h-5 w-5" />
-          </div>
+          <img
+            src="/logo-cireng.png"
+            alt="Cireng Juara"
+            className="size-10 object-contain"
+          />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold">Cireng Juara</span>
             {operatorName && (
