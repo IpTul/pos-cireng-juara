@@ -39,9 +39,9 @@ export default function FreeProductModal({
   currentSelections,
 }: Props) {
   const [search, setSearch] = useState('');
-  const [selections, setSelections] = useState<FreeItemSelection[]>(currentSelections);
+  const [selections, setSelections] =
+    useState<FreeItemSelection[]>(currentSelections);
 
-  // Sync with currentSelections when modal opens
   useEffect(() => {
     if (open) {
       setSelections(currentSelections);
@@ -52,15 +52,20 @@ export default function FreeProductModal({
   const remaining = maxFreeQuantity - totalSelected;
 
   const filteredProducts = products
-    .filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
+    .filter(
+      (p) =>
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
     )
     .filter((p) => p.is_active && p.stock > 0);
 
   function handleQuantityChange(productId: number, qty: number) {
     if (qty < 0) return;
-    if (qty > remaining + (selections.find(s => s.product_id === productId)?.quantity || 0)) {
+    if (
+      qty >
+      remaining +
+        (selections.find((s) => s.product_id === productId)?.quantity || 0)
+    ) {
       return;
     }
 
@@ -70,7 +75,9 @@ export default function FreeProductModal({
         return prev.filter((s) => s.product_id !== productId);
       }
       if (existing) {
-        return prev.map((s) => (s.product_id === productId ? { ...s, quantity: qty } : s));
+        return prev.map((s) =>
+          s.product_id === productId ? { ...s, quantity: qty } : s,
+        );
       }
       return [...prev, { product_id: productId, quantity: qty }];
     });
@@ -90,7 +97,7 @@ export default function FreeProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh]">
+      <DialogContent className="max-h-[90vh] max-w-lg">
         <DialogHeader className="flex flex-col items-start gap-1">
           <DialogTitle className="text-lg">Pilih Produk Gratis</DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -110,8 +117,10 @@ export default function FreeProductModal({
           </div>
 
           {/* Selected summary */}
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <span className="text-sm text-muted-foreground">Sudah dipilih:</span>
+          <div className="flex items-center justify-between rounded-lg bg-muted p-3">
+            <span className="text-sm text-muted-foreground">
+              Sudah dipilih:
+            </span>
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="text-base">
                 {totalSelected} / {maxFreeQuantity}
@@ -123,12 +132,16 @@ export default function FreeProductModal({
           </div>
 
           {/* Product list */}
-          <div className="max-h-96 overflow-y-auto space-y-2">
+          <div className="max-h-96 space-y-2 overflow-y-auto">
             {filteredProducts.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Tidak ada produk tersedia</p>
+              <p className="py-8 text-center text-muted-foreground">
+                Tidak ada produk tersedia
+              </p>
             ) : (
               filteredProducts.map((product) => {
-                const selected = selections.find((s) => s.product_id === product.id);
+                const selected = selections.find(
+                  (s) => s.product_id === product.id,
+                );
                 const selectedQty = selected?.quantity || 0;
                 const isSelected = selectedQty > 0;
                 const maxForThisProduct = remaining + selectedQty;
@@ -136,8 +149,10 @@ export default function FreeProductModal({
                 return (
                   <div
                     key={product.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                      isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                    className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'hover:bg-muted/50'
                     }`}
                   >
                     {product.image ? (
@@ -151,30 +166,38 @@ export default function FreeProductModal({
                         {product.name.charAt(0)}
                       </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{product.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{product.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {(product.cabang?.name || '')} • Stok: {product.stock}
+                        {product.cabang?.name || ''} • Stok: {product.stock}
                       </p>
-                      <p className="text-sm font-bold text-primary">{formatRupiah(product.price)}</p>
+                      <p className="text-sm font-bold text-primary">
+                        {formatRupiah(product.price)}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleQuantityChange(product.id, selectedQty - 1)}
+                        onClick={() =>
+                          handleQuantityChange(product.id, selectedQty - 1)
+                        }
                         disabled={selectedQty <= 0}
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                      <span className="w-8 text-center font-medium text-base">
+                      <span className="w-8 text-center text-base font-medium">
                         {selectedQty}
                       </span>
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleQuantityChange(product.id, selectedQty + 1)}
-                        disabled={selectedQty >= maxForThisProduct || remaining <= 0}
+                        onClick={() =>
+                          handleQuantityChange(product.id, selectedQty + 1)
+                        }
+                        disabled={
+                          selectedQty >= maxForThisProduct || remaining <= 0
+                        }
                       >
                         <Check className="h-4 w-4" />
                       </Button>
@@ -195,7 +218,10 @@ export default function FreeProductModal({
           <Button variant="outline" onClick={onClose}>
             Batal
           </Button>
-          <Button onClick={handleConfirm} disabled={totalSelected !== maxFreeQuantity}>
+          <Button
+            onClick={handleConfirm}
+            disabled={totalSelected !== maxFreeQuantity}
+          >
             Konfirmasi
           </Button>
         </DialogFooter>

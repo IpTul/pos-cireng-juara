@@ -223,7 +223,6 @@ export default function MemberIndex({ members, search, sort }: Props) {
           </table>
           {members.last_page > 1 && (
             <div className="border-t p-4">
-              {/* Simple pagination - could extract to component */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
                   Menampilkan {members.from} sampai {members.to} dari{' '}

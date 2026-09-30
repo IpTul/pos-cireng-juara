@@ -33,6 +33,7 @@ export interface Addon {
 export interface CartItem {
   product: Product;
   quantity: number;
+  stock: number;
 }
 
 export interface PackVariant {

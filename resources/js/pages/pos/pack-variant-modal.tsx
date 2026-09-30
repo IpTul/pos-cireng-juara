@@ -17,7 +17,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onConfirm: (variants: PackVariant[]) => void;
-  pack: Pack | null; // FIX: sekarang boleh null, karena bisa di-mount sebelum user pilih pack
+  pack: Pack | null;
   products: Product[];
   currentVariants?: PackVariant[];
 }
@@ -33,29 +33,24 @@ export default function PackVariantModal({
   const [search, setSearch] = useState('');
   const [variants, setVariants] = useState<PackVariant[]>(currentVariants);
 
-  // Sync with currentVariants when modal opens
   useEffect(() => {
     if (open) {
       setVariants(currentVariants);
     }
   }, [open, currentVariants]);
 
-  // FIX: guard ini HARUS setelah semua hooks (useState/useEffect) dan SEBELUM
-  // kode apapun yang mengakses pack.xxx, supaya jumlah hook tetap konsisten
-  // di setiap render (Rules of Hooks) sekaligus mencegah crash saat pack null.
   if (!pack) return null;
 
   const totalSelected = variants.reduce((sum, v) => sum + v.quantity, 0);
   const remaining = pack.max_items - totalSelected;
 
-  // Filter products that are in the pack and active with stock
   const packProductIds = pack.pack_items?.map((pi) => pi.product_id) || [];
   const filteredProducts = products
     .filter((p) => packProductIds.includes(p.id))
     .filter(
       (p) =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
-        (p.cabang?.name || "").toLowerCase().includes(search.toLowerCase()),
+        (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
     )
     .filter((p) => p.is_active && p.stock > 0);
 
@@ -65,7 +60,6 @@ export default function PackVariantModal({
     const existingVariant = variants.find((v) => v.product_id === productId);
     const currentQty = existingVariant?.quantity || 0;
 
-    // Check if we can add more (respecting max items and stock)
     if (qty > currentQty) {
       if (remaining <= 0) return;
       const product = products.find((p) => p.id === productId);
@@ -245,7 +239,7 @@ export default function PackVariantModal({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{product.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {(product.cabang?.name || "")} • Stok: {product.stock}
+                        {product.cabang?.name || ''} • Stok: {product.stock}
                       </p>
                       <p className="text-sm font-bold text-primary">
                         {formatRupiah(product.price)}

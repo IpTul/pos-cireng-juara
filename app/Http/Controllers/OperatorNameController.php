@@ -25,15 +25,12 @@ class OperatorNameController extends Controller
             'operator_name' => ['required', 'string', 'max:255'],
         ]);
 
-        // Update the authenticated user's operator_name in the database
         $user = $request->user();
         $user->operator_name = $validated['operator_name'];
         $user->save();
 
-        // Update the session
         session(['operator_name' => $validated['operator_name']]);
 
-        // Log the update for debugging
         Log::info('Operator name updated', [
             'user_id' => $user->id,
             'operator_name' => $validated['operator_name']

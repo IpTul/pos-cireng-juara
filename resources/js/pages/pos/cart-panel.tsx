@@ -38,8 +38,8 @@ interface Props {
   onClear: () => void;
   onCheckout: () => void;
   products: Product[];
-  availableAddons: Addon[]; // katalog addon yang bisa dipilih
-  cartAddons: AddonSelection[]; // addon yang sudah dipilih untuk transaksi ini
+  availableAddons: Addon[];
+  cartAddons: AddonSelection[];
   onSetFreeItems: (freeItems: FreeItemSelection[]) => void;
   onAddAddon: (addon: Addon) => void;
   onRemoveAddon: (addonId: number) => void;
@@ -92,7 +92,11 @@ export default function CartPanel({
   const [selectedCurrentFree, setSelectedCurrentFree] = useState<
     FreeItemSelection[]
   >([]);
-  const [packVariantModal, setPackVariantModal] = useState<{ open: boolean; pack: any | null; variants: PackVariant[] | null }>({
+  const [packVariantModal, setPackVariantModal] = useState<{
+    open: boolean;
+    pack: any | null;
+    variants: PackVariant[] | null;
+  }>({
     open: false,
     pack: null,
     variants: null,
@@ -175,26 +179,30 @@ export default function CartPanel({
                       </p>
                     ) : (
                       <>
-                        {/* Show selected variants or default pack items */}
                         {item.variants && item.variants.length > 0 ? (
                           <div className="space-y-1 text-xs text-muted-foreground">
                             {item.variants.map((variant, idx) => (
-                              <p key={idx}>{variant.product.name} x{variant.quantity}</p>
+                              <p key={idx}>
+                                {variant.product.name} x{variant.quantity}
+                              </p>
                             ))}
                           </div>
                         ) : (
                           <p className="text-xs text-muted-foreground">
                             {item.pack.pack_items
-                              ?.map((pi) => `${pi.product.name} x${pi.quantity}`)
+                              ?.map(
+                                (pi) => `${pi.product.name} x${pi.quantity}`,
+                              )
                               .join(', ')}
                           </p>
                         )}
-                        {/* Edit variants button */}
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-5 w-5 p-0 text-xs mt-1 hover:text-primary"
-                          onClick={() => openPackVariantModal(item, item.variants || [])}
+                          className="mt-1 h-5 w-5 p-0 text-xs hover:text-primary"
+                          onClick={() =>
+                            openPackVariantModal(item, item.variants || [])
+                          }
                         >
                           <span className="text-[10px]">Edit</span>
                         </Button>
@@ -242,7 +250,11 @@ export default function CartPanel({
                     type="number"
                     min={1}
                     max={
-                      item.stock <= 0 ? 0 : isCartItem(item) ? item.product.stock : 999
+                      item.stock <= 0
+                        ? 0
+                        : isCartItem(item)
+                          ? item.product.stock
+                          : 999
                     }
                     disabled={item.stock <= 0}
                     value={item.quantity}
@@ -276,7 +288,6 @@ export default function CartPanel({
             ))
           )}
 
-          {/* Addon — level cart, sekali untuk seluruh transaksi. Di LUAR items.map. */}
           {items.length > 0 && availableAddons.length > 0 && (
             <div className="border-t pt-3">
               <p className="mb-2 text-xs font-medium text-muted-foreground">

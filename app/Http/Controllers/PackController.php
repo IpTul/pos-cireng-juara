@@ -114,7 +114,6 @@ class PackController extends Controller
             'max_items' => $validated['max_items'],
         ]);
 
-        // Delete existing pack items and recreate
         $pack->packItems()->delete();
 
         foreach ($validated['items'] as $item) {

@@ -197,7 +197,6 @@ class SaleHistoryController extends Controller
             'can' => [
                 'create' => Auth::user()->can('create', Sale::class),
             ],
-            // FIX: kirim balik filter yang aktif supaya frontend bisa isi ulang input tanggal
             'filters' => [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
@@ -206,8 +205,6 @@ class SaleHistoryController extends Controller
         ]);
     }
 
-    // FIX: endpoint baru khusus untuk Export Excel — tanpa pagination,
-    // mengembalikan SEMUA baris dalam rentang tanggal terpilih sebagai JSON.
     public function exportData(Request $request)
     {
         $this->authorizeOwnerOnly();

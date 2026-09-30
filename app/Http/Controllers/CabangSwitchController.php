@@ -10,7 +10,6 @@ class CabangSwitchController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            // null / tidak dikirim = "Semua Cabang"
             'cabang_id' => ['nullable', 'exists:cabangs,id'],
         ]);
 

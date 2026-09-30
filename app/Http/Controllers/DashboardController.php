@@ -17,7 +17,6 @@ class DashboardController extends Controller
     {
         $this->user = auth()->user();
 
-        // Optionally, restrict to owner or kasir (duplicate of route middleware)
         if (! $this->user?->inRole(['owner', 'kasir'])) {
             abort(403, 'Akses ditolak.');
         }
@@ -31,7 +30,6 @@ class DashboardController extends Controller
             ->where('status','completed')
             ->get();
 
-        // top product
         $topProduct = SalesItem::select(
             'product_name',
             DB::raw('SUM(quantity) as total_qty'),
@@ -48,7 +46,6 @@ class DashboardController extends Controller
             'total_revenue' => (float) $p->total_revenue,
         ]);
 
-        // recent sales (paginated)
         $recentSales = Sale::with(['items.product.cabang', 'items.pack'])
             ->latest()
             ->paginate(5)

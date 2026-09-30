@@ -10,7 +10,6 @@ import {
 } from '@/types';
 import { toast } from 'sonner';
 
-// Cart localStorage key
 const CART_STORAGE_KEY = 'cireng-juara-cart';
 
 function loadCartFromStorage(): CartState {
@@ -52,7 +51,7 @@ interface PackCartItemWithFree extends PackCartItem {
 
 interface CartState {
   items: (CartItemWithFree | PackCartItemWithFree)[];
-  addons: AddonSelection[]; // addon level-cart, sekali untuk seluruh transaksi
+  addons: AddonSelection[];
 }
 
 type CartAction =
@@ -79,7 +78,6 @@ function isPackCartItem(
   return 'pack' in item && 'variants' in item;
 }
 
-// Calculate free quantity (1 free per 10 purchased) - GLOBAL across all items
 function getGlobalFreeQuantity(
   items: (CartItemWithFree | PackCartItemWithFree)[],
 ): number {
@@ -87,7 +85,6 @@ function getGlobalFreeQuantity(
   return Math.floor(totalPaidQty / 10);
 }
 
-// Distribute global free quantity across items (all free items shown on first item)
 function distributeFreeQuantity(
   items: (CartItemWithFree | PackCartItemWithFree)[],
   globalFreeQty: number,
@@ -126,8 +123,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : i,
         );
       } else {
-        // When stock <= 0, still add the product to the cart list but it cannot be selected/increased
-        // The existing SET_QTY_PRODUCT logic will restrict quantity when product.stock <= 0
         const initialQty = action.product.stock <= 0 ? 0 : 1;
         newItems = [
           ...state.items,
@@ -154,7 +149,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       );
       if (existing) {
         const newQty = existing.quantity + 1;
-        // Check stock for all selected variants
         const requiredStock: Record<number, number> = {};
         for (const variant of existing.variants) {
           requiredStock[variant.product_id] =
@@ -178,7 +172,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : i,
         );
       } else {
-        // Check stock for all selected variants
         const variants = action.variants || [];
         if (variants.length === 0) {
           toast.error('Silakan pilih varian produk untuk paket ini');
@@ -291,7 +284,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'SET_PACK_VARIANTS': {
       newItems = state.items.map((i) => {
         if (!isPackCartItem(i) || i.pack.id !== action.packId) return i;
-        // Check stock for new variants
         const requiredStock: Record<number, number> = {};
         for (const variant of action.variants) {
           requiredStock[variant.product_id] =
@@ -401,7 +393,6 @@ export function useCart() {
   const [state, dispatch] = useReducer(cartReducer, { items: [], addons: [] });
   const { items, addons } = state;
 
-  // Load from localStorage on initialization, then sync to storage on every change
   useEffect(() => {
     saveCartToStorage(state);
   }, [state]);
@@ -415,7 +406,6 @@ export function useCart() {
         sum += parseFloat(item.pack.price) * item.quantity;
       }
     }
-    // Addon dihitung sekali untuk seluruh transaksi
     for (const addonSel of addons) {
       sum += parseFloat(addonSel.addon.price) * addonSel.quantity;
     }
@@ -456,7 +446,6 @@ export function useCart() {
     dispatch({ type: 'SET_FREE_ITEMS', freeItems });
   }
 
-  // Addon level-cart (bukan per item lagi)
   function addAddon(addon: Addon) {
     dispatch({ type: 'ADD_ADDON', addon });
   }
@@ -471,7 +460,7 @@ export function useCart() {
 
   return {
     items,
-    addons, // AddonSelection[] terpilih untuk transaksi ini
+    addons,
     subtotal,
     totalItems,
     totalFreeItems,

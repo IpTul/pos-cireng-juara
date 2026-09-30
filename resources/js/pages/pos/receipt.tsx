@@ -38,7 +38,6 @@ export default function Receipt({ sale }: Props) {
       <div className="receipt-paper mx-auto max-w-xs p-6 font-mono text-sm">
         <div className="mb-4 text-center">
           <p className="text-xl font-bold">CIRENG JUARA</p>
-          {/* <p className="text-xs text-muted-foreground">Your local shop</p> */}
           <p className="mt-1 text-xs text-muted-foreground">
             {new Date(sale.created_at).toLocaleString()}
           </p>
@@ -94,8 +93,6 @@ export default function Receipt({ sale }: Props) {
             <span>{formatRupiah(sale.total)}</span>
           </div>
 
-          {/* FIX: setiap baris info pembayaran sekarang jadi flex-row sendiri, */}
-          {/* ditumpuk vertikal — bukan digabung jadi 3 flex-item dalam satu baris */}
           <div className="space-y-1 text-sm">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1 text-muted-foreground">

@@ -75,7 +75,6 @@ export default function CheckoutDialog({
   const [error, setError] = useState<string | null>(null);
   const [isGrab, setIsGrab] = useState(false);
 
-  // Member search
   const [memberSearch, setMemberSearch] = useState('');
   const [memberResults, setMemberResults] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -92,14 +91,11 @@ export default function CheckoutDialog({
       ? !processing && isCustomerNameFilled
       : !processing && !!cashInput && cash >= subtotal && isCustomerNameFilled;
 
-  // Calculate estimated points from cart
   const calculateEstimatedPoints = useCallback(() => {
     let points = 0;
-    // Regular products
     items.filter(isCartItem).forEach((i) => {
       points += i.quantity;
     });
-    // Pack variants
     items.filter(isPackCartItem).forEach((i) => {
       if (i.variants && i.variants.length > 0) {
         i.variants.forEach((v) => {
@@ -116,7 +112,6 @@ export default function CheckoutDialog({
 
   const estimatedPoints = calculateEstimatedPoints();
 
-  // Debounced member search
   useEffect(() => {
     if (!memberSearch.trim() || memberSearch.length < 2) {
       setMemberResults([]);
@@ -186,7 +181,6 @@ export default function CheckoutDialog({
     setError(null);
     setProcessing(true);
 
-    // Collect all free items from all items (they're stored on the first item)
     const allFreeItems = items
       .flatMap((i) => i.freeItems || [])
       .map((f) => ({ product_id: f.product_id, quantity: f.quantity }));
@@ -205,7 +199,6 @@ export default function CheckoutDialog({
       })),
     }));
 
-    // Addon sekarang level-cart, langsung dari cartAddons
     const allAddons = cartAddons
       .filter((a) => a.quantity > 0)
       .map((a) => ({
@@ -285,7 +278,6 @@ export default function CheckoutDialog({
               </div>
             ))}
 
-            {/* Addon — sekali untuk seluruh transaksi */}
             {cartAddons.filter((a) => a.quantity > 0).length > 0 && (
               <div className="mt-3 space-y-1 border-t pt-2">
                 <p className="text-xs font-medium text-muted-foreground">
@@ -333,7 +325,6 @@ export default function CheckoutDialog({
             </div>
           </div>
 
-          {/* Nama customer (wajib) */}
           <div>
             <Label htmlFor="customer_name">Nama Customer (wajib)</Label>
             <Input

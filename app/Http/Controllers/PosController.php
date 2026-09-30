@@ -17,7 +17,6 @@ class PosController extends Controller
     {
         $this->user = auth()->user();
 
-        // Optionally, restrict to owner or kasir (duplicate of route middleware)
         if (! $this->user?->inRole(['owner', 'kasir'])) {
             abort(403, 'Akses ditolak.');
         }
