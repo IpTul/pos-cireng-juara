@@ -1,4 +1,7 @@
 import { Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import type { PaginatedData } from '@/types';
 import { Button } from '@/components/ui/button';
 
@@ -12,16 +15,38 @@ interface MemberHistoryItem {
 
 interface Props {
   histories: PaginatedData<MemberHistoryItem>;
+  search: string;
 }
 
-export default function MemberHistoryIndex({ histories }: Props) {
+export default function MemberHistoryIndex({ histories, search }: Props) {
+  const [searchInput, setSearchInput] = useState(search);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput === search) return;
+      router.get(
+        '/members/history',
+        { q: searchInput || undefined },
+        { preserveScroll: true, preserveState: true, replace: true },
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
   return (
     <>
       <Head title="Riwayat Member" />
       <div className="p-6">
-        <h1 className="mb-4 text-2xl font-bold">
-          Riwayat Member Test Development
-        </h1>
+        <h1 className="mb-4 text-2xl font-bold">Riwayat Member</h1>
+
+        <div className="relative mb-4 w-full max-w-md">
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Cari nama member, nomor HP, atau penambah..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
 
         <div className="rounded-lg border">
           <table className="w-full text-sm">
@@ -40,7 +65,7 @@ export default function MemberHistoryIndex({ histories }: Props) {
                     colSpan={4}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    Belum ada riwayat.
+                    {search ? 'Riwayat tidak ditemukan.' : 'Belum ada riwayat.'}
                   </td>
                 </tr>
               ) : (
@@ -80,7 +105,10 @@ export default function MemberHistoryIndex({ histories }: Props) {
                     onClick={() =>
                       router.get(
                         '/members/history',
-                        { page: histories.current_page - 1 },
+                        {
+                          page: histories.current_page - 1,
+                          q: search || undefined,
+                        },
                         { preserveScroll: true },
                       )
                     }
@@ -95,7 +123,10 @@ export default function MemberHistoryIndex({ histories }: Props) {
                     onClick={() =>
                       router.get(
                         '/members/history',
-                        { page: histories.current_page + 1 },
+                        {
+                          page: histories.current_page + 1,
+                          q: search || undefined,
+                        },
                         { preserveScroll: true },
                       )
                     }
