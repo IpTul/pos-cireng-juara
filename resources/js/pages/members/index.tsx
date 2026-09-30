@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect, useCallback } from 'react';
 import type { Member, PaginatedData, Cabang } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Pencil, Plus, Trash2, Search, UserPlus } from 'lucide-react';
+import { History, Pencil, Plus, Trash2, Search, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -24,9 +24,10 @@ import InputError from '@/components/input-error';
 interface Props {
   members: PaginatedData<Member>;
   search: string;
+  sort: string;
 }
 
-export default function MemberIndex({ members, search }: Props) {
+export default function MemberIndex({ members, search, sort }: Props) {
   const { auth, cabangs } = usePage().props as unknown as {
     auth: { user: { role: 'owner' | 'kasir' } };
     cabangs: Cabang[];
@@ -42,13 +43,11 @@ export default function MemberIndex({ members, search }: Props) {
     cabang_id: '' as string | number,
   });
 
-  // Sync searchInput and debouncedSearch with server search prop
   useEffect(() => {
     setSearchInput(search);
     setDebouncedSearch(search);
   }, [search]);
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchInput);
@@ -56,16 +55,16 @@ export default function MemberIndex({ members, search }: Props) {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Reload when debounced search changes
-  useEffect(() => {
-    if (debouncedSearch !== search) {
-      router.get(
-        '/members',
-        { search: debouncedSearch },
-        { preserveScroll: true },
-      );
-    }
-  }, [debouncedSearch]);
+  function handleSort(value: string) {
+    router.get(
+      '/members',
+      {
+        search: debouncedSearch,
+        sort: value === 'default' ? undefined : value,
+      },
+      { preserveScroll: true, preserveState: true },
+    );
+  }
 
   function openCreate() {
     reset();
@@ -121,23 +120,44 @@ export default function MemberIndex({ members, search }: Props) {
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Manajemen Member</h1>
-          <Button onClick={openCreate}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Tambah Member
-          </Button>
+          <div className="flex gap-2">
+            {auth.user?.role === 'owner' && (
+              <Button
+                variant="outline"
+                onClick={() => router.get('/members/history')}
+              >
+                <History className="mr-2 h-4 w-4" />
+                Riwayat Member
+              </Button>
+            )}
+            <Button onClick={openCreate}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Tambah Member
+            </Button>
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="mb-4">
-          <div className="relative max-w-md">
+        {/* Search + Filter */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+          <div className="relative w-full max-w-md">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
               placeholder="Cari nama atau nomor HP..."
-              value={debouncedSearch}
-              onChange={(e) => setDebouncedSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
+          <Select value={sort || 'default'} onValueChange={handleSort}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Urutkan poin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Terbaru</SelectItem>
+              <SelectItem value="points_desc">Poin tertinggi</SelectItem>
+              <SelectItem value="points_asc">Poin terendah</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="rounded-lg border">
@@ -221,6 +241,7 @@ export default function MemberIndex({ members, search }: Props) {
                           {
                             page: members.current_page - 1,
                             search: debouncedSearch,
+                            sort: sort || undefined,
                           },
                           { preserveScroll: true },
                         )
@@ -239,6 +260,7 @@ export default function MemberIndex({ members, search }: Props) {
                           {
                             page: members.current_page + 1,
                             search: debouncedSearch,
+                            sort: sort || undefined,
                           },
                           { preserveScroll: true },
                         )

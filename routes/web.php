@@ -15,6 +15,7 @@ use App\Http\Controllers\AddonController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OperatorNameController;
 use App\Http\Controllers\CabangSwitchController;
+use App\Http\Controllers\MemberHistoryController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -57,6 +58,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('members', MemberController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware('role:owner,kasir');
+
+    Route::get('/members/history', [MemberHistoryController::class, 'index'])->name('members.history');
 
     Route::get('members/search', [MemberController::class, 'search'])
         ->middleware('role:owner,kasir')

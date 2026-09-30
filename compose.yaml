@@ -20,6 +20,7 @@ services:
     volumes:
       - '.:/var/www/html'
       - 'sail-node-modules:/var/www/html/node_modules'
+      - 'sail-vendor:/var/www/html/vendor'
     networks:
       - sail
     depends_on:
@@ -56,4 +57,6 @@ volumes:
   sail-mysql:
     driver: local
   sail-node-modules:
+    driver: local
+  sail-vendor:
     driver: local

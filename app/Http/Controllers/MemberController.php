@@ -7,8 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\MemberHistory;
 
-class MemberController extends Controller
+class MemberController extends Controller   
 {
     protected $user;
 
@@ -36,13 +37,24 @@ class MemberController extends Controller
             $query->where('phone', 'like', "%{$search}%");
         }
 
-        $members = $query->latest()
-            ->paginate(15)
-            ->withQueryString();
+        $sort = in_array($request->input('sort'), ['points_desc', 'points_asc'], true)
+        ? $request->input('sort')
+        : null;
+
+        if ($sort === 'points_desc') {
+            $query->orderBy('points', 'desc')->orderBy('id');
+        } elseif ($sort === 'points_asc') {
+            $query->orderBy('points', 'asc')->orderBy('id');
+        } else {
+            $query->latest();
+        }
+
+        $members = $query->paginate(15)->withQueryString();
 
         return Inertia::render('members/index', [
             'members' => $members,
             'search' => $request->input('search', ''),
+            'sort' => $sort ?? '',
         ]);
     }
 
@@ -62,7 +74,18 @@ class MemberController extends Controller
             return back()->withErrors(['cabang_id' => 'Cabang wajib dipilih.']);
         }
 
-        Member::create($validated);
+        $member = Member::create($validated);
+
+        if ($this->user->isKasir()) {
+            MemberHistory::create([
+                'member_id' => $member->id,
+                'member_name' => $member->name,
+                'member_phone' => $member->phone,
+                'cabang_id' => $member->cabang_id,
+                'user_id' => $this->user->id,
+                'action' => 'created',
+            ]);
+        }
 
         return redirect()->route('members.index')
             ->with('success', 'Member berhasil dibuat.');
