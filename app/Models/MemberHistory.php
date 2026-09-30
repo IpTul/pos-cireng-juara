@@ -9,13 +9,8 @@ class MemberHistory extends Model
 {
     protected $fillable = [
         'member_id', 'member_name', 'member_phone',
-        'cabang_id', 'user_id', 'action',
+        'user_id', 'action',
     ];
-
-    public function cabang(): BelongsTo
-    {
-        return $this->belongsTo(Cabang::class);
-    }
 
     public function user(): BelongsTo
     {

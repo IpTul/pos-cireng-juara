@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect, useCallback } from 'react';
-import type { Member, PaginatedData, Cabang } from '@/types';
+import type { Member, PaginatedData } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -28,9 +28,8 @@ interface Props {
 }
 
 export default function MemberIndex({ members, search, sort }: Props) {
-  const { auth, cabangs } = usePage().props as unknown as {
+  const { auth } = usePage().props as unknown as {
     auth: { user: { role: 'owner' | 'kasir' } };
-    cabangs: Cabang[];
   };
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
@@ -40,7 +39,6 @@ export default function MemberIndex({ members, search, sort }: Props) {
   const { data, setData, post, put, processing, errors, reset } = useForm({
     name: '',
     phone: '',
-    cabang_id: '' as string | number,
   });
 
   useEffect(() => {
@@ -49,17 +47,19 @@ export default function MemberIndex({ members, search, sort }: Props) {
   }, [search]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+    if (debouncedSearch === search) return;
+    router.get(
+      '/members',
+      { q: debouncedSearch || undefined, sort: sort || undefined },
+      { preserveScroll: true, preserveState: true, replace: true },
+    );
+  }, [debouncedSearch]);
 
   function handleSort(value: string) {
     router.get(
       '/members',
       {
-        search: debouncedSearch,
+        search: debouncedSearch || undefined,
         sort: value === 'default' ? undefined : value,
       },
       { preserveScroll: true, preserveState: true },
@@ -76,7 +76,6 @@ export default function MemberIndex({ members, search, sort }: Props) {
     setData({
       name: m.name,
       phone: m.phone,
-      cabang_id: m.cabang_id ?? '',
     });
     setEditing(m);
     setShowForm(true);
@@ -305,27 +304,7 @@ export default function MemberIndex({ members, search, sort }: Props) {
               />
               <InputError message={errors.phone} />
             </div>
-            {auth.user?.role === 'owner' && (
-              <div>
-                <Label htmlFor="member-cabang">Cabang</Label>
-                <Select
-                  value={data.cabang_id ? String(data.cabang_id) : ''}
-                  onValueChange={(value) => setData('cabang_id', value)}
-                >
-                  <SelectTrigger id="member-cabang">
-                    <SelectValue placeholder="Pilih cabang" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cabangs?.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <InputError message={errors.cabang_id} />
-              </div>
-            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={closeForm}>
                 Batal

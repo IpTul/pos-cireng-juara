@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('member_id')->nullable()->constrained()->nullOnDelete();
             $table->string('member_name');
             $table->string('member_phone');
-            $table->foreignId('cabang_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('action')->default('created');
             $table->timestamps();

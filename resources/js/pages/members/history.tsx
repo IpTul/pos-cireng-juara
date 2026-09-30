@@ -7,8 +7,7 @@ interface MemberHistoryItem {
   member_name: string;
   member_phone: string;
   created_at: string;
-  user: { id: number; name: string } | null;
-  cabang: { id: number; name: string } | null;
+  user: { id: number; name: string; operator_name: string | null } | null;
 }
 
 interface Props {
@@ -20,7 +19,9 @@ export default function MemberHistoryIndex({ histories }: Props) {
     <>
       <Head title="Riwayat Member" />
       <div className="p-6">
-        <h1 className="mb-4 text-2xl font-bold">Riwayat Member</h1>
+        <h1 className="mb-4 text-2xl font-bold">
+          Riwayat Member Test Development
+        </h1>
 
         <div className="rounded-lg border">
           <table className="w-full text-sm">
@@ -30,14 +31,13 @@ export default function MemberHistoryIndex({ histories }: Props) {
                 <th className="px-4 py-3 text-left">Member Baru</th>
                 <th className="px-4 py-3 text-left">Nomor HP</th>
                 <th className="px-4 py-3 text-left">Ditambahkan Oleh</th>
-                <th className="px-4 py-3 text-left">Cabang</th>
               </tr>
             </thead>
             <tbody>
               {histories.data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={4}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     Belum ada riwayat.
@@ -57,10 +57,9 @@ export default function MemberHistoryIndex({ histories }: Props) {
                       {h.member_phone}
                     </td>
                     <td className="px-4 py-3">
-                      {h.user?.name ?? 'User dihapus'}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {h.cabang?.name ?? '-'}
+                      {h.user
+                        ? (h.user.operator_name ?? h.user.name)
+                        : 'User dihapus'}
                     </td>
                   </tr>
                 ))

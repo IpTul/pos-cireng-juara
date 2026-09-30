@@ -40,8 +40,8 @@ export default defineConfig({
     host: '0.0.0.0',
     hmr: { host: 'localhost' },
     watch: {
-      usePolling: false,
-      // interval: 2000,
+      usePolling: true,
+      interval: 2000,
       ignored: [
         '**/node_modules/**',
         '**/vendor/**',

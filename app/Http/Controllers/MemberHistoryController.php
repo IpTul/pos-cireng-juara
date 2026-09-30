@@ -14,10 +14,7 @@ class MemberHistoryController extends Controller
         $user = $request->user();
         abort_if($user->isKasir(), 403);
 
-        $activeCabangId = $user->activeCabangId();
-
-        $histories = MemberHistory::with(['user:id,name', 'cabang:id,name'])
-            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+        $histories = MemberHistory::with(['user:id,name,operator_name'])
             ->latest()
             ->paginate(15)
             ->withQueryString();

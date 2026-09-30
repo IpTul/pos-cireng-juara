@@ -14,7 +14,6 @@ use Illuminate\Support\Carbon;
     'points',
     'last_purchase_at',
     'is_deleted',
-    'cabang_id',
 ])]
 class Member extends Model
 {

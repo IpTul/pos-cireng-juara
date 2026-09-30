@@ -103,7 +103,6 @@ export interface Pack {
 export interface Member {
   id: number;
   name: string;
-  cabang_id: number | null;
   phone: string;
   points: number;
   last_purchase_at: string | null;
