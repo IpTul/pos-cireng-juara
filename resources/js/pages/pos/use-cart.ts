@@ -16,7 +16,10 @@ function loadCartFromStorage(): CartState {
   try {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed?.items) && Array.isArray(parsed?.addons)) {
+        return parsed;
+      }
     }
   } catch (e) {
     console.error('Failed to load cart from localStorage', e);
@@ -390,7 +393,11 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 }
 
 export function useCart() {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], addons: [] });
+  const [state, dispatch] = useReducer(
+    cartReducer,
+    undefined,
+    loadCartFromStorage,
+  );
   const { items, addons } = state;
 
   useEffect(() => {
