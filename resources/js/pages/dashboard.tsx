@@ -9,6 +9,10 @@ interface Stats {
   today_transactions: number;
   total_products: number;
   low_stock_count: number;
+  payment_breakdown: Record<
+    'cash' | 'qris' | 'grab' | 'gofood',
+    { total: number; count: number }
+  >;
 }
 
 interface TopProduct {
@@ -95,6 +99,25 @@ export default function Dashboard({
             highlight={stats.low_stock_count > 0}
           />
         </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {(
+            [
+              ['cash', 'Tunai'],
+              ['qris', 'QRIS'],
+              ['grab', 'Grab'],
+              ['gofood', 'GoFood'],
+            ] as const
+          ).map(([key, label]) => (
+            <StatCard
+              key={key}
+              title={`${label} Hari Ini`}
+              value={`Rp ${stats.payment_breakdown[key].total.toLocaleString('id-ID')}`}
+              subtitle={`${stats.payment_breakdown[key].count} transaksi`}
+            />
+          ))}
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border">
             <div className="border-b px-4 py-3">
@@ -213,10 +236,12 @@ Dashboard.layout = {
 function StatCard({
   title,
   value,
+  subtitle,
   highlight = false,
 }: {
   title: string;
   value: string;
+  subtitle?: string;
   highlight?: boolean;
 }) {
   return (
@@ -229,6 +254,9 @@ function StatCard({
       >
         {value}
       </p>
+      {subtitle && (
+        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+      )}
     </div>
   );
 }
