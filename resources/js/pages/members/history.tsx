@@ -10,7 +10,7 @@ interface MemberHistoryItem {
   member_name: string;
   member_phone: string;
   created_at: string;
-  user: { id: number; name: string; operator_name: string | null } | null;
+  operator_name: string | null;
 }
 
 interface Props {
@@ -81,11 +81,7 @@ export default function MemberHistoryIndex({ histories, search }: Props) {
                     <td className="px-4 py-3 text-muted-foreground">
                       {h.member_phone}
                     </td>
-                    <td className="px-4 py-3">
-                      {h.user
-                        ? (h.user.operator_name ?? h.user.name)
-                        : 'User dihapus'}
-                    </td>
+                    <td className="px-4 py-3">{h.operator_name ?? '-'}</td>
                   </tr>
                 ))
               )}

@@ -59,6 +59,7 @@ class MemberController extends Controller
                 'member_name' => $member->name,
                 'member_phone' => $member->phone,
                 'user_id' => $user->id,
+                'operator_name' => $user->operator_name ?: $user->name,
                 'action' => 'created',
             ]);
         }

@@ -16,15 +16,12 @@ class MemberHistoryController extends Controller
 
         $search = trim((string) $request->input('q', ''));
 
-        $histories = MemberHistory::with(['user:id,name,operator_name'])
+        $histories = MemberHistory::query()
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('member_name', 'like', "%{$search}%")
                         ->orWhere('member_phone', 'like', "%{$search}%")
-                        ->orWhereHas('user', function ($u) use ($search) {
-                            $u->where('operator_name', 'like', "%{$search}%")
-                                ->orWhere('name', 'like', "%{$search}%");
-                        });
+                        ->orWhere('operator_name', 'like', "%{$search}%");
                 });
             })
             ->latest()
