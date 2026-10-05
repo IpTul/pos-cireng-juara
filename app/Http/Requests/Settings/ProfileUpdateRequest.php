@@ -17,6 +17,12 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        if ($this->user()->isKasir()) {
+            return [
+                'operator_name' => ['nullable', 'string', 'max:255'],
+            ];
+        }
+
         return $this->profileRules($this->user()->id);
     }
 }

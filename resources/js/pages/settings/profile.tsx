@@ -23,6 +23,7 @@ export default function Profile({
   status?: string;
 }) {
   const { auth } = usePage<PageProps>().props;
+  const isKasir = auth.user.role === 'kasir';
 
   return (
     <>
@@ -51,6 +52,7 @@ export default function Profile({
 
                 <Input
                   id="name"
+                  disabled={isKasir}
                   className="mt-1 block w-full"
                   defaultValue={auth.user.name}
                   name="name"
@@ -68,6 +70,7 @@ export default function Profile({
                 <Input
                   id="email"
                   type="email"
+                  disabled={isKasir}
                   className="mt-1 block w-full"
                   defaultValue={auth.user.email}
                   name="email"
@@ -77,6 +80,12 @@ export default function Profile({
                 />
 
                 <InputError className="mt-2" message={errors.email} />
+
+                {isKasir && (
+                  <p className="text-xs text-muted-foreground">
+                    Nama dan email hanya bisa diubah oleh owner.
+                  </p>
+                )}
               </div>
 
               {auth.user.role === 'kasir' && (
