@@ -36,7 +36,7 @@ class CheckoutController extends Controller
             'addons.*.addon_id'         => ['required', 'exists:addons,id'],
             'addons.*.quantity'         => ['required', 'integer', 'min:1'],
             'cash_tendered'             => ['required', 'integer', 'min:1'],
-            'payment_method'            => ['sometimes', 'string', 'in:cash,qris,grab'],
+            'payment_method'            => ['sometimes', 'string', 'in:cash,qris,grab,gofood'],
         ]);
 
         if ($request->user()->isKasir()) {
@@ -270,7 +270,7 @@ class CheckoutController extends Controller
             $sale = Sale::create([
                 'user_id'        => $request->user()->id,
                 'cabang_id'      => $cabangId,
-                'operator_name'  => session('operator_name'),
+                'operator_name'  => $request->user()->operator_name ?? $request->user()->name ?? '',
                 'customer_name'  => $validated['customer_name'] ?? null,
                 'member_id'      => $validated['member_id'] ?? null,
                 'total'          => round($total),

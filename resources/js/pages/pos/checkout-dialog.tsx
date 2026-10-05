@@ -74,6 +74,7 @@ export default function CheckoutDialog({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGrab, setIsGrab] = useState(false);
+  const [isGoFood, setIsGoFood] = useState(false);
 
   const [memberSearch, setMemberSearch] = useState('');
   const [memberResults, setMemberResults] = useState<Member[]>([]);
@@ -87,7 +88,7 @@ export default function CheckoutDialog({
   const isCustomerNameFilled = customerName.trim().length > 0;
 
   const canSubmit =
-    isQris || isGrab
+    isQris || isGrab || isGoFood
       ? !processing && isCustomerNameFilled
       : !processing && !!cashInput && cash >= subtotal && isCustomerNameFilled;
 
@@ -157,6 +158,7 @@ export default function CheckoutDialog({
     if (checked) {
       setCashInput('');
       setIsGrab(false);
+      setIsGoFood(false);
     }
   }
 
@@ -165,6 +167,17 @@ export default function CheckoutDialog({
     setError(null);
     if (checked) {
       setCashInput('');
+      setIsGoFood(false);
+      setIsQris(false);
+    }
+  }
+
+  function handleGoFoodToggle(checked: boolean) {
+    setIsGoFood(checked);
+    setError(null);
+    if (checked) {
+      setCashInput('');
+      setIsGrab(false);
       setIsQris(false);
     }
   }
@@ -174,7 +187,7 @@ export default function CheckoutDialog({
       setError('Nama customer wajib diisi.');
       return;
     }
-    if (!isQris && !isGrab && cash < subtotal) {
+    if (!isQris && !isGrab && !isGoFood && cash < subtotal) {
       setError('Jumlah tunai kurang dari total.');
       return;
     }
@@ -215,8 +228,20 @@ export default function CheckoutDialog({
         packs: packItems,
         free_items: allFreeItems,
         addons: allAddons,
-        payment_method: isQris ? 'qris' : isGrab ? 'grab' : 'cash',
-        cash_tendered: isQris ? subtotal : isGrab ? subtotal : cash,
+        payment_method: isQris
+          ? 'qris'
+          : isGrab
+            ? 'grab'
+            : isGoFood
+              ? 'gofood'
+              : 'cash',
+        cash_tendered: isQris
+          ? subtotal
+          : isGrab
+            ? subtotal
+            : isGoFood
+              ? subtotal
+              : cash,
       },
       {
         onSuccess: () => {
@@ -225,6 +250,7 @@ export default function CheckoutDialog({
           setCustomerName('');
           setIsQris(false);
           setIsGrab(false);
+          setIsGoFood(false);
           onSuccess();
         },
         onError: (errors) => {
@@ -469,8 +495,25 @@ export default function CheckoutDialog({
             </Label>
           </div>
 
+          <div className="flex items-center gap-2 rounded-lg border p-3">
+            <Checkbox
+              id="gofood"
+              checked={isGoFood}
+              onCheckedChange={(checked) =>
+                handleGoFoodToggle(checked === true)
+              }
+            />
+            <Label
+              htmlFor="gofood"
+              className="flex flex-1 cursor-pointer items-center gap-2 text-sm font-medium"
+            >
+              <QrCode className="h-4 w-4" />
+              Pesanan GOFOOD
+            </Label>
+          </div>
+
           {/* Cash input — disembunyikan/dinonaktifkan kalau bayar QRIS */}
-          {!isQris && !isGrab && (
+          {!isQris && !isGrab && !isGoFood && (
             <div>
               <Label htmlFor="cash">Uang Tunai</Label>
               <Input
@@ -489,7 +532,7 @@ export default function CheckoutDialog({
           )}
 
           {/* Change — hanya relevan untuk pembayaran tunai */}
-          {!isQris && !isGrab && cashInput && (
+          {!isQris && !isGrab && !isGoFood && cashInput && (
             <div className="flex justify-between text-lg font-bold">
               <span>Kembalian</span>
               <span
@@ -513,6 +556,16 @@ export default function CheckoutDialog({
             <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
               <span className="text-muted-foreground">
                 Total via Grab (Settle)
+              </span>
+              <span className="font-bold">{formatRupiah(subtotal)}</span>
+            </div>
+          )}
+
+          {/* Info ringkas kalau pesanan GoFood dipilih — settle langsung, bukan tunai/QRIS */}
+          {isGoFood && (
+            <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
+              <span className="text-muted-foreground">
+                Total via Gofood (Settle)
               </span>
               <span className="font-bold">{formatRupiah(subtotal)}</span>
             </div>

@@ -73,7 +73,7 @@ export interface Sale {
   total: number;
   cash_tendered: number;
   change_amount: number;
-  payment_method: 'cash' | 'qris' | 'grab';
+  payment_method: 'cash' | 'qris' | 'grab' | 'gofood';
   status: string;
   created_at: string;
   items: SaleItem[];

@@ -170,6 +170,7 @@ export default function PackIndex({ packs, products, cabangs }: Props) {
                 <th className="px-4 py-3 text-left">Nama Paket</th>
                 <th className="px-4 py-3 text-left">Isi Paket</th>
                 <th className="px-4 py-3 text-right">Harga</th>
+                <th className="px-4 py-3 text-center">Cabang</th>
                 <th className="px-4 py-3 text-center">Status</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
@@ -208,6 +209,12 @@ export default function PackIndex({ packs, products, cabangs }: Props) {
                   </td>
                   <td className="px-4 py-3 text-right">
                     Rp{Number(pack.price).toLocaleString('id-ID')}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {/* {pack.pack_items?.map((item: PackItem) => (
+                      <span>{item.product?.cabang_id}</span>
+                    ))} */}
+                    {pack.cabang_id}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Badge variant={pack.is_active ? 'default' : 'secondary'}>

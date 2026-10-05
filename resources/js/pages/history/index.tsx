@@ -49,7 +49,7 @@ interface SaleItemRow {
     total: number;
     cash_tendered: number;
     change_amount: number;
-    payment_method: 'cash' | 'qris' | 'grab';
+    payment_method: 'cash' | 'qris' | 'grab' | 'gofood';
     status: string;
     created_at: string;
     operator_name?: string | null;
@@ -161,15 +161,19 @@ export default function History({ saleItems, user, can, filters }: Props) {
             ? 'QRIS'
             : row.sale.payment_method === 'grab'
               ? 'Grab'
-              : 'Tunai',
+              : row.sale.payment_method === 'gofood'
+                ? 'GoFood'
+                : 'Tunai',
         Tunai:
           row.sale.payment_method === 'qris' ||
-          row.sale.payment_method === 'grab'
+          row.sale.payment_method === 'grab' ||
+          row.sale.payment_method === 'gofood'
             ? ''
             : row.sale.cash_tendered,
         Kembalian:
           row.sale.payment_method === 'qris' ||
-          row.sale.payment_method === 'grab'
+          row.sale.payment_method === 'grab' ||
+          row.sale.payment_method === 'gofood'
             ? ''
             : row.sale.change_amount,
         Status: row.sale.status,
@@ -252,6 +256,7 @@ export default function History({ saleItems, user, can, filters }: Props) {
                 <SelectItem value="cash">Tunai</SelectItem>
                 <SelectItem value="qris">QRIS</SelectItem>
                 <SelectItem value="grab">Grab</SelectItem>
+                <SelectItem value="gofood">GoFood</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -348,6 +353,11 @@ export default function History({ saleItems, user, can, filters }: Props) {
                             <Bike className="h-3 w-3" />
                             Grab
                           </span>
+                        ) : sale.sale.payment_method === 'gofood' ? (
+                          <span className="flex items-center justify-center gap-1 text-green-700">
+                            <Bike className="h-3 w-3" />
+                            GoFood
+                          </span>
                         ) : (
                           <span className="flex items-center justify-center gap-1 text-green-600">
                             Tunai
@@ -356,13 +366,15 @@ export default function History({ saleItems, user, can, filters }: Props) {
                       </td>
                       <td className="px-4 py-3 text-center">
                         {sale.sale.payment_method === 'qris' ||
-                        sale.sale.payment_method === 'grab'
+                        sale.sale.payment_method === 'grab' ||
+                        sale.sale.payment_method === 'gofood'
                           ? formatRupiah(sale.sale.total)
                           : formatRupiah(sale.sale.cash_tendered)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {sale.sale.payment_method === 'qris' ||
-                        sale.sale.payment_method === 'grab'
+                        sale.sale.payment_method === 'grab' ||
+                        sale.sale.payment_method === 'gofood'
                           ? 'Rp0'
                           : formatRupiah(sale.sale.change_amount)}
                       </td>
@@ -546,6 +558,11 @@ export default function History({ saleItems, user, can, filters }: Props) {
                       <Bike className="h-3 w-3 text-green-700" />
                       Grab
                     </>
+                  ) : selected.sale.payment_method === 'gofood' ? (
+                    <>
+                      <Bike className="h-3 w-3 text-green-700" />
+                      GoFood
+                    </>
                   ) : (
                     <>
                       <DollarSign className="h-3 w-3 text-green-600" />
@@ -560,17 +577,21 @@ export default function History({ saleItems, user, can, filters }: Props) {
                     ? 'Total QRIS'
                     : selected.sale.payment_method === 'grab'
                       ? 'Total Grab'
-                      : 'Tunai'}
+                      : selected.sale.payment_method === 'gofood'
+                        ? 'Total GoFOod'
+                        : 'Tunai'}
                 </span>
                 <span>
                   {selected.sale.payment_method === 'qris' ||
-                  selected.sale.payment_method === 'grab'
+                  selected.sale.payment_method === 'grab' ||
+                  selected.sale.payment_method === 'gofood'
                     ? formatRupiah(selected.sale.total)
                     : formatRupiah(selected.sale.cash_tendered)}
                 </span>
               </div>
               {selected.sale.payment_method !== 'qris' &&
-                selected.sale.payment_method !== 'grab' && (
+                selected.sale.payment_method !== 'grab' &&
+                selected.sale.payment_method !== 'gofood' && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Kembalian</span>
                     <span>{formatRupiah(selected.sale.change_amount)}</span>

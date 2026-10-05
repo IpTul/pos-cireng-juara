@@ -14,7 +14,8 @@ function formatRupiah(value: number) {
 export default function Receipt({ sale }: Props) {
   const isQris = sale.payment_method === 'qris';
   const isGrab = sale.payment_method === 'grab';
-  const isSettled = isQris || isGrab;
+  const isGoFood = sale.payment_method === 'gofood';
+  const isSettled = isQris || isGrab || isGoFood;
 
   return (
     <>
@@ -98,12 +99,17 @@ export default function Receipt({ sale }: Props) {
               <span className="flex items-center gap-1 text-muted-foreground">
                 {isQris ? (
                   <>
-                    <QrCode className="h-3 w-3" />
+                    {/* <QrCode className="h-3 w-3" /> */}
                     Metode
                   </>
                 ) : isGrab ? (
                   <>
-                    <Bike className="h-3 w-3" />
+                    {/* <Bike className="h-3 w-3" /> */}
+                    Metode
+                  </>
+                ) : isGoFood ? (
+                  <>
+                    {/* <Bike className="h-3 w-3" /> */}
                     Metode
                   </>
                 ) : (
@@ -111,7 +117,13 @@ export default function Receipt({ sale }: Props) {
                 )}
               </span>
               <span className="font-medium">
-                {isQris ? 'QRIS' : isGrab ? 'GRAB' : 'Tunai'}
+                {isQris
+                  ? 'QRIS'
+                  : isGrab
+                    ? 'GRAB'
+                    : isGoFood
+                      ? 'GOFOOD'
+                      : 'Tunai'}
               </span>
             </div>
 
@@ -136,7 +148,7 @@ export default function Receipt({ sale }: Props) {
         </div>
 
         <div className="mt-6 text-center text-xs text-muted-foreground">
-          <p>Terima kasih datang kembali ya heart</p>
+          <p>Terima kasih datang kembali ya</p>
           <p>Kritik Saran & Terima Pesanan</p>
           <p>IG : Cirengjuara.smd</p>
           <p>WA : 082211495774</p>
