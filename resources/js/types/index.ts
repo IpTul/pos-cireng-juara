@@ -68,6 +68,7 @@ export interface SaleItem {
 export interface Sale {
   id: number;
   customer_name?: string | null;
+  operator_name?: string | null;
   member_id?: number | null;
   member?: Member | null;
   total: number;

@@ -45,6 +45,13 @@ export default function Receipt({ sale }: Props) {
           <p className="text-xs text-muted-foreground">Receipt #{sale.id}</p>
         </div>
 
+        {sale.operator_name && (
+          <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
+            <span className="text-muted-foreground">Operator</span>
+            <span className="font-medium">{sale.operator_name}</span>
+          </div>
+        )}
+
         {sale.customer_name && (
           <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
             <span className="text-muted-foreground">Nama Customer</span>
