@@ -28,8 +28,8 @@ class PosController extends Controller
 
         $products = Product::with('cabang')
             ->where('is_active', true)
-            ->where('stock', '>', 0)
             ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+            ->orderByRaw('stock <= 0')
             ->orderBy('name')
             ->get();
 
@@ -37,13 +37,14 @@ class PosController extends Controller
             ->where('is_active', true)
             ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->get()
-            ->filter(function ($pack) {
-                $pack->is_available = true;
-                foreach ($pack->packItems as $item) {
-                    if (!$item->product->is_active || $item->product->stock < $item->quantity) {
-                        return false;
-                    }
-                }
+            ->filter(fn ($pack) => $pack->packItems->every(
+                fn ($item) => $item->product?->is_active
+            ))
+            ->map(function ($pack) {
+                $pack->is_available = $pack->packItems->every(
+                    fn ($item) => $item->product->stock >= $item->quantity
+                );
+
                 return $pack;
             })
             ->values();
