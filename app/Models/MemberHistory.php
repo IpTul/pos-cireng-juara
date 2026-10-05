@@ -9,7 +9,7 @@ class MemberHistory extends Model
 {
     protected $fillable = [
         'member_id', 'member_name', 'member_phone',
-        'user_id', 'operator_name', 'action',
+        'user_id', 'operator_name', 'cabang_id', 'cabang_name', 'action',
     ];
 
     public function user(): BelongsTo

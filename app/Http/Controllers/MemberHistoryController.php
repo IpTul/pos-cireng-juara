@@ -21,7 +21,8 @@ class MemberHistoryController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('member_name', 'like', "%{$search}%")
                         ->orWhere('member_phone', 'like', "%{$search}%")
-                        ->orWhere('operator_name', 'like', "%{$search}%");
+                        ->orWhere('operator_name', 'like', "%{$search}%")
+                        ->orWhere('cabang_name', 'like', "%{$search}%");
                 });
             })
             ->latest()

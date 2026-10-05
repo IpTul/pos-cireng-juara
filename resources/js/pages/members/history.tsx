@@ -11,6 +11,7 @@ interface MemberHistoryItem {
   member_phone: string;
   created_at: string;
   operator_name: string | null;
+  cabang_name: string | null;
 }
 
 interface Props {
@@ -42,7 +43,7 @@ export default function MemberHistoryIndex({ histories, search }: Props) {
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Cari nama member, nomor HP, atau penambah..."
+            placeholder="Cari nama member, nomor HP, penambah, atau cabang..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
@@ -56,13 +57,14 @@ export default function MemberHistoryIndex({ histories, search }: Props) {
                 <th className="px-4 py-3 text-left">Member Baru</th>
                 <th className="px-4 py-3 text-left">Nomor HP</th>
                 <th className="px-4 py-3 text-left">Ditambahkan Oleh</th>
+                <th className="px-4 py-3 text-left">Cabang</th>
               </tr>
             </thead>
             <tbody>
               {histories.data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     {search ? 'Riwayat tidak ditemukan.' : 'Belum ada riwayat.'}
@@ -82,6 +84,7 @@ export default function MemberHistoryIndex({ histories, search }: Props) {
                       {h.member_phone}
                     </td>
                     <td className="px-4 py-3">{h.operator_name ?? '-'}</td>
+                    <td className="px-4 py-3">{h.cabang_name ?? '-'}</td>
                   </tr>
                 ))
               )}
