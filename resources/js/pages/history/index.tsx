@@ -13,6 +13,8 @@ import {
   FileSpreadsheet,
   User,
   Award,
+  MoreHorizontal,
+  Trash,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -264,155 +266,157 @@ export default function History({ saleItems, user, can, filters }: Props) {
         </div>
 
         <div className="rounded-lg border">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Product</th>
-                <th className="px-4 py-3 text-left">Customer</th>
-                <th className="px-4 py-3 text-left">Operator</th>
-                <th className="px-4 py-3 text-left">Total</th>
-                <th className="px-4 py-3 text-center">Payment</th>
-                <th className="px-4 py-3 text-center">Cash Tendered</th>
-                <th className="px-4 py-3 text-center">Change</th>
-                <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-center print:hidden">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {saleItems.data.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b bg-muted/50">
                 <tr>
-                  <td
-                    colSpan={10}
-                    className="px-4 py-8 text-center text-muted-foreground"
-                  >
-                    No sale history found.
-                  </td>
+                  <th className="px-4 py-3 text-left">Date</th>
+                  <th className="px-4 py-3 text-left">Product</th>
+                  <th className="px-4 py-3 text-left">Customer</th>
+                  <th className="px-4 py-3 text-left">Operator</th>
+                  <th className="px-4 py-3 text-left">Total</th>
+                  <th className="px-4 py-3 text-center">Payment</th>
+                  <th className="px-4 py-3 text-center hidden lg:table-cell">Cash Tendered</th>
+                  <th className="px-4 py-3 text-center hidden lg:table-cell">Change</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center print:hidden">Action</th>
                 </tr>
-              ) : (
-                saleItems.data.map((sale) => {
-                  const isPack = !!sale.pack;
-                  const isFree = sale.is_free;
-                  const itemName = isPack
-                    ? sale.pack?.name
-                    : sale.product?.name;
-                  const cabangName = isPack
-                    ? 'Paket'
-                    : sale.product?.cabang?.name;
-                  const badgeIcon = isPack ? (
-                    <Package className="mr-1 h-3 w-3" />
-                  ) : null;
+              </thead>
+              <tbody>
+                {saleItems.data.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={10}
+                      className="px-4 py-8 text-center text-muted-foreground"
+                    >
+                      No sale history found.
+                    </td>
+                  </tr>
+                ) : (
+                  saleItems.data.map((sale) => {
+                    const isPack = !!sale.pack;
+                    const isFree = sale.is_free;
+                    const itemName = isPack
+                      ? sale.pack?.name
+                      : sale.product?.name;
+                    const cabangName = isPack
+                      ? 'Paket'
+                      : sale.product?.cabang?.name;
+                    const badgeIcon = isPack ? (
+                      <Package className="mr-1 h-3 w-3" />
+                    ) : null;
 
-                  const hasFreeItems =
-                    sale.free_items && sale.free_items.length > 0;
-                  const freeItemsDisplay = hasFreeItems ? (
-                    <span className="ml-2 text-xs text-green-600">
-                      {' '}
-                      + Gratis:{' '}
-                      {sale.free_items
-                        .map((f) => `${f.name} x${f.quantity}`)
-                        .join(', ')}
-                    </span>
-                  ) : null;
+                    const hasFreeItems =
+                      sale.free_items && sale.free_items.length > 0;
+                    const freeItemsDisplay = hasFreeItems ? (
+                      <span className="ml-2 text-xs text-green-600">
+                        {' '}
+                        + Gratis:{' '}
+                        {sale.free_items
+                          .map((f) => `${f.name} x${f.quantity}`)
+                          .join(', ')}
+                      </span>
+                    ) : null;
 
-                  return (
-                    <tr key={sale.id}>
-                      <td className="px-4 py-3">
-                        {new Date(sale.sale.created_at).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-left font-medium">
-                        {badgeIcon}
-                        {cabangName} - {itemName}
-                        {freeItemsDisplay}
-                        {isFree && (
+                    return (
+                      <tr key={sale.id}>
+                        <td className="px-4 py-3">
+                          {new Date(sale.sale.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-left font-medium">
+                          {badgeIcon}
+                          {cabangName} - {itemName}
+                          {freeItemsDisplay}
+                          {isFree && (
+                            <Badge
+                              variant="default"
+                              className="ml-2 bg-green-600 text-xs"
+                            >
+                              Gratis
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {sale.sale.customer_name || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {sale.sale.operator_name || sale.sale.user.name}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {formatRupiah(sale.sale.total)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {sale.sale.payment_method === 'qris' ? (
+                            <span className="flex items-center justify-center gap-1 text-primary">
+                              <QrCode className="h-3 w-3" />
+                              QRIS
+                            </span>
+                          ) : sale.sale.payment_method === 'grab' ? (
+                            <span className="flex items-center justify-center gap-1 text-green-700">
+                              <Bike className="h-3 w-3" />
+                              Grab
+                            </span>
+                          ) : sale.sale.payment_method === 'gofood' ? (
+                            <span className="flex items-center justify-center gap-1 text-green-700">
+                              <Bike className="h-3 w-3" />
+                              GoFood
+                            </span>
+                          ) : (
+                            <span className="flex items-center justify-center gap-1 text-green-600">
+                              Tunai
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center hidden lg:table-cell">
+                          {sale.sale.payment_method === 'qris' ||
+                          sale.sale.payment_method === 'grab' ||
+                          sale.sale.payment_method === 'gofood'
+                            ? formatRupiah(sale.sale.total)
+                            : formatRupiah(sale.sale.cash_tendered)}
+                        </td>
+                        <td className="px-4 py-3 text-center hidden lg:table-cell">
+                          {sale.sale.payment_method === 'qris' ||
+                          sale.sale.payment_method === 'grab' ||
+                          sale.sale.payment_method === 'gofood'
+                            ? 'Rp0'
+                            : formatRupiah(sale.sale.change_amount)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
                           <Badge
-                            variant="default"
-                            className="ml-2 bg-green-600 text-xs"
+                            variant={
+                              sale.sale.status === 'completed'
+                                ? 'default'
+                                : sale.sale.status === 'pending'
+                                  ? 'secondary'
+                                  : 'destructive'
+                            }
                           >
-                            Gratis
+                            {sale.sale.status}
                           </Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {sale.sale.customer_name || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {sale.sale.operator_name || sale.sale.user.name}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {formatRupiah(sale.sale.total)}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {sale.sale.payment_method === 'qris' ? (
-                          <span className="flex items-center justify-center gap-1 text-primary">
-                            <QrCode className="h-3 w-3" />
-                            QRIS
-                          </span>
-                        ) : sale.sale.payment_method === 'grab' ? (
-                          <span className="flex items-center justify-center gap-1 text-green-700">
-                            <Bike className="h-3 w-3" />
-                            Grab
-                          </span>
-                        ) : sale.sale.payment_method === 'gofood' ? (
-                          <span className="flex items-center justify-center gap-1 text-green-700">
-                            <Bike className="h-3 w-3" />
-                            GoFood
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center gap-1 text-green-600">
-                            Tunai
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {sale.sale.payment_method === 'qris' ||
-                        sale.sale.payment_method === 'grab' ||
-                        sale.sale.payment_method === 'gofood'
-                          ? formatRupiah(sale.sale.total)
-                          : formatRupiah(sale.sale.cash_tendered)}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {sale.sale.payment_method === 'qris' ||
-                        sale.sale.payment_method === 'grab' ||
-                        sale.sale.payment_method === 'gofood'
-                          ? 'Rp0'
-                          : formatRupiah(sale.sale.change_amount)}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Badge
-                          variant={
-                            sale.sale.status === 'completed'
-                              ? 'default'
-                              : sale.sale.status === 'pending'
-                                ? 'secondary'
-                                : 'destructive'
-                          }
-                        >
-                          {sale.sale.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right print:hidden">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewDetail(sale)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handlePrint(sale)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                        </td>
+                        <td className="px-4 py-3 text-right print:hidden">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewDetail(sale)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePrint(sale)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {saleItems.data.length > 0 && (
             <div className="flex items-center justify-between border-t px-4 py-3 print:hidden">
