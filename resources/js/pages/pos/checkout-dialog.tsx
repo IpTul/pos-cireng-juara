@@ -268,7 +268,7 @@ export default function CheckoutDialog({
         <DialogHeader>
           <DialogTitle>Proses Transaksi</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="max-h-[80vh] overflow-y-auto space-y-4">
           <div className="space-y-1 rounded-lg bg-muted p-4">
             {items.map((i, index) => (
               <div key={index} className="flex justify-between text-sm">

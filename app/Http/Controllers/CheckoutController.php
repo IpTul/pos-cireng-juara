@@ -67,12 +67,6 @@ class CheckoutController extends Controller
                 }
             }
 
-            if (! empty($validated['member_id'])) {
-                $member = Member::find($validated['member_id']);
-                if ($member && $member->cabang_id !== $ownCabangId) {
-                    abort(403, 'Member ini bukan milik cabang kamu.');
-                }
-            }
         }
         
         $saleId = DB::transaction(function() use ($validated, $request){

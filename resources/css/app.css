@@ -150,10 +150,76 @@
     background: white;
   }
 
-  .receipt {
-    box-shadow: none;
-    border: none;
+  /* Struk thermal 58mm: hanya aktif di Android */
+  html.android-receipt .receipt-paper {
+    width: 100%;
     max-width: 100%;
-    padding: 0;
+    margin: 0;
+    padding: 3mm 2mm 20mm;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #000;
+  }
+
+  /* Judul */
+  html.android-receipt .receipt-paper p.text-xl {
+    font-size: 24px;
+  }
+
+  /* Tanggal, nomor struk, Operator, Customer, keterangan "5 × Rp2.000" */
+  html.android-receipt .receipt-paper .text-xs {
+    font-size: 15px;
+  }
+
+  html.android-receipt .receipt-paper .receipt-body {
+    margin-top: 30px;
+  }
+
+  /* Nama produk, Metode, Dibayar */
+  html.android-receipt .receipt-paper .text-sm {
+    font-size: 17px;
+  }
+
+  /* Baris TOTAL */
+  html.android-receipt .receipt-paper .text-base {
+    margin-top: 10px;
+    font-size: 20px;
+  }
+
+  /* Thermal hanya hitam-putih: abu-abu jadi pucat */
+  html.android-receipt .receipt-paper .text-muted-foreground {
+    color: #000;
+  }
+
+  html.android-receipt .receipt-paper .border-t {
+    border-color: #000;
+  }
+
+  /* Nama produk panjang turun ke baris berikutnya, tidak dipotong "..." */
+  html.android-receipt .receipt-paper .truncate {
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
+  /* Jarak antar bagian */
+  html.android-receipt .receipt-paper .pt-3 {
+    padding-top: 15px;
+    padding-bottom: 12px;
+  }
+
+  /* Footer (ucapan terima kasih, IG, WA) */
+  html.android-receipt .receipt-paper .mt-6 {
+    font-size: 15px;
+  }
+
+  html.android-receipt .receipt-paper .mb-3,
+  html.android-receipt .receipt-paper .mb-4 {
+    margin-bottom: 6px;
+  }
+
+  .print-feed {
+    margin-top: 20px;
+    /* border: 1px solid black; */
   }
 }
