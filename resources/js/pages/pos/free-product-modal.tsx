@@ -97,42 +97,47 @@ export default function FreeProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-lg">
-        <DialogHeader className="flex flex-col items-start gap-1">
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-3 overflow-hidden [@media(max-height:500px)]:max-h-[96dvh] [@media(max-height:500px)]:gap-2 [@media(max-height:500px)]:p-3">
+        <DialogHeader className="flex shrink-0 flex-col items-start gap-1">
           <DialogTitle className="text-lg">Pilih Produk Gratis</DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground [@media(max-height:500px)]:hidden">
             {itemName} - Dapat {maxFreeQuantity} gratis (Beli 10 Gratis 1)
           </p>
         </DialogHeader>
-        <div className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Cari produk..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
 
-          {/* Selected summary */}
-          <div className="flex items-center justify-between rounded-lg bg-muted p-3">
-            <span className="text-sm text-muted-foreground">
-              Sudah dipilih:
-            </span>
-            <div className="flex items-center gap-4">
-              <Badge variant="outline" className="text-base">
-                {totalSelected} / {maxFreeQuantity}
-              </Badge>
-              <Badge variant={remaining === 0 ? 'default' : 'secondary'}>
-                Sisa: {remaining}
-              </Badge>
+        {/* Isi tengah: baris atas (cari + ringkasan), lalu daftar produk */}
+        <div className="flex min-h-0 flex-1 flex-col gap-3 [@media(max-height:500px)]:gap-2">
+          {/* Baris atas: bertumpuk di layar normal, sejajar di layar pendek */}
+          <div className="flex shrink-0 flex-col gap-3 [@media(max-height:500px)]:flex-row [@media(max-height:500px)]:items-center [@media(max-height:500px)]:gap-2">
+            {/* Search */}
+            <div className="relative [@media(max-height:500px)]:flex-1">
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Cari produk..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            {/* Selected summary */}
+            <div className="flex shrink-0 items-center justify-between rounded-lg bg-muted p-3 [@media(max-height:500px)]:gap-3 [@media(max-height:500px)]:py-1">
+              <span className="text-sm text-muted-foreground [@media(max-height:500px)]:hidden">
+                Sudah dipilih:
+              </span>
+              <div className="flex items-center gap-4">
+                <Badge variant="outline" className="text-base">
+                  {totalSelected} / {maxFreeQuantity}
+                </Badge>
+                <Badge variant={remaining === 0 ? 'default' : 'secondary'}>
+                  Sisa: {remaining}
+                </Badge>
+              </div>
             </div>
           </div>
 
           {/* Product list */}
-          <div className="max-h-96 space-y-2 overflow-y-auto">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
             {filteredProducts.length === 0 ? (
               <p className="py-8 text-center text-muted-foreground">
                 Tidak ada produk tersedia
@@ -149,7 +154,7 @@ export default function FreeProductModal({
                 return (
                   <div
                     key={product.id}
-                    className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                    className={`flex items-center gap-3 rounded-lg border p-3 transition-colors [@media(max-height:500px)]:p-2 ${
                       isSelected
                         ? 'border-primary bg-primary/5'
                         : 'hover:bg-muted/50'
@@ -159,23 +164,23 @@ export default function FreeProductModal({
                       <img
                         src={`/storage/${product.image}`}
                         alt={product.name}
-                        className="h-12 w-12 rounded object-cover"
+                        className="h-12 w-12 rounded object-cover [@media(max-height:500px)]:h-9 [@media(max-height:500px)]:w-9"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded bg-muted text-xl">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-muted text-xl [@media(max-height:500px)]:h-9 [@media(max-height:500px)]:w-9">
                         {product.name.charAt(0)}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground [@media(max-height:500px)]:text-xs">
                         {product.cabang?.name || ''} • Stok: {product.stock}
                       </p>
                       <p className="text-sm font-bold text-primary">
                         {formatRupiah(product.price)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <Button
                         variant="outline"
                         size="icon"
@@ -209,12 +214,13 @@ export default function FreeProductModal({
           </div>
 
           {remaining > 0 && (
-            <p className="text-center text-sm text-amber-600">
+            <p className="shrink-0 text-center text-sm text-amber-600 [@media(max-height:500px)]:hidden">
               Pilih {remaining} produk gratis lagi
             </p>
           )}
         </div>
-        <DialogFooter>
+
+        <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={onClose}>
             Batal
           </Button>

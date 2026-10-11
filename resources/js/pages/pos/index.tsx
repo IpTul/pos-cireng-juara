@@ -75,9 +75,10 @@ export default function PosIndex({ products, packs, addons }: Props) {
   return (
     <>
       <Head title="Jual" />
-      <div className="flex h-screen flex-col bg-background">
+      {/* h-dvh (bukan h-screen) supaya tidak tertutup toolbar Safari iOS */}
+      <div className="flex h-dvh flex-col bg-background">
         {/* Top Bar */}
-        <div className="flex items-center gap-4 border-b px-4 py-3">
+        <div className="flex items-center gap-4 border-b px-4 py-3 [@media(max-height:500px)]:gap-2 [@media(max-height:500px)]:py-1.5">
           <Link
             href="/dashboard"
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
@@ -126,7 +127,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
         </div>
 
         {/* Main area - Mobile: tampilkan satu panel sesuai tab aktif */}
-        <div className="flex flex-1 overflow-hidden md:hidden">
+        <div className="flex min-h-0 flex-1 overflow-hidden md:hidden">
           {mobileTab === 'produk' ? (
             <ProductGrid
               products={filteredProducts}
@@ -157,7 +158,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
         </div>
 
         {/* Main area - Desktop: ProductGrid dan CartPanel berdampingan */}
-        <div className="hidden flex-1 overflow-hidden md:flex">
+        <div className="hidden min-h-0 flex-1 overflow-hidden md:flex">
           <ProductGrid
             products={filteredProducts}
             packs={packs}

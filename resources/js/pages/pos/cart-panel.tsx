@@ -141,8 +141,8 @@ export default function CartPanel({
 
   return (
     <>
-      <div className="flex w-full flex-col bg-card md:w-80 md:border-l">
-        <div className="flex items-center justify-between border-b px-4 py-3">
+      <div className="flex h-full min-h-0 w-full flex-col bg-card md:w-80 md:shrink-0 md:border-l [@media(max-height:500px)]:md:w-96">
+        <div className="flex items-center justify-between border-b px-4 py-3 [@media(max-height:500px)]:py-1.5">
           <h2 className="font-semibold">Keranjang</h2>
           {items.length > 0 && (
             <button
@@ -153,14 +153,17 @@ export default function CartPanel({
             </button>
           )}
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 [@media(max-height:500px)]:p-2">
           {items.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Belum ada item.
             </p>
           ) : (
             items.map((item, index) => (
-              <div key={index} className="flex flex-col gap-2">
+              <div
+                key={index}
+                className="flex flex-col gap-2 [@media(max-height:500px)]:gap-1"
+              >
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
@@ -266,7 +269,7 @@ export default function CartPanel({
                         onSetPackQuantity(item.pack.id, qty);
                       }
                     }}
-                    className="w-16 text-center"
+                    className="w-16 text-center [@media(max-height:500px)]:h-8"
                   />
                   <span className="w-16 text-center text-xs text-muted-foreground">
                     Total: {item.totalQuantity ?? item.quantity}
@@ -343,27 +346,27 @@ export default function CartPanel({
             </div>
           )}
         </div>
-        <div className="space-y-3 border-t p-4">
-          <div className="flex justify-between text-sm text-muted-foreground">
+        <div className="shrink-0 space-y-3 border-t p-4 [@media(max-height:500px)]:space-y-1 [@media(max-height:500px)]:p-2">
+          <div className="flex justify-between text-sm text-muted-foreground [@media(max-height:500px)]:hidden">
             <span>Item dibayar</span>
             <span>{items.reduce((sum, i) => sum + i.quantity, 0)}</span>
           </div>
-          <div className="flex justify-between text-sm text-green-600">
+          <div className="flex justify-between text-sm text-green-600 [@media(max-height:500px)]:hidden">
             <span>Gratis (Beli 10 Gratis 1)</span>
             <span>
               {items.reduce((sum, i) => sum + (i.freeQuantity || 0), 0)}
             </span>
           </div>
-          <div className="flex justify-between text-lg font-bold">
+          <div className="flex justify-between text-lg font-bold [@media(max-height:500px)]:text-sm">
             <span>Total Item</span>
             <span>{totalItems}</span>
           </div>
-          <div className="flex justify-between text-lg font-bold">
+          <div className="flex justify-between text-lg font-bold [@media(max-height:500px)]:text-sm">
             <span>Total Bayar</span>
             <span>{formatRupiah(subtotal)}</span>
           </div>
           <Button
-            className="w-full"
+            className="w-full [@media(max-height:500px)]:h-8"
             size="lg"
             disabled={items.length === 0}
             onClick={onCheckout}

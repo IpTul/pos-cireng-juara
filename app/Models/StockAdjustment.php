@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['product_id', 'user_id', 'type', 'quantity', 'reason', 'previous_stock', 'new_stock'])]
+#[Fillable(['product_id', 'user_id', 'operator_name', 'type', 'quantity', 'reason', 'previous_stock', 'new_stock'])]
 class StockAdjustment extends Model
 {
     protected $table = 'stock_adjustments';

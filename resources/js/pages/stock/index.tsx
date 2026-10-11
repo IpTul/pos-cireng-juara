@@ -19,18 +19,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableCaption,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/ui/pagination';
-import { Separator } from '@/components/ui/separator';
+// import { Pagination } from '@/components/ui/pagination'; // aktifkan lagi kalau blok pagination di bawah dibuka
 
 interface Product {
   id: number;
@@ -42,7 +32,9 @@ interface Product {
 interface Adjustment {
   id: number;
   product: Product;
-  user: { name: string; operator_name: string };
+  // snapshot nama operator saat perubahan stok dibuat (tidak ikut berubah)
+  operator_name: string | null;
+  user: { name: string; operator_name: string } | null;
   type: 'increase' | 'decrease';
   quantity: number;
   reason: string | null;
@@ -65,7 +57,7 @@ interface Props {
   user: {
     id: number;
     name: string;
-    opeartor_name: string;
+    operator_name: string;
     email: string;
     role: 'owner' | 'kasir';
   };
@@ -154,7 +146,7 @@ export default function StockIndex({
   return (
     <>
       <Head title="Stok Cireng" />
-      <div className="p-6">
+      <div className="p-3 md:p-6">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Stok Cireng</h1>
           <Button onClick={() => setModalOpen(true)}>
@@ -273,8 +265,8 @@ export default function StockIndex({
           </DialogContent>
         </Dialog>
 
-        <div className="rounded-lg border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[900px] text-sm">
             <caption>
               Riwayat perubahan stok ({adjustments.total} total)
             </caption>
@@ -292,11 +284,11 @@ export default function StockIndex({
                 <th className="px-4 py-3 text-center">Waktu</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="whitespace-nowrap">
               {adjustments.data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={8}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     Belum ada riwayat perubahan stok.
@@ -318,8 +310,8 @@ export default function StockIndex({
                       {getTypeBadge(adj.type)}
                     </td>
                     <td className="px-4 py-3 text-center">{adj.quantity}</td>
-                    <td className="py-3 pl-30">
-                      <div className="flex items-center gap-1 text-sm">
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1 text-sm">
                         <span className="text-muted-foreground">
                           {adj.previous_stock}
                         </span>
@@ -329,9 +321,10 @@ export default function StockIndex({
                     </td>
                     <td className="px-4 py-3 text-left">{adj.reason || '-'}</td>
                     <td className="px-4 py-3 text-center">
-                      {adj.user
-                        ? (adj.user.operator_name ?? adj.user.name)
-                        : 'User dihapus'}
+                      {adj.operator_name ??
+                        adj.user?.operator_name ??
+                        adj.user?.name ??
+                        'User dihapus'}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {formatDate(adj.created_at)}

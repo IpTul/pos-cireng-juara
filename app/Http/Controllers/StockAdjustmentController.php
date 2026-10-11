@@ -87,6 +87,7 @@ class StockAdjustmentController extends Controller
         StockAdjustment::create([
             'product_id' => $product->id,
             'user_id' => auth()->id(),
+            'operator_name' => $request->user()->operator_name ?? $request->user()->name,
             'type' => $validated['type'],
             'quantity' => $validated['quantity'],
             'reason' => $validated['reason'],

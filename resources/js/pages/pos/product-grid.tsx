@@ -25,7 +25,7 @@ export default function ProductGrid({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+    <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-4">
       {products.length > 0 && (
         <div className="mb-4">
           <h3 className="mb-2 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase sm:px-2 sm:text-sm">
@@ -47,10 +47,10 @@ export default function ProductGrid({
                   <img
                     src={`/storage/${product.image}`}
                     alt={product.name}
-                    className="aspect-square w-full object-cover"
+                    className="aspect-square w-full object-cover [@media(max-height:500px)]:aspect-[3/2]"
                   />
                 ) : (
-                  <div className="flex aspect-square w-full items-center justify-center bg-muted text-2xl text-muted-foreground sm:text-3xl">
+                  <div className="flex aspect-square w-full items-center justify-center bg-muted text-2xl text-muted-foreground sm:text-3xl [@media(max-height:500px)]:aspect-[3/2]">
                     {product.name.charAt(0)}
                   </div>
                 )}
@@ -100,10 +100,10 @@ export default function ProductGrid({
                     <img
                       src={`/storage/${pack.image}`}
                       alt={pack.name}
-                      className="aspect-square w-full object-cover"
+                      className="aspect-square w-full object-cover [@media(max-height:500px)]:aspect-[3/2]"
                     />
                   ) : (
-                    <div className="flex aspect-square w-full items-center justify-center bg-primary/10 text-primary">
+                    <div className="flex aspect-square w-full items-center justify-center bg-primary/10 text-primary [@media(max-height:500px)]:aspect-[3/2]">
                       <Package className="h-8 w-8 sm:h-10 sm:w-10" />
                     </div>
                   )}
