@@ -26,9 +26,15 @@ interface Props {
   packs: Pack[];
   products: Product[];
   cabangs?: Cabang[];
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: 'owner' | 'kasir';
+  };
 }
 
-export default function PackIndex({ packs, products, cabangs }: Props) {
+export default function PackIndex({ packs, products, cabangs, user }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Pack | null>(null);
   const [formData, setFormData] = useState({
@@ -150,16 +156,18 @@ export default function PackIndex({ packs, products, cabangs }: Props) {
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Kelola Paket Makanan</h1>
-          <Button
-            onClick={() => {
-              resetForm();
-              setEditing(null);
-              setShowForm(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Tambah Paket
-          </Button>
+          {user.role === 'owner' && (
+            <Button
+              onClick={() => {
+                resetForm();
+                setEditing(null);
+                setShowForm(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Tambah Paket
+            </Button>
+          )}
         </div>
 
         {/* Paket List */}

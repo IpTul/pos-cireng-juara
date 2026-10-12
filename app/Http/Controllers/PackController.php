@@ -25,7 +25,7 @@ class PackController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $activeCabangId = $this->user->activeCabangId();
 
@@ -45,7 +45,13 @@ class PackController extends Controller
             'products' => $products,
             'can' => [
                 'create' => Auth::user()->can('create', Pack::class),
-            ]
+            ],
+            'user' => [
+                'id'    => $request->user()->id,
+                'name'  => $request->user()->name,
+                'email' => $request->user()->email,
+                'role'  => $request->user()->role,
+            ],
         ]);
     }
 
