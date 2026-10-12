@@ -27,6 +27,14 @@ function loadCartFromStorage(): CartState {
   return { items: [], addons: [] };
 }
 
+function clearCartStorage() {
+  try {
+    localStorage.removeItem(CART_STORAGE_KEY);
+  } catch (e) {
+    console.error('Failed to clear cart from localStorage', e);
+  }
+}
+
 function saveCartToStorage(state: CartState) {
   try {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state));
@@ -483,6 +491,9 @@ export function useCart() {
     addAddon,
     removeAddon,
     setAddonQuantity,
-    clear: () => dispatch({ type: 'CLEAR' }),
+    clear: () => {
+      dispatch({ type: 'CLEAR' });
+      clearCartStorage();
+    },
   };
 }

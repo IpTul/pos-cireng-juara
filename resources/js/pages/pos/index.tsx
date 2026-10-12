@@ -72,6 +72,13 @@ export default function PosIndex({ products, packs, addons }: Props) {
     setPackVariantModal({ open: false, pack: null });
   }
 
+  function handleCheckoutSuccess() {
+    clear();
+    setShowCheckout(false);
+    setSearch('');
+    setMobileTab('produk');
+  }
+
   return (
     <>
       <Head title="Jual" />
@@ -191,7 +198,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
         cartAddons={cartAddons}
         subtotal={subtotal}
         totalItems={totalItems}
-        onSuccess={clear}
+        onSuccess={handleCheckoutSuccess}
         onClose={() => setShowCheckout(false)}
       />
       {/* FIX: hanya render modal kalau pack sudah terisi (bukan null) */}

@@ -251,7 +251,12 @@ export default function CheckoutDialog({
           setIsQris(false);
           setIsGrab(false);
           setIsGoFood(false);
+          setSelectedMember(null);
+          setMemberSearch('');
+          setMemberResults([]);
+          setError(null);
           onSuccess();
+          onClose();
         },
         onError: (errors) => {
           setProcessing(false);
@@ -268,7 +273,7 @@ export default function CheckoutDialog({
         <DialogHeader>
           <DialogTitle>Proses Transaksi</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[80vh] overflow-y-auto space-y-4">
+        <div className="max-h-[80vh] space-y-4 overflow-y-auto">
           <div className="space-y-1 rounded-lg bg-muted p-4">
             {items.map((i, index) => (
               <div key={index} className="flex justify-between text-sm">
