@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Cabang, Product } from '@/types';
+import { Cabang, Product, PaginatedData } from '@/types';
 import { toast } from 'sonner';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import ProductForm from './product-form';
 import { Label } from '@/components/ui/label';
 
 interface Props {
-  products: Product[];
+  products: PaginatedData<Product>;
   cabangs: Cabang[];
   user: {
     id: number;
@@ -151,7 +151,7 @@ export default function ProductIndex({ products, cabangs, user }: Props) {
               </tr>
             </thead>
             <tbody>
-              {products.length === 0 && (
+              {products.data.length === 0 && (
                 <tr>
                   <td
                     colSpan={6}
@@ -161,7 +161,7 @@ export default function ProductIndex({ products, cabangs, user }: Props) {
                   </td>
                 </tr>
               )}
-              {products.map((product) => (
+              {products.data.map((product) => (
                 <tr
                   key={product.id}
                   className="border-b last:border-0 hover:bg-muted/25"
@@ -211,6 +211,38 @@ export default function ProductIndex({ products, cabangs, user }: Props) {
             </tbody>
           </table>
         </div>
+
+        {products.total > 0 && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Menampilkan {products.from}–{products.to} dari {products.total}{' '}
+              produk
+            </p>
+            {products.last_page > 1 && (
+              <div className="flex gap-1">
+                {products.links.map((link, i) => (
+                  <Button
+                    key={i}
+                    type="button"
+                    size="sm"
+                    variant={link.active ? 'default' : 'outline'}
+                    disabled={!link.url}
+                    onClick={() =>
+                      link.url &&
+                      router.get(
+                        link.url,
+                        {},
+                        { preserveState: true, preserveScroll: true },
+                      )
+                    }
+                    dangerouslySetInnerHTML={{ __html: link.label }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {ShowForm && (
           <ProductForm
             cabangs={cabangs}

@@ -31,8 +31,9 @@ class ProductController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $user = $request->user();
         $query = Product::with('cabang');
 
         $activeCabangId = $this->user->activeCabangId();
@@ -54,7 +55,7 @@ class ProductController extends Controller
             $query->orderBy('stock', 'asc');
         }
 
-        $products = $query->get();
+        $products = $query->paginate(8)->withQueryString();
 
         $cabangs = Cabang::orderBy('name')
         ->get();
@@ -63,10 +64,10 @@ class ProductController extends Controller
             'products' => $products,
             'cabangs' => $cabangs,
             'user' => [
-                'id' => $this->user->id,
-                'name' => $this->user->name,
-                'email' => $this->user->email,
-                'role' => $this->user->role,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
             ],
             'filters' => [
                 'cabang_id' => request()->input('cabang_id'),
