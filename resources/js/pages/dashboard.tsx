@@ -112,8 +112,8 @@ export default function Dashboard({
             <StatCard
               key={key}
               title={`${label} Hari Ini`}
-              value={`Rp ${stats.payment_breakdown[key].total.toLocaleString('id-ID')}`}
-              subtitle={`${stats.payment_breakdown[key].count} transaksi`}
+              value={`Rp ${(stats.payment_breakdown?.[key]?.total ?? 0).toLocaleString('id-ID')}`}
+              subtitle={`${stats.payment_breakdown?.[key]?.count ?? 0} transaksi`}
             />
           ))}
         </div>

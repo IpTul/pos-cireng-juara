@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SalesItem;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,58 +18,58 @@ class DashboardController extends Controller
     {
         $this->user = auth()->user();
 
+        // Optionally, restrict to owner or kasir (duplicate of route middleware)
         if (! $this->user?->inRole(['owner', 'kasir'])) {
             abort(403, 'Akses ditolak.');
         }
     }
     
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $user = $request->user();
+        abort_unless($user?->inRole(['owner', 'kasir']), 403, 'Akses ditolak.');
         $today = today();
         $activeCabangId = $this->user->activeCabangId();
 
-        $todaySales = Sale::whereDate('created_at', $today)
-            ->where('status', 'completed')
-            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+        $todaySales = Sale::whereDate('created_at',$today)
+            ->where('status','completed')
             ->get();
 
-        $paymentBreakdown = collect(['cash', 'qris', 'grab', 'gofood'])
-            ->mapWithKeys(function ($method) use ($todaySales) {
-                $sales = $todaySales->where('payment_method', $method);
+        $paymentBreakdown = [];
+        foreach (['cash', 'qris', 'grab', 'gofood'] as $method) {
+            $bySale = $todaySales->where('payment_method', $method);
+            $paymentBreakdown[$method] = [
+                'total' => (float) $bySale->sum('total'),
+                'count' => $bySale->count(),
+            ];
+        }
 
-                return [$method => [
-                    'total' => (float) $sales->sum('total'),
-                    'count' => $sales->count(),
-                ]];
-            });
-
+        // top product
         $topProduct = SalesItem::select(
             'product_name',
             DB::raw('SUM(quantity) as total_qty'),
             DB::raw('SUM(subtotal) as total_revenue')
         )
-        ->whereHas('sale', fn ($q) => $q->whereDate('created_at', $today)
-            ->where('status', 'completed')
-            ->when($activeCabangId, fn ($q2) => $q2->where('cabang_id', $activeCabangId)))
+        ->whereHas('sale', fn($q) => $q->whereDate('created_at',$today)->where('status','completed'))
         ->groupBy('product_name')
         ->orderByDesc('total_qty')
         ->limit(5)
         ->get()
-        ->map(fn ($p) => [
+        ->map(fn($p) => [
             'product_name'  => $p->product_name,
             'total_qty'     => (int) $p->total_qty,
             'total_revenue' => (float) $p->total_revenue,
         ]);
 
+        // recent sales (paginated)
         $recentSales = Sale::with(['items.product.cabang', 'items.pack'])
-            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->latest()
             ->paginate(5)
-            ->through(fn ($sale) => [
+            ->through(fn($sale) => [
                 'id'         => $sale->id,
                 'total'      => (float) $sale->total,
                 'created_at' => $sale->created_at,
-                'items'      => $sale->items->map(fn ($item) => [
+                'items'      => $sale->items->map(fn($item) => [
                     'id'            => $item->id,
                     'product_name'  => $item->product_name,
                     'unit_price'    => $item->unit_price,
@@ -79,16 +80,18 @@ class DashboardController extends Controller
                 ]),
             ]);
 
-        $productQuery = fn () => Product::query()
-            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId));
-
-        return Inertia::render('dashboard', [
+        return Inertia::render('dashboard',[
             'stats' => [
-                'today_revenue'      => (float) $todaySales->sum('total'),
-                'today_transactions' => $todaySales->count(),
-                'total_products'     => $productQuery()->where('is_active', true)->count(),
-                'low_stock_count'    => $productQuery()->where('stock', '<=', 5)->where('stock', '>', 0)->count(),
-                'payment_breakdown'  => $paymentBreakdown,
+                    'today_revenue'      => (float) $todaySales->sum('total'),
+                    'today_transactions' => $todaySales->count(),
+                    'payment_breakdown'  => $paymentBreakdown,
+                    'total_products' => Product::where('is_active', true)
+                        ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+                        ->count(),
+                    'low_stock_count' => Product::where('is_active', true)
+                        ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+                        ->where('stock', '<=', 5)
+                        ->count(),
             ],
             'top_products' => $topProduct,
             'recent_sales' => $recentSales,
@@ -97,7 +100,6 @@ class DashboardController extends Controller
                 'name'  => $this->user->name,
                 'email' => $this->user->email,
                 'role'  => $this->user->role,
-                'operator_name' => $this->user->operator_name,
             ],
         ]);
     }
