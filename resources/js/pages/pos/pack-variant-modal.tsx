@@ -94,7 +94,7 @@ export default function PackVariantModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-lg">
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-4 overflow-hidden">
         <DialogHeader className="flex flex-col items-start gap-1">
           <DialogTitle className="text-lg">
             Pilih Varian Paket: {pack.name}
@@ -103,7 +103,7 @@ export default function PackVariantModal({
             Pilih maksimal {pack.max_items} item dari produk yang tersedia
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           {/* Search */}
           <div className="relative">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -200,7 +200,7 @@ export default function PackVariantModal({
           )}
 
           {/* Product list */}
-          <div className="max-h-96 space-y-2 overflow-y-auto">
+          <div className="space-y-2">
             {filteredProducts.length === 0 ? (
               <p className="py-8 text-center text-muted-foreground">
                 {search
@@ -286,7 +286,7 @@ export default function PackVariantModal({
             </p>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0">
           <Button variant="outline" onClick={onClose}>
             Batal
           </Button>
