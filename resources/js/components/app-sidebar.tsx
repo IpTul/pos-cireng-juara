@@ -5,7 +5,7 @@ import {
   Tag,
   ShoppingCart,
   History,
-  Store,
+  NotebookText,
   Wallet,
   Users,
   Activity,
@@ -107,6 +107,14 @@ export function AppSidebar() {
     { title: 'Manajemen Pengguna', href: '/users', icon: Users },
   ];
 
+  const otherItems: NavItem[] = [
+    {
+      title: 'SOP',
+      href: '/sop',
+      icon: NotebookText,
+    },
+  ];
+
   // const financeItems: NavItem[] = [
   //   { title: 'Keuangan', href: '/keuangan', icon: Wallet },
   // ];
@@ -157,6 +165,7 @@ export function AppSidebar() {
       <SidebarContent className="gap-2 py-2">
         <SidebarGroup>
           <NavMain items={posItems} />
+          <NavMain items={otherItems} />
         </SidebarGroup>
 
         <SidebarGroup>

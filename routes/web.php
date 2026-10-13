@@ -16,6 +16,7 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\OperatorNameController;
 use App\Http\Controllers\CabangSwitchController;
 use App\Http\Controllers\MemberHistoryController;
+use App\Http\Controllers\SOPController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -30,6 +31,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('pos', [PosController::class, 'index'])
         ->name('pos.index')
+        ->middleware('role:owner,kasir');
+
+    Route::get('sop', [SOPController::class, 'index'])
+        ->name('sop.index')
         ->middleware('role:owner,kasir');
 
     Route::get('/history', [SaleHistoryController::class, 'index'])->name('history.index')->middleware('role:owner,kasir');
