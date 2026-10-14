@@ -115,9 +115,6 @@ class CheckoutController extends Controller
                 $variants = $packItem['variants'] ?? [];
 
                 if (! empty($variants)) {
-<<<<<<< HEAD
-                    if (count($variants) > $pack->max_items) {
-=======
                     $allowedIds = $pack->packItems->pluck('product_id')->all();
                     if (collect($variants)->contains(fn ($v) => ! in_array($v['product_id'], $allowedIds))) {
                         throw ValidationException::withMessages([
@@ -125,7 +122,6 @@ class CheckoutController extends Controller
                         ]);
                     }
                     if (collect($variants)->sum('quantity') > $pack->max_items) {
->>>>>>> 7079be1 (feat: change name of directory)
                         throw ValidationException::withMessages([
                             'packs' => "Maksimal {$pack->max_items} item untuk paket \"{$pack->name}\".",
                         ]);

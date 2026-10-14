@@ -161,11 +161,7 @@ return [
     */
 
     'features' => [
-<<<<<<< HEAD
-        Features::registration(),
-=======
         // Features::registration(),
->>>>>>> 7079be1 (feat: change name of directory)
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

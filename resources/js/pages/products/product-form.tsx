@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import InputError from '@/components/input-error';
-import { FormEvent } from 'react';
+import { FormEvent, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -40,6 +40,31 @@ export default function ProductForm({ cabangs, product, onClose }: Props) {
       image: null as File | null,
     },
   );
+
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // URL sementara untuk file yang baru dipilih
+  const preview = useMemo(
+    () => (data.image ? URL.createObjectURL(data.image) : null),
+    [data.image],
+  );
+
+  // Bebaskan memori saat file diganti atau form ditutup
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  // Gambar yang sudah tersimpan di produk (sesuaikan dengan datamu, lihat catatan)
+  const currentImage = product?.image ? `/storage/${product.image}` : null;
+
+  const shownImage = preview ?? currentImage;
+
+  function clearImage() {
+    setData('image', null);
+    if (fileRef.current) fileRef.current.value = '';
+  }
 
   //   function submit(e: FormEvent) {
   //     e.preventDefault();
@@ -147,14 +172,41 @@ export default function ProductForm({ cabangs, product, onClose }: Props) {
             <InputError message={errors.description} />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="image">Image (optional)</Label>
+
+            {shownImage && (
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">
+                  {preview ? 'Preview gambar baru' : 'Gambar saat ini'}
+                </p>
+                <img
+                  src={shownImage}
+                  alt={product?.name ?? 'Preview produk'}
+                  className="bg-muted h-40 w-full rounded-md border object-contain"
+                />
+              </div>
+            )}
+
             <Input
+              ref={fileRef}
               id="image"
               type="file"
               accept="image/*"
               onChange={(e) => setData('image', e.target.files?.[0] ?? null)}
             />
+
+            {preview && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={clearImage}
+              >
+                Batalkan gambar baru
+              </Button>
+            )}
+
             <InputError message={errors.image} />
           </div>
 

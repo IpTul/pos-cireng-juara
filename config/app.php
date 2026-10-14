@@ -65,11 +65,7 @@ return [
     |
     */
 
-<<<<<<< HEAD
-    'timezone' => 'UTC',
-=======
     'timezone' => env('APP_TIMEZONE', 'Asia/Makassar'),
->>>>>>> 7079be1 (feat: change name of directory)
 
     /*
     |--------------------------------------------------------------------------
