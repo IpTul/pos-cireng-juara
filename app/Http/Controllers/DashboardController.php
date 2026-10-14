@@ -33,6 +33,10 @@ class DashboardController extends Controller
 
         $todaySales = Sale::whereDate('created_at',$today)
             ->where('status','completed')
+<<<<<<< HEAD
+=======
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+>>>>>>> 7079be1 (feat: change name of directory)
             ->get();
 
         $paymentBreakdown = [];
@@ -50,7 +54,12 @@ class DashboardController extends Controller
             DB::raw('SUM(quantity) as total_qty'),
             DB::raw('SUM(subtotal) as total_revenue')
         )
+<<<<<<< HEAD
         ->whereHas('sale', fn($q) => $q->whereDate('created_at',$today)->where('status','completed'))
+=======
+        ->whereHas('sale', fn($q) => $q->whereDate('created_at',$today)->where('status','completed')
+        ->when($activeCabangId, fn ($q2) => $q2->where('cabang_id', $activeCabangId)))
+>>>>>>> 7079be1 (feat: change name of directory)
         ->groupBy('product_name')
         ->orderByDesc('total_qty')
         ->limit(5)
@@ -63,6 +72,10 @@ class DashboardController extends Controller
 
         // recent sales (paginated)
         $recentSales = Sale::with(['items.product.cabang', 'items.pack'])
+<<<<<<< HEAD
+=======
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+>>>>>>> 7079be1 (feat: change name of directory)
             ->latest()
             ->paginate(5)
             ->through(fn($sale) => [

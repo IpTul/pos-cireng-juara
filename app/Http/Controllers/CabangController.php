@@ -94,6 +94,9 @@ class CabangController extends Controller
     public function destroy(Cabang $cabang)
     {
         $this->authorizeOwnerOnly();
+        if ($cabang->products()->exists()) {
+            return back()->with('error', 'Cabang masih punya produk.');
+        }
         $cabang->delete();
         return redirect()->route('cabangs.index')->with('success', 'Cabang berhasil dihapus.');
     }
