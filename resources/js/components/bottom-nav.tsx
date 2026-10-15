@@ -19,7 +19,7 @@ interface Props {
 const base =
   'flex h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition-all';
 const activeCls =
-  'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300';
+  'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300';
 const idleCls = 'text-muted-foreground hover:text-foreground';
 
 export default function BottomNav({ items, onMore }: Props) {
