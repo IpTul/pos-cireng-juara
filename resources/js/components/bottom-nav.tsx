@@ -1,5 +1,3 @@
-// resources/js/components/bottom-nav.tsx
-
 import { Link, usePage } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -12,14 +10,13 @@ export type BottomNavItem = {
 
 interface Props {
   items: BottomNavItem[];
-  /** Dipanggil saat tombol "Lainnya" ditekan (buka sidebar) */
   onMore?: () => void;
 }
 
 const base =
   'flex h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition-all';
 const activeCls =
-  'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300';
+  'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300';
 const idleCls = 'text-muted-foreground hover:text-foreground';
 
 export default function BottomNav({ items, onMore }: Props) {
@@ -29,15 +26,14 @@ export default function BottomNav({ items, onMore }: Props) {
   const isActive = (href: string) =>
     path === href || path.startsWith(`${href}/`);
 
-  // Kalau halaman aktif tidak ada di bar, tandai "Lainnya" sebagai aktif
   const moreActive = !items.some((item) => isActive(item.href));
 
   return (
     <nav
       aria-label="Navigasi utama"
-      className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="no-print fixed inset-x-0 bottom-[var(--footer-total-h)] z-40 box-border h-[var(--bottom-nav-h)] border-t border-border bg-background md:hidden"
     >
-      <ul className="mx-auto flex max-w-md items-center justify-around px-2 py-2">
+      <ul className="mx-auto flex h-full max-w-md items-center justify-around px-2">
         {items.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;

@@ -57,4 +57,4 @@ Aplikasi Point of Sale (POS) sederhana untuk bisnis cireng, dibangun menggunakan
 
 ## Lisensi
 
-Proyek ini dibuat untuk keperluan pribadi/bisnis Cireng Juara.
+Proyek ini dibuat untuk keperluan pribadi/bisnis Cireng Juara. © 2026 IpTul. All rights reserved.

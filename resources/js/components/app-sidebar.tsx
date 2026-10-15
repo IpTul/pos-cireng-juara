@@ -34,7 +34,6 @@ import {
 } from '@/components/ui/select';
 import type { NavItem, Cabang, User } from '@/types';
 
-// Menu yang tampil di bottom bar (mobile). Sisanya lewat tombol "Lainnya".
 const bottomItems: BottomNavItem[] = [
   { title: 'Utama', href: '/dashboard', icon: LayoutGrid },
   { title: 'Produk', href: '/products', icon: Package },
