@@ -1,15 +1,17 @@
+// resources/js/pages/pos/receipt.tsx
+
 import { Head, Link } from '@inertiajs/react';
-import type { Sale } from '@/types';
-import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft, User, Award } from 'lucide-react';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import type { Sale } from '@/types';
 
 interface Props {
   sale: Sale;
 }
 
-function formatRupiah(value: number) {
-  return `Rp${Math.round(value).toLocaleString('id-ID')}`;
+function rupiah(value: number | string) {
+  return `Rp${Math.round(Number(value)).toLocaleString('id-ID')}`;
 }
 
 export default function Receipt({ sale }: Props) {
@@ -18,17 +20,34 @@ export default function Receipt({ sale }: Props) {
   const isGoFood = sale.payment_method === 'gofood';
   const isSettled = isQris || isGrab || isGoFood;
 
+  const methodLabel = isQris
+    ? 'QRIS'
+    : isGrab
+      ? 'GRAB'
+      : isGoFood
+        ? 'GOFOOD'
+        : 'Tunai';
+
+  // Tandai perangkat sentuh non-iOS (HP/tablet Android, termasuk mode
+  // "situs desktop") supaya memakai ukuran cetak yang lebih besar.
   useEffect(() => {
-    if (!/Android/i.test(navigator.userAgent)) return;
-    document.documentElement.classList.add('android-receipt');
-    return () => document.documentElement.classList.remove('android-receipt');
+    const ua = navigator.userAgent;
+    const isIOS =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (ua.includes('Macintosh') && navigator.maxTouchPoints > 1);
+    const isTouch = navigator.maxTouchPoints > 0;
+
+    if (!isTouch || isIOS) return;
+
+    document.documentElement.classList.add('receipt-android');
+    return () => document.documentElement.classList.remove('receipt-android');
   }, []);
 
   return (
     <>
       <Head title={`Receipt #${sale.id}`} />
 
-      {/* Screen-only controls */}
+      {/* Tombol: hanya tampil di layar, tidak ikut tercetak */}
       <div className="no-print flex gap-2 border-b p-4">
         <Link href="/pos">
           <Button variant="outline">
@@ -42,140 +61,105 @@ export default function Receipt({ sale }: Props) {
         </Button>
       </div>
 
-      {/* Receipt body */}
-      <div className="receipt-paper mx-auto max-w-55 p-5 font-mono text-sm">
-        <div className="mb-4 text-center">
-          <p className="text-xl font-bold">CIRENG JUARA</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {new Date(sale.created_at).toLocaleString()}
+      {/* Isi struk */}
+      <div className="receipt-paper">
+        <div className="rc-center">
+          <p className="rc-title">CIRENG JUARA</p>
+          <p className="rc-small rc-muted">
+            {new Date(sale.created_at).toLocaleString('id-ID')}
           </p>
-          {/* <p className="text-xs text-muted-foreground">Receipt #{sale.id}</p> */}
         </div>
 
-        <div className="receipt-body">
-          {sale.operator_name && (
-            <div className="mb-3 flex justify-between pt-3 text-xs">
-              <span className="text-muted-foreground">Operator</span>
-              <span className="font-medium">{sale.operator_name}</span>
-            </div>
-          )}
-
-          {sale.customer_name && (
-            <div className="mb-3 flex justify-between border-t border-dashed pt-3 text-xs">
-              <span className="text-muted-foreground">Nama Customer</span>
-              <span className="font-medium">{sale.customer_name}</span>
-            </div>
-          )}
-
-          {sale.member && (
-            <div className="mb-3 space-y-1 border-t border-dashed pt-3 text-xs">
-              <div className="flex justify-between">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <User className="h-3 w-3" />
-                  Member
-                </span>
-                <span className="font-medium">{sale.member.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Award className="h-3 w-3" />
-                  Poin Member
-                </span>
-                <span className="font-medium">{sale.member.points} poin</span>
-              </div>
-            </div>
-          )}
-
-          <div className="mb-3 space-y-2 border-t border-dashed pt-3">
-            {sale.items.map((item) => (
-              <div key={item.id}>
-                <div className="flex justify-between">
-                  <span className="flex-1 truncate">{item.product_name}</span>
-                  <span className="ml-2">
-                    Rp{item.subtotal.toLocaleString('id-ID')}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {item.quantity} × Rp{item.unit_price.toLocaleString('id-ID')}
-                </div>
-              </div>
-            ))}
+        {sale.operator_name && (
+          <div className="rc-section-first rc-row rc-small">
+            <span className="rc-muted">Operator</span>
+            <span className="rc-strong">{sale.operator_name}</span>
           </div>
+        )}
+
+        {sale.customer_name && (
+          <div className="rc-section rc-row rc-small">
+            <span className="rc-muted">Nama Customer</span>
+            <span className="rc-strong">{sale.customer_name}</span>
+          </div>
+        )}
+
+        {sale.member && (
+          <div className="rc-section rc-stack rc-small">
+            <div className="rc-row">
+              <span className="rc-label rc-muted">
+                <User />
+                Member
+              </span>
+              <span className="rc-strong">{sale.member.name}</span>
+            </div>
+            <div className="rc-row">
+              <span className="rc-label rc-muted">
+                <Award />
+                Poin Member
+              </span>
+              <span className="rc-strong">{sale.member.points} poin</span>
+            </div>
+          </div>
+        )}
+
+        {/* Daftar item */}
+        <div className="rc-section">
+          {sale.items.map((item) => (
+            <div key={item.id} className="rc-item">
+              <div className="rc-row">
+                <span className="rc-name">{item.product_name}</span>
+                <span className="rc-price">{rupiah(item.subtotal)}</span>
+              </div>
+              <div className="rc-small rc-muted">
+                {item.quantity} × {rupiah(item.unit_price)}
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="space-y-1 border-t border-dashed pt-3">
-          <div className="flex justify-between text-base font-bold">
+        {/* Total dan pembayaran */}
+        <div className="rc-section rc-stack">
+          <div className="rc-row rc-total">
             <span>TOTAL</span>
-            <span>{formatRupiah(sale.total)}</span>
+            <span>{rupiah(sale.total)}</span>
           </div>
 
-          <div className="space-y-1 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-muted-foreground">
-                {isQris ? (
-                  <>
-                    {/* <QrCode className="h-3 w-3" /> */}
-                    Metode
-                  </>
-                ) : isGrab ? (
-                  <>
-                    {/* <Bike className="h-3 w-3" /> */}
-                    Metode
-                  </>
-                ) : isGoFood ? (
-                  <>
-                    {/* <Bike className="h-3 w-3" /> */}
-                    Metode
-                  </>
-                ) : (
-                  <>Metode</>
-                )}
-              </span>
-              <span className="font-medium">
-                {isQris
-                  ? 'QRIS'
-                  : isGrab
-                    ? 'GRAB'
-                    : isGoFood
-                      ? 'GOFOOD'
-                      : 'Tunai'}
-              </span>
+          <div className="rc-row">
+            <span className="rc-muted">Metode</span>
+            <span className="rc-strong">{methodLabel}</span>
+          </div>
+
+          {isSettled ? (
+            <div className="rc-row">
+              <span className="rc-muted">Dibayar</span>
+              <span className="rc-strong">{rupiah(sale.total)}</span>
             </div>
-
-            {isQris ? (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Dibayar</span>
-                <span className="font-medium">{formatRupiah(sale.total)}</span>
+          ) : (
+            <>
+              <div className="rc-row">
+                <span className="rc-muted">Tunai</span>
+                <span>{rupiah(sale.cash_tendered)}</span>
               </div>
-            ) : (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tunai</span>
-                  <span>{formatRupiah(sale.cash_tendered)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Kembalian</span>
-                  <span>{formatRupiah(sale.change_amount)}</span>
-                </div>
-              </>
-            )}
-          </div>
+              <div className="rc-row">
+                <span className="rc-muted">Kembalian</span>
+                <span>{rupiah(sale.change_amount)}</span>
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="mt-6 text-center text-xs text-muted-foreground">
-          <p>Terima kasih datang kembali ya</p>
-          <p>Kritik Saran & Terima Pesanan</p>
+        {/* Footer struk */}
+        <div className="rc-footer rc-muted">
+          <p>Terima Kasih Ya Guys</p>
           <p>IG : Cirengjuara.smd</p>
           <p>WA : 082211495774</p>
-          <div className="mt-4">
-            <p className="mb-2 text-xs">Scan untuk linktree</p>
-            <img
-              src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://linktr.ee/cirengjuara.smd"
-              alt="QR Code Linktree"
-              className="mx-auto h-30 w-30"
-            />
-          </div>
-          <div className="print-feed border-t border-dashed" />
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://linktr.ee/cirengjuara.smd"
+            alt="QR Code Linktree"
+            className="rc-qr"
+          />
+          <div className="rc-feed" />
         </div>
       </div>
     </>

@@ -226,13 +226,14 @@ export default function UserIndex({ users, user }: Props) {
               <Input
                 id="user-password"
                 type="password"
+                autoComplete="new-password"
                 value={data.password}
                 onChange={(e) => setData('password', e.target.value)}
                 required={!editing}
               />
               <InputError message={errors.password} />
             </div>
-            {!editing && (
+            {(!editing || data.password) && (
               <div>
                 <Label htmlFor="user-password-confirm">
                   Konfirmasi Password
@@ -240,6 +241,7 @@ export default function UserIndex({ users, user }: Props) {
                 <Input
                   id="user-password-confirm"
                   type="password"
+                  autoComplete="new-password"
                   value={data.password_confirmation}
                   onChange={(e) =>
                     setData('password_confirmation', e.target.value)

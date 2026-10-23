@@ -218,6 +218,9 @@ class CheckoutController extends Controller
                         'addons' => "Addon \"{$addon->name}\" tidak aktif.",
                     ]);
                 }
+                $addonSubtotal = (float) $addon->price * $addonQty;
+                $total        += $addonSubtotal;
+
                 $saleItems[] = [
                     'product_id'   => null,
                     'pack_id'      => null,
@@ -225,7 +228,7 @@ class CheckoutController extends Controller
                     'product_name' => "[ADDON] {$addon->name}",
                     'unit_price'   => $addon->price,
                     'quantity'     => $addonQty,
-                    'subtotal'     => round($addon->price * $addonQty),
+                    'subtotal'     => round($addonSubtotal),
                     'is_free'      => false,
                 ];
             }

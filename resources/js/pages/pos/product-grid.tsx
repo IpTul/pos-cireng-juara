@@ -55,7 +55,7 @@ export default function ProductGrid({
                   </div>
                 )}
                 <div className="p-1.5 sm:p-2">
-                  <p className="truncate text-xs font-medium sm:text-sm">
+                  <p className="truncate text-xl font-medium sm:text-sm">
                     {product.name}
                   </p>
                   <p className="text-xs font-bold text-primary sm:text-sm">

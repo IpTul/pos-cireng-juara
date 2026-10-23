@@ -12,8 +12,6 @@ import {
   PlusCircle,
   UserPlus,
 } from 'lucide-react';
-import BottomNav from '@/components/bottom-nav';
-import type { BottomNavItem } from '@/components/bottom-nav';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -23,7 +21,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   Select,
@@ -34,15 +31,7 @@ import {
 } from '@/components/ui/select';
 import type { NavItem, Cabang, User } from '@/types';
 
-const bottomItems: BottomNavItem[] = [
-  { title: 'Utama', href: '/dashboard', icon: LayoutGrid },
-  { title: 'Produk', href: '/products', icon: Package },
-  { title: 'Jual', href: '/pos', icon: ShoppingCart },
-  { title: 'Riwayat', href: '/history', icon: History },
-];
-
 export function AppSidebar() {
-  const { setOpenMobile } = useSidebar();
   const { auth, cabangs, activeCabangId, operatorName } = usePage()
     .props as unknown as {
     auth: { user: User };
@@ -135,90 +124,85 @@ export function AppSidebar() {
   // ];
 
   return (
-    <>
-      <Sidebar>
-        <SidebarHeader className="border-b px-3 py-4">
-          <div className="flex items-center gap-2.5">
-            <img
-              src="/logo-cireng.png"
-              alt="Cireng Juara"
-              className="size-10 object-contain"
-            />
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold">Cireng Juara</span>
-              {operatorName && (
-                <span className="text-xs text-muted-foreground">
-                  Operator : {operatorName}
-                </span>
-              )}
-            </div>
+    <Sidebar>
+      <SidebarHeader className="border-b px-3 py-4">
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/logo-cireng.png"
+            alt="Cireng Juara"
+            className="size-10 object-contain"
+          />
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold">Cireng Juara</span>
+            {operatorName && (
+              <span className="text-xs text-muted-foreground">
+                Operator : {operatorName}
+              </span>
+            )}
           </div>
+        </div>
 
-          {auth.user?.role === 'owner' && (
-            <Select
-              value={activeCabangId ? String(activeCabangId) : 'all'}
-              onValueChange={handleCabangSwitch}
-            >
-              <SelectTrigger className="mt-2 w-full">
-                <SelectValue placeholder="Semua Cabang  " />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Cabang</SelectItem>
-                {cabangs?.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SidebarHeader>
+        {auth.user?.role === 'owner' && (
+          <Select
+            value={activeCabangId ? String(activeCabangId) : 'all'}
+            onValueChange={handleCabangSwitch}
+          >
+            <SelectTrigger className="mt-2 w-full">
+              <SelectValue placeholder="Semua Cabang  " />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Cabang</SelectItem>
+              {cabangs?.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </SidebarHeader>
 
-        <SidebarContent className="gap-2 py-2">
+      <SidebarContent className="gap-2 py-2">
+        <SidebarGroup>
+          <NavMain items={posItems} />
+          <NavMain items={otherItems} />
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Operasional</SidebarGroupLabel>
+          <NavMain items={operationalItems} />
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Produk</SidebarGroupLabel>
+          <NavMain items={catalogItems} />
+        </SidebarGroup>
+
+        {auth.user?.role === 'owner' && (
           <SidebarGroup>
-            <NavMain items={posItems} />
-            <NavMain items={otherItems} />
+            <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
+            <NavMain items={managementItems} />
           </SidebarGroup>
+        )}
 
+        {/* {auth.user?.role === 'owner' && (
           <SidebarGroup>
-            <SidebarGroupLabel>Operasional</SidebarGroupLabel>
-            <NavMain items={operationalItems} />
+            <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
+            <NavMain items={financeItems} />
           </SidebarGroup>
+        )}
 
+        {auth.user?.role === 'owner' && (
           <SidebarGroup>
-            <SidebarGroupLabel>Produk</SidebarGroupLabel>
-            <NavMain items={catalogItems} />
+            <SidebarGroupLabel>Pengaturan</SidebarGroupLabel>
+            <NavMain items={settingsItems} />
           </SidebarGroup>
+        )} */}
+      </SidebarContent>
 
-          {auth.user?.role === 'owner' && (
-            <SidebarGroup>
-              <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
-              <NavMain items={managementItems} />
-            </SidebarGroup>
-          )}
-
-          {/* {auth.user?.role === 'owner' && (
-            <SidebarGroup>
-              <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
-              <NavMain items={financeItems} />
-            </SidebarGroup>
-          )}
-
-          {auth.user?.role === 'owner' && (
-            <SidebarGroup>
-              <SidebarGroupLabel>Pengaturan</SidebarGroupLabel>
-              <NavMain items={settingsItems} />
-            </SidebarGroup>
-          )} */}
-        </SidebarContent>
-
-        <SidebarFooter className="border-t px-2 py-3">
-          <NavUser />
-        </SidebarFooter>
-      </Sidebar>
-
-      {/* Bottom bar khusus mobile; tombol "Lainnya" membuka sidebar */}
-      <BottomNav items={bottomItems} onMore={() => setOpenMobile(true)} />
-    </>
+      <SidebarFooter className="border-t px-2 py-3">
+        <NavUser />
+      </SidebarFooter>
+    </Sidebar>
   );
 }
