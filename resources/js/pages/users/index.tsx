@@ -112,6 +112,9 @@ export default function UserIndex({ users, user }: Props) {
     kasir: 'Kasir',
   };
 
+  const passwordMismatch =
+    data.password !== '' && data.password !== data.password_confirmation;
+
   return (
     <>
       <Head title="Manajemen Pengguna" />
@@ -236,7 +239,7 @@ export default function UserIndex({ users, user }: Props) {
             {(!editing || data.password) && (
               <div>
                 <Label htmlFor="user-password-confirm">
-                  Konfirmasi Password
+                  Konfirmasi Password{editing ? ' Baru' : ''}
                 </Label>
                 <Input
                   id="user-password-confirm"
@@ -246,7 +249,13 @@ export default function UserIndex({ users, user }: Props) {
                   onChange={(e) =>
                     setData('password_confirmation', e.target.value)
                   }
+                  required={!editing || data.password !== ''}
                 />
+                {passwordMismatch && (
+                  <p className="text-sm text-destructive">
+                    Konfirmasi password belum sama.
+                  </p>
+                )}
                 <InputError message={errors.password_confirmation} />
               </div>
             )}
@@ -291,7 +300,7 @@ export default function UserIndex({ users, user }: Props) {
               <Button type="button" variant="outline" onClick={closeForm}>
                 Batal
               </Button>
-              <Button type="submit" disabled={processing}>
+              <Button type="submit" disabled={processing || passwordMismatch}>
                 {processing ? 'Menyimpan…' : editing ? 'Update' : 'Buat'}
               </Button>
             </div>
