@@ -49,8 +49,8 @@ export default function MemberHistoryIndex({ histories, search }: Props) {
           />
         </div>
 
-        <div className="rounded-lg border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[900px] text-sm">
             <thead className="border-b bg-muted/50">
               <tr>
                 <th className="px-4 py-3 text-left">Waktu</th>

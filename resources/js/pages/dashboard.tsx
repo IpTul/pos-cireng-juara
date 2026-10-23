@@ -119,11 +119,11 @@ export default function Dashboard({
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <div className="border-b px-4 py-3">
               <h2 className="font-semibold">Produk Terlaris</h2>
             </div>
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[900px] text-sm">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-2 text-left">Produk</th>
@@ -159,7 +159,7 @@ export default function Dashboard({
               </tbody>
             </table>
           </div>
-          <div className="rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <div className="border-b px-4 py-3">
               <h2 className="font-semibold">Penjualan Terbaru</h2>
             </div>
