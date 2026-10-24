@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Package, Gift, Plus, Minus } from 'lucide-react';
+import {
+  Trash2,
+  Package,
+  Gift,
+  Plus,
+  Minus,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import {
   CartItem,
   PackCartItem,
@@ -65,6 +73,71 @@ function isPackCartItem(item: Props['items'][0]): item is PackCartItem & {
 
 function formatRupiah(value: string | number) {
   return `Rp${Math.round(Number(value)).toLocaleString('id-ID')}`;
+}
+
+function QuantityStepper({
+  value,
+  max,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  max: number;
+  disabled?: boolean;
+  onChange: (qty: number) => void;
+}) {
+  const arrow =
+    'flex flex-1 items-center justify-center text-muted-foreground hover:bg-muted active:bg-muted disabled:opacity-30';
+
+  return (
+    <>
+      {/* PC (mouse): tampilan lama */}
+      <Input
+        type="number"
+        min={1}
+        max={max}
+        disabled={disabled}
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value) || 0)}
+        className="hidden w-16 text-center desk:flex [@media(max-height:500px)]:h-8"
+      />
+
+      {/* HP & tablet: kotak angka + panah naik/turun */}
+      <div className="flex h-14 items-stretch overflow-hidden rounded-md border desk:hidden [@media(max-height:500px)]:h-10">
+        <Input
+          type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          min={1}
+          max={max}
+          disabled={disabled}
+          value={value}
+          onChange={(e) => onChange(parseInt(e.target.value) || 0)}
+          className="h-full w-11 [appearance:textfield] rounded-none border-0 px-1 text-center shadow-none focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <div className="flex w-8 flex-col border-l">
+          <button
+            type="button"
+            aria-label="Tambah jumlah"
+            disabled={disabled || value >= max}
+            onClick={() => onChange(value + 1)}
+            className={arrow}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Kurangi jumlah"
+            disabled={disabled || value <= 1}
+            onClick={() => onChange(value - 1)}
+            className={`${arrow} border-t`}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </>
+  );
 }
 
 export default function CartPanel({
@@ -249,9 +322,8 @@ export default function CartPanel({
                       </p>
                     )}
                   </div>
-                  <Input
-                    type="number"
-                    min={1}
+                  <QuantityStepper
+                    value={item.quantity}
                     max={
                       item.stock <= 0
                         ? 0
@@ -260,16 +332,13 @@ export default function CartPanel({
                           : 999
                     }
                     disabled={item.stock <= 0}
-                    value={item.quantity}
-                    onChange={(e) => {
-                      const qty = parseInt(e.target.value) || 0;
+                    onChange={(qty) => {
                       if (isCartItem(item)) {
                         onSetProductQuantity(item.product.id, qty);
                       } else {
                         onSetPackQuantity(item.pack.id, qty);
                       }
                     }}
-                    className="w-16 text-center [@media(max-height:500px)]:h-8"
                   />
                   <span className="w-16 text-center text-xs text-muted-foreground">
                     Total: {item.totalQuantity ?? item.quantity}
