@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Product, Pack, Addon, PackVariant } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { LayoutGrid, Search, ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ProductGrid from './product-grid';
 import CartPanel from './cart-panel';
 import { useCart } from './use-cart';
@@ -49,13 +49,60 @@ export default function PosIndex({ products, packs, addons }: Props) {
     pack: null,
   });
 
-  const filteredProducts = products.filter(
+  const reserved = useMemo(() => {
+    const map: Record<number, number> = {};
+    const add = (id: number, qty: number) => {
+      map[id] = (map[id] ?? 0) + qty;
+    };
+
+    for (const item of items) {
+      if ('product' in item) {
+        add(item.product.id, item.quantity);
+      } else {
+        for (const v of item.variants) {
+          add(v.product_id, v.quantity * item.quantity);
+        }
+      }
+    }
+    for (const f of items[0]?.freeItems ?? []) {
+      add(f.product_id, f.quantity);
+    }
+    return map;
+  }, [items]);
+
+  const displayProducts = useMemo(
+    () =>
+      products.map((p) => ({
+        ...p,
+        stock: Math.max(0, p.stock - (reserved[p.id] ?? 0)),
+      })),
+    [products, reserved],
+  );
+
+  const displayPacks = useMemo(() => {
+    const stockById = new Map(displayProducts.map((p) => [p.id, p.stock]));
+    return packs.map((pack) => ({
+      ...pack,
+      is_available:
+        pack.is_available !== false &&
+        pack.pack_items.every(
+          (pi) =>
+            (stockById.get(pi.product_id) ?? pi.product.stock) >= pi.quantity,
+        ),
+    }));
+  }, [packs, displayProducts]);
+
+  const filteredProducts = displayProducts.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
   );
 
   const [mobileTab, setMobileTab] = useState<'produk' | 'keranjang'>('produk');
+
+  function handleAddProduct(product: Product) {
+    addProduct(products.find((p) => p.id === product.id) ?? product);
+  }
 
   function handleAddPack(pack: Pack) {
     setPackVariantModal({ open: true, pack });
@@ -138,8 +185,8 @@ export default function PosIndex({ products, packs, addons }: Props) {
           {mobileTab === 'produk' ? (
             <ProductGrid
               products={filteredProducts}
-              packs={packs}
-              onAddProduct={addProduct}
+              packs={displayPacks}
+              onAddProduct={handleAddProduct}
               onAddPack={handleAddPack}
             />
           ) : (
@@ -208,7 +255,7 @@ export default function PosIndex({ products, packs, addons }: Props) {
           onClose={handlePackVariantCancel}
           onConfirm={handlePackVariantConfirm}
           pack={packVariantModal.pack}
-          products={products}
+          products={displayProducts}
         />
       )}
     </>

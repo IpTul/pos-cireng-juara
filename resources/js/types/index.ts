@@ -71,6 +71,8 @@ export interface Sale {
   operator_name?: string | null;
   member_id?: number | null;
   member?: Member | null;
+  cabang_id?: number | null;
+  cabang?: Cabang | null;
   total: number;
   cash_tendered: number;
   change_amount: number;

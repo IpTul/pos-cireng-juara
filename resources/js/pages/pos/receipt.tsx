@@ -65,6 +65,9 @@ export default function Receipt({ sale }: Props) {
       <div className="receipt-paper">
         <div className="rc-center">
           <p className="rc-title">CIRENG JUARA</p>
+          {sale.cabang?.name && (
+            <p className="rc-small rc-strong">{sale.cabang.name}</p>
+          )}
           <p className="rc-small rc-muted">
             {new Date(sale.created_at).toLocaleString('id-ID')}
           </p>

@@ -300,7 +300,7 @@ class CheckoutController extends Controller
     }
 
     public function receipt(Sale $sale){
-        $sale->load(['items', 'member']);
+        $sale->load(['items', 'member', 'cabang']);
 
         return Inertia::render('pos/receipt',[
             'sale' => $sale
