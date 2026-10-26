@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Illuminate\Support\Carbon;
 
 class StockAdjustmentController extends Controller
 {
@@ -36,8 +37,14 @@ class StockAdjustmentController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate([
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+        ]);
+
         $activeCabangId = $this->user->activeCabangId();
         $reason = $request->input('reason', 'all');
+        [$from, $to] = $this->resolvePeriod($request);
 
         $adjustments = StockAdjustment::with(['product.cabang', 'user'])
             ->when($activeCabangId, function ($q) use ($activeCabangId) {
@@ -45,14 +52,15 @@ class StockAdjustmentController extends Controller
             })
             ->when($reason !== 'all', function ($q) use ($reason) {
                 if ($reason === 'other') {
-                    // Alasan lama (teks bebas) atau kosong
                     $q->where(function ($w) {
                         $w->whereNull('reason')->orWhereNotIn('reason', self::REASONS);
                     });
-                } elseif (in_array($reason, self::REASONS, true)) {
+                } else {
                     $q->where('reason', $reason);
                 }
             })
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->latest()
             ->latest('id')
             ->paginate(20)
@@ -77,8 +85,26 @@ class StockAdjustmentController extends Controller
             ],
             'filters' => [
                 'reason' => $reason,
+                'period' => $request->input('period', 'all'),
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date'),
             ],
         ]);
+    }
+
+    private function resolvePeriod(Request $request): array
+    {
+        return match ($request->input('period', 'all')) {
+            'today' => [now()->startOfDay(), now()->endOfDay()],
+            'yesterday' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
+            '7days' => [now()->subDays(6)->startOfDay(), now()->endOfDay()],
+            '30days' => [now()->subDays(29)->startOfDay(), now()->endOfDay()],
+            'custom' => [
+                $request->filled('start_date') ? Carbon::parse($request->input('start_date'))->startOfDay() : null,
+                $request->filled('end_date') ? Carbon::parse($request->input('end_date'))->endOfDay() : null,
+            ],
+            default => [null, null],
+        };
     }
 
     public function store(Request $request): RedirectResponse

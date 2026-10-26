@@ -62,7 +62,12 @@ interface Props {
     role: 'owner' | 'kasir';
   };
   can: { create: boolean };
-  filters?: { reason: string };
+  filters?: {
+    reason: string;
+    period?: string;
+    start_date?: string | null;
+    end_date?: string | null;
+  };
 }
 
 const INCREASE_REASONS = ['Stok Awal', 'Tambahan'] as const;
@@ -71,8 +76,18 @@ const DECREASE_REASONS = [
   'Rusak',
   'Ke double (konfirmasi owner)',
 ] as const;
-// Semua alasan (dipakai filter riwayat)
 const REASONS = [...INCREASE_REASONS, ...DECREASE_REASONS] as const;
+
+type Period = 'all' | 'today' | 'yesterday' | '7days' | '30days' | 'custom';
+
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'all', label: 'Semua waktu' },
+  { value: 'today', label: 'Hari ini' },
+  { value: 'yesterday', label: 'Kemarin' },
+  { value: '7days', label: '7 hari terakhir' },
+  { value: '30days', label: '30 hari terakhir' },
+  { value: 'custom', label: 'Pilih tanggal' },
+];
 
 export default function StockIndex({
   adjustments,
@@ -93,6 +108,64 @@ export default function StockIndex({
   const [search, setSearch] = useState('');
 
   const [reasonFilter, setReasonFilter] = useState(filters?.reason ?? 'all');
+  const [period, setPeriod] = useState<Period>(
+    (filters?.period as Period) ?? 'all',
+  );
+  const [startDate, setStartDate] = useState(filters?.start_date ?? '');
+  const [endDate, setEndDate] = useState(filters?.end_date ?? '');
+
+  const filterActive = reasonFilter !== 'all' || period !== 'all';
+  const dateRangeInvalid = !!startDate && !!endDate && endDate < startDate;
+
+  // Kirim semua filter sekaligus; `next` menimpa nilai state yang baru diubah
+  function applyFilters(next: {
+    reason?: string;
+    period?: Period;
+    start?: string;
+    end?: string;
+  }) {
+    const r = next.reason ?? reasonFilter;
+    const p = next.period ?? period;
+    const s = next.start ?? startDate;
+    const e = next.end ?? endDate;
+
+    const params: Record<string, string> = {};
+    if (r !== 'all') params.reason = r;
+    if (p !== 'all') params.period = p;
+    if (p === 'custom') {
+      if (s) params.start_date = s;
+      if (e) params.end_date = e;
+    }
+
+    router.get('/stok', params, {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+    });
+  }
+
+  function handlePeriodChange(value: string) {
+    const next = value as Period;
+    setPeriod(next);
+    // "Pilih tanggal" menunggu tombol Terapkan
+    if (next !== 'custom') applyFilters({ period: next });
+  }
+
+  function resetFilters() {
+    setReasonFilter('all');
+    setPeriod('all');
+    setStartDate('');
+    setEndDate('');
+    router.get(
+      '/stok',
+      {},
+      {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      },
+    );
+  }
 
   const reasonOptions: readonly string[] =
     type === 'increase' ? INCREASE_REASONS : DECREASE_REASONS;
@@ -108,11 +181,7 @@ export default function StockIndex({
 
   function handleReasonFilter(value: string) {
     setReasonFilter(value);
-    router.get('/stok', value === 'all' ? {} : { reason: value }, {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-    });
+    applyFilters({ reason: value });
   }
 
   const filteredProducts = products.filter(
@@ -303,23 +372,80 @@ export default function StockIndex({
           </DialogContent>
         </Dialog>
 
-        <div className="mb-4 flex items-center gap-3">
-          <label className="text-sm font-medium">Alasan</label>
-          <Select value={reasonFilter} onValueChange={handleReasonFilter}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Semua alasan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua alasan</SelectItem>
-              {REASONS.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r}
-                </SelectItem>
-              ))}
-              <SelectItem value="other">Lainnya (alasan lama)</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="mb-4 flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Alasan</label>
+            <Select value={reasonFilter} onValueChange={handleReasonFilter}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Semua alasan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua alasan</SelectItem>
+                {REASONS.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+                <SelectItem value="other">Lainnya (alasan lama)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Periode</label>
+            <Select value={period} onValueChange={handlePeriodChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Semua waktu" />
+              </SelectTrigger>
+              <SelectContent>
+                {PERIODS.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {period === 'custom' && (
+            <>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Dari</label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Sampai</label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <Button
+                type="button"
+                disabled={(!startDate && !endDate) || dateRangeInvalid}
+                onClick={() => applyFilters({ period: 'custom' })}
+              >
+                Terapkan
+              </Button>
+            </>
+          )}
+
+          {filterActive && (
+            <Button type="button" variant="ghost" onClick={resetFilters}>
+              Reset
+            </Button>
+          )}
         </div>
+        {dateRangeInvalid && (
+          <p className="-mt-2 mb-4 text-sm text-destructive">
+            Tanggal "Sampai" tidak boleh lebih awal dari "Dari".
+          </p>
+        )}
 
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[900px] text-sm">
