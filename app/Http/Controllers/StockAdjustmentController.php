@@ -18,16 +18,45 @@ class StockAdjustmentController extends Controller
         $this->user = auth()->user();
     }
 
-    public function index()
+    private const INCREASE_REASONS = ['Stok Awal', 'Tambahan'];
+
+    private const DECREASE_REASONS = [
+        'Pengurangan',
+        'Rusak',
+        'Ke double (konfirmasi owner)',
+    ];
+
+    private const REASONS = [
+        'Stok Awal',
+        'Tambahan',
+        'Pengurangan',
+        'Rusak',
+        'Ke double (konfirmasi owner)',
+    ];
+
+    public function index(Request $request)
     {
         $activeCabangId = $this->user->activeCabangId();
+        $reason = $request->input('reason', 'all');
 
         $adjustments = StockAdjustment::with(['product.cabang', 'user'])
             ->when($activeCabangId, function ($q) use ($activeCabangId) {
                 $q->whereHas('product', fn ($p) => $p->where('cabang_id', $activeCabangId));
             })
+            ->when($reason !== 'all', function ($q) use ($reason) {
+                if ($reason === 'other') {
+                    // Alasan lama (teks bebas) atau kosong
+                    $q->where(function ($w) {
+                        $w->whereNull('reason')->orWhereNotIn('reason', self::REASONS);
+                    });
+                } elseif (in_array($reason, self::REASONS, true)) {
+                    $q->where('reason', $reason);
+                }
+            })
             ->latest()
-            ->paginate(20);
+            ->latest('id')
+            ->paginate(20)
+            ->withQueryString();
 
         $products = Product::with('cabang')
             ->where('is_active', true)
@@ -46,6 +75,9 @@ class StockAdjustmentController extends Controller
             'can' => [
                 'create' => auth()->user()->can('create', StockAdjustment::class),
             ],
+            'filters' => [
+                'reason' => $reason,
+            ],
         ]);
     }
 
@@ -57,6 +89,16 @@ class StockAdjustmentController extends Controller
             'quantity' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'max:255'],
         ]);
+
+        $allowedReasons = $validated['type'] === 'increase'
+            ? self::INCREASE_REASONS
+            : self::DECREASE_REASONS;
+
+        if (! in_array($validated['reason'], $allowedReasons, true)) {
+            throw ValidationException::withMessages([
+                'reason' => 'Alasan tidak sesuai dengan jenis perubahan.',
+            ]);
+        }
 
         $product = Product::lockForUpdate()->findOrFail($validated['product_id']);
 

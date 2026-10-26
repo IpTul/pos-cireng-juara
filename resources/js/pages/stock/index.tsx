@@ -62,13 +62,24 @@ interface Props {
     role: 'owner' | 'kasir';
   };
   can: { create: boolean };
+  filters?: { reason: string };
 }
+
+const INCREASE_REASONS = ['Stok Awal', 'Tambahan'] as const;
+const DECREASE_REASONS = [
+  'Pengurangan',
+  'Rusak',
+  'Ke double (konfirmasi owner)',
+] as const;
+// Semua alasan (dipakai filter riwayat)
+const REASONS = [...INCREASE_REASONS, ...DECREASE_REASONS] as const;
 
 export default function StockIndex({
   adjustments,
   products,
   user,
   can,
+  filters,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
@@ -80,6 +91,29 @@ export default function StockIndex({
   const validQty = !Number.isNaN(qty) && qty >= 1;
   const [reason, setReason] = useState('');
   const [search, setSearch] = useState('');
+
+  const [reasonFilter, setReasonFilter] = useState(filters?.reason ?? 'all');
+
+  const reasonOptions: readonly string[] =
+    type === 'increase' ? INCREASE_REASONS : DECREASE_REASONS;
+
+  function handleTypeChange(value: string) {
+    const next = value as 'increase' | 'decrease';
+    setType(next);
+
+    const allowed: readonly string[] =
+      next === 'increase' ? INCREASE_REASONS : DECREASE_REASONS;
+    if (!allowed.includes(reason)) setReason('');
+  }
+
+  function handleReasonFilter(value: string) {
+    setReasonFilter(value);
+    router.get('/stok', value === 'all' ? {} : { reason: value }, {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+    });
+  }
 
   const filteredProducts = products.filter(
     (p) =>
@@ -202,10 +236,7 @@ export default function StockIndex({
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Jenis Perubahan</label>
-                  <Select
-                    value={type}
-                    onValueChange={(v) => setType(v as 'increase' | 'decrease')}
-                  >
+                  <Select value={type} onValueChange={handleTypeChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih..." />
                     </SelectTrigger>
@@ -238,11 +269,18 @@ export default function StockIndex({
                   <label className="text-sm font-medium">
                     Alasan <span className="text-destructive">*</span>
                   </label>
-                  <Input
-                    placeholder="Contoh: Penjualan manual, Rusak, Koreksi stok..."
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
+                  <Select value={reason} onValueChange={setReason}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih alasan..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {reasonOptions.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter>
@@ -264,6 +302,24 @@ export default function StockIndex({
             </form>
           </DialogContent>
         </Dialog>
+
+        <div className="mb-4 flex items-center gap-3">
+          <label className="text-sm font-medium">Alasan</label>
+          <Select value={reasonFilter} onValueChange={handleReasonFilter}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Semua alasan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua alasan</SelectItem>
+              {REASONS.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+              <SelectItem value="other">Lainnya (alasan lama)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[900px] text-sm">
