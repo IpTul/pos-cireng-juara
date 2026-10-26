@@ -53,7 +53,48 @@ class SaleHistoryController extends Controller
             ->when($paymentMethod && $paymentMethod !== 'all', function ($query) use ($paymentMethod) {
                 $query->where('payment_method', $paymentMethod);
             })
-            ->latest();
+            ->latest()
+            ->latest('id');
+    }
+
+    /**
+     * Satu baris = satu transaksi, berisi semua item di dalamnya.
+     */
+    private function transformSale(Sale $sale): array
+    {
+        return [
+            'id' => $sale->id,
+            'customer_name' => $sale->customer_name,
+            'member' => $sale->member ? [
+                'id' => $sale->member->id,
+                'name' => $sale->member->name,
+                'phone' => $sale->member->phone,
+                'points' => $sale->member->points,
+            ] : null,
+            'total' => $sale->total,
+            'cash_tendered' => $sale->cash_tendered,
+            'change_amount' => $sale->change_amount,
+            'payment_method' => $sale->payment_method ?? 'cash',
+            'status' => $sale->status,
+            'created_at' => $sale->created_at,
+            'operator_name' => $sale->operator_name,
+            'user' => [
+                'id' => $sale->user->id,
+                'name' => $sale->user->name,
+            ],
+            'cabang' => $sale->cabang?->name,
+            'items' => $sale->items->map(fn ($item) => [
+                'id' => $item->id,
+                // product_name adalah snapshot saat transaksi (produk, paket, addon)
+                'name' => $item->product_name ?? $item->product?->name ?? $item->pack?->name ?? '-',
+                'is_pack' => (bool) $item->pack_id,
+                'cabang' => $item->product?->cabang?->name,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'subtotal' => $item->subtotal,
+                'is_free' => (bool) $item->is_free,
+            ])->values(),
+        ];
     }
 
     private function combineSaleItems(Collection $sales): Collection
@@ -161,41 +202,23 @@ class SaleHistoryController extends Controller
         $paymentMethod = $request->input('payment_method', 'all');
         $request->merge(['start_date' => $startDate, 'end_date' => $endDate, 'payment_method' => $paymentMethod]);
 
-        $sales = $this->baseSalesQuery($request)->get();
-
-        $saleItems = $this->combineSaleItems($sales);
-
-        $perPage = 6;
-        $currentPage = request()->get('page', 1);
-        $total = $saleItems->count();
-        $paginatedItems = $saleItems->forPage($currentPage, $perPage)->values();
-
-
-        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginatedItems,
-            $total,
-            $perPage,
-            $currentPage,
-            [
-                'path' => request()->url(),
-                'query' => array_merge(request()->query(), [
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
-                    'payment_method' => $paymentMethod,
-                ]),
-            ]
-        );
+        // Paginasi per TRANSAKSI langsung di database (bukan per item)
+        $sales = $this->baseSalesQuery($request)
+            ->paginate(10)
+            ->appends([
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'payment_method' => $paymentMethod,
+            ])
+            ->through(fn (Sale $sale) => $this->transformSale($sale));
 
         return Inertia::render('history/index', [
-            'saleItems' => $paginated,
+            'sales' => $sales,
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'email' => $this->user->email,
                 'role' => $this->user->role,
-            ],
-            'can' => [
-                'create' => Auth::user()->can('create', Sale::class),
             ],
             'filters' => [
                 'start_date' => $startDate,
