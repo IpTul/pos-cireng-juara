@@ -280,7 +280,7 @@ export default function StockIndex({
                         setSelectedProductId(v ? Number(v) : null)
                       }
                     >
-                      <SelectTrigger className="pl-9">
+                      <SelectTrigger className="w-full pl-9">
                         <SelectValue placeholder="Pilih produk..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -306,7 +306,7 @@ export default function StockIndex({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Jenis Perubahan</label>
                   <Select value={type} onValueChange={handleTypeChange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -339,7 +339,7 @@ export default function StockIndex({
                     Alasan <span className="text-destructive">*</span>
                   </label>
                   <Select value={reason} onValueChange={setReason}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih alasan..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -447,6 +447,76 @@ export default function StockIndex({
           </p>
         )}
 
+        {/* HP & tablet: kartu, tidak perlu geser */}
+        {/* <div className="lg:hidden">
+          <p className="mb-2 text-sm text-muted-foreground">
+            Riwayat perubahan stok ({adjustments.total} total)
+          </p>
+
+          {adjustments.data.length === 0 ? (
+            <div className="rounded-lg border px-4 py-8 text-center text-sm text-muted-foreground">
+              Belum ada riwayat perubahan stok.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {adjustments.data.map((adj, index) => (
+                <div key={adj.id} className="rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        #{adjustments.from + index}
+                      </p>
+                      <p className="font-medium break-words">
+                        {adj.product.name}
+                      </p>
+                    </div>
+                    {getTypeBadge(adj.type)}
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">
+                      Jumlah{' '}
+                      <span className="font-semibold text-foreground">
+                        {adj.quantity}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-muted-foreground">
+                        {adj.previous_stock}
+                      </span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className="font-semibold">{adj.new_stock}</span>
+                    </span>
+                  </div>
+
+                  <dl className="mt-3 space-y-1 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">Alasan</dt>
+                      <dd className="text-right">{adj.reason || '-'}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">Oleh</dt>
+                      <dd className="text-right">
+                        {adj.operator_name ??
+                          adj.user?.operator_name ??
+                          adj.user?.name ??
+                          'User dihapus'}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">Waktu</dt>
+                      <dd className="text-right">
+                        {formatDate(adj.created_at)}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
+            </div>
+          )}
+        </div> */}
+
+        {/* <div className="hidden overflow-x-auto rounded-lg border lg:block"> */}
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[900px] text-sm">
             <caption>
