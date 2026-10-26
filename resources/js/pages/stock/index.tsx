@@ -75,7 +75,9 @@ export default function StockIndex({
     null,
   );
   const [type, setType] = useState<'increase' | 'decrease'>('increase');
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState('');
+  const qty = parseInt(quantity, 10);
+  const validQty = !Number.isNaN(qty) && qty >= 1;
   const [reason, setReason] = useState('');
   const [search, setSearch] = useState('');
 
@@ -87,7 +89,7 @@ export default function StockIndex({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedProductId || quantity <= 0 || !reason.trim()) return;
+    if (!selectedProductId || !validQty || !reason.trim()) return;
 
     router.post(
       '/stok',
@@ -102,7 +104,7 @@ export default function StockIndex({
           toast.success('Stok berhasil diubah.');
           setModalOpen(false);
           setSelectedProductId(null);
-          setQuantity(1);
+          setQuantity('');
           setReason('');
         },
         onError: (errors) => {
@@ -224,11 +226,11 @@ export default function StockIndex({
                   <label className="text-sm font-medium">Jumlah</label>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     value={quantity}
-                    onChange={(e) =>
-                      setQuantity(Math.max(1, parseInt(e.target.value) || 1))
-                    }
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setQuantity(e.target.value)}
                   />
                 </div>
 
@@ -253,9 +255,7 @@ export default function StockIndex({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={
-                    !selectedProductId || quantity <= 0 || !reason.trim()
-                  }
+                  disabled={!selectedProductId || !validQty || !reason.trim()}
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Simpan Perubahan
