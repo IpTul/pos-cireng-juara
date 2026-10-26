@@ -197,7 +197,7 @@ class SaleHistoryController extends Controller
 
     public function index(Request $request)
     {
-        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $startDate = $request->input('start_date', now()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
         $paymentMethod = $request->input('payment_method', 'all');
         $request->merge(['start_date' => $startDate, 'end_date' => $endDate, 'payment_method' => $paymentMethod]);
