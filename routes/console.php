@@ -8,4 +8,8 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('members:cleanup')->dailyAt('02:00');
+// Schedule::command('members:cleanup')->dailyAt('02:00');
+Schedule::command('stock:reset')
+    ->dailyAt('7:00')
+    ->timezone('Asia/Makassar')
+    ->withoutOverlapping();
