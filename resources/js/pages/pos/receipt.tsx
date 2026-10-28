@@ -156,7 +156,7 @@ export default function Receipt({ sale }: Props) {
         <div className="rc-footer rc-muted">
           <p>Terima Kasih Ya Guys</p>
           <p>IG : Cirengjuara.smd</p>
-          <p>WA : 082211495774</p>
+          {/* <p>WA : 082211495774</p> */}
           <img
             src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://linktr.ee/cirengjuara.smd"
             alt="QR Code Linktree"
