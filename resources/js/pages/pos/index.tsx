@@ -85,9 +85,8 @@ export default function PosIndex({ products, packs, addons }: Props) {
       ...pack,
       is_available:
         pack.is_available !== false &&
-        pack.pack_items.every(
-          (pi) =>
-            (stockById.get(pi.product_id) ?? pi.product.stock) >= pi.quantity,
+        pack.pack_items.some(
+          (pi) => (stockById.get(pi.product_id) ?? pi.product.stock) > 0,
         ),
     }));
   }, [packs, displayProducts]);

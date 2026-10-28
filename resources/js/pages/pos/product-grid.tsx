@@ -123,7 +123,7 @@ export default function ProductGrid({
                     </p>
                     {!isAvailable && (
                       <span className="block text-xs font-medium text-destructive">
-                        Stok tidak cukup
+                        Semua produk habis
                       </span>
                     )}
                   </div>

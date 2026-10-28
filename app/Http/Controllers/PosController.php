@@ -37,14 +37,14 @@ class PosController extends Controller
             ->where('is_active', true)
             ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->get()
-            ->filter(fn ($pack) => $pack->packItems->every(
+            ->filter(fn ($pack) => $pack->packItems->contains(
                 fn ($item) => $item->product?->is_active
             ))
             ->map(function ($pack) {
-                $pack->is_available = $pack->packItems->every(
-                    fn ($item) => $item->product->stock >= $item->quantity
+                $pack->is_available = $pack->packItems->contains(
+                    fn ($item) => $item->product?->is_active && $item->product->stock > 0
                 );
-
+            
                 return $pack;
             })
             ->values();

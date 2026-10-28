@@ -273,11 +273,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       } else {
         newItems = state.items.map((i) => {
           if (!isPackCartItem(i) || i.pack.id !== action.packId) return i;
-          for (const packItem of i.pack.pack_items || []) {
-            const required = packItem.quantity * action.quantity;
-            if (packItem.product.stock < required) {
+          for (const variant of i.variants) {
+            const required = variant.quantity * action.quantity;
+            const product =
+              i.pack.pack_items?.find(
+                (pi) => pi.product_id === variant.product_id,
+              )?.product ?? variant.product;
+            if (product.stock < required) {
               toast.error(
-                `Stok "${packItem.product.name}" hanya tersisa ${packItem.product.stock}`,
+                `Stok "${product.name}" hanya tersisa ${product.stock}`,
               );
               return i;
             }

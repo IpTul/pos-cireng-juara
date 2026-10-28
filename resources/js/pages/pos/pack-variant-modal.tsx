@@ -52,7 +52,8 @@ export default function PackVariantModal({
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
     )
-    .filter((p) => p.is_active && p.stock > 0);
+    .filter((p) => p.is_active)
+    .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0));
 
   function handleQuantityChange(productId: number, qty: number) {
     if (qty < 0) return;
@@ -215,14 +216,17 @@ export default function PackVariantModal({
                 const selectedQty = selected?.quantity || 0;
                 const isSelected = selectedQty > 0;
                 const maxForThisProduct = remaining + selectedQty;
+                const outOfStock = product.stock <= 0;
 
                 return (
                   <div
                     key={product.id}
                     className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
-                      isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:bg-muted/50'
+                      outOfStock
+                        ? 'opacity-50'
+                        : isSelected
+                          ? 'border-primary bg-primary/5'
+                          : 'hover:bg-muted/50'
                     }`}
                   >
                     {product.image ? (
@@ -239,7 +243,14 @@ export default function PackVariantModal({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{product.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {product.cabang?.name || ''} • Stok: {product.stock}
+                        {product.cabang?.name || ''} •{' '}
+                        {outOfStock ? (
+                          <span className="font-medium text-destructive">
+                            Stok habis
+                          </span>
+                        ) : (
+                          <>Stok: {product.stock}</>
+                        )}
                       </p>
                       <p className="text-sm font-bold text-primary">
                         {formatRupiah(product.price)}
@@ -266,6 +277,7 @@ export default function PackVariantModal({
                           handleQuantityChange(product.id, selectedQty + 1)
                         }
                         disabled={
+                          outOfStock ||
                           selectedQty >= maxForThisProduct ||
                           remaining <= 0 ||
                           selectedQty >= product.stock
