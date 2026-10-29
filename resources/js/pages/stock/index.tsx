@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -89,6 +89,12 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'custom', label: 'Pilih tanggal' },
 ];
 
+function newRequestId() {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function StockIndex({
   adjustments,
   products,
@@ -106,6 +112,10 @@ export default function StockIndex({
   const validQty = !Number.isNaN(qty) && qty >= 1;
   const [reason, setReason] = useState('');
   const [search, setSearch] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false);
+  const [requestId, setRequestId] = useState(newRequestId);
 
   const [reasonFilter, setReasonFilter] = useState(filters?.reason ?? 'all');
   const [period, setPeriod] = useState<Period>(
@@ -192,7 +202,12 @@ export default function StockIndex({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Kunci langsung (sinkron), supaya ketukan kedua yang super cepat ditolak
+    if (submitLock.current) return;
     if (!selectedProductId || !validQty || !reason.trim()) return;
+
+    submitLock.current = true;
+    setSubmitting(true);
 
     router.post(
       '/stok',
@@ -201,19 +216,26 @@ export default function StockIndex({
         type,
         quantity,
         reason,
+        request_id: requestId,
       },
       {
+        preserveScroll: true,
         onSuccess: () => {
           toast.success('Stok berhasil diubah.');
           setModalOpen(false);
           setSelectedProductId(null);
           setQuantity('');
           setReason('');
+          setRequestId(newRequestId());
         },
         onError: (errors) => {
           toast.error(
             Object.values(errors).flat().join(', ') || 'Gagal mengubah stok.',
           );
+        },
+        onFinish: () => {
+          submitLock.current = false;
+          setSubmitting(false);
         },
       },
     );
@@ -362,10 +384,17 @@ export default function StockIndex({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={!selectedProductId || !validQty || !reason.trim()}
+                  disabled={
+                    submitting ||
+                    !selectedProductId ||
+                    !validQty ||
+                    !reason.trim()
+                  }
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Simpan Perubahan
+                  <RefreshCw
+                    className={`mr-2 h-4 w-4 ${submitting ? 'animate-spin' : ''}`}
+                  />
+                  {submitting ? 'Menyimpan…' : 'Simpan Perubahan'}
                 </Button>
               </DialogFooter>
             </form>
