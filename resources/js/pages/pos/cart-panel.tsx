@@ -21,7 +21,6 @@ import {
 import FreeProductModal from './free-product-modal';
 import PackVariantModal from './pack-variant-modal';
 import { FreeItemSelection } from './use-cart';
-import { Badge } from '@/components/ui/badge';
 
 interface Props {
   items: (
@@ -232,181 +231,207 @@ export default function CartPanel({
               Belum ada item.
             </p>
           ) : (
-            items.map((item, index) => (
-              <div
-                key={index}
-                className="flex flex-col gap-2 [@media(max-height:500px)]:gap-1"
-              >
-                <div className="flex items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1">
-                      <p className="truncate text-sm font-medium">
-                        {isCartItem(item)
-                          ? item.product.name
-                          : `[Paket] ${item.pack.name}`}
-                      </p>
-                      {isPackCartItem(item) && (
-                        <Package className="h-3 w-3 text-primary" />
-                      )}
-                    </div>
-                    {isCartItem(item) ? (
-                      <p className="text-xs text-muted-foreground">
-                        {formatRupiah(item.product.price)}
-                      </p>
-                    ) : (
-                      <>
-                        {item.variants && item.variants.length > 0 ? (
-                          <div className="space-y-1 text-xs text-muted-foreground">
-                            {item.variants.map((variant, idx) => (
-                              <p key={idx}>
-                                {variant.product.name} x{variant.quantity}
-                              </p>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">
-                            {item.pack.pack_items
-                              ?.map(
-                                (pi) => `${pi.product.name} x${pi.quantity}`,
-                              )
-                              .join(', ')}
-                          </p>
+            items.map((item, index) => {
+              const freeQty = item.freeQuantity ?? 0;
+              const pickedFree = (item.freeItems ?? []).reduce(
+                (s, f) => s + f.quantity,
+                0,
+              );
+              const freeDone = freeQty > 0 && pickedFree >= freeQty;
+
+              return (
+                <div
+                  key={index}
+                  className="rounded-xl border bg-background p-3 [@media(max-height:500px)]:p-2"
+                >
+                  {/* Nama, harga, hapus */}
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        {isPackCartItem(item) && (
+                          <Package className="h-4 w-4 shrink-0 text-primary" />
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="mt-1 h-5 w-5 p-0 text-xs hover:text-primary"
-                          onClick={() =>
-                            openPackVariantModal(item, item.variants || [])
-                          }
-                        >
-                          <span className="text-[10px]">Edit</span>
-                        </Button>
-                      </>
-                    )}
-                    {(item.freeQuantity ?? 0) > 0 && (
-                      <div className="mt-1 flex items-center gap-2">
-                        <p className="flex items-center gap-1 text-xs text-green-600">
-                          <Gift className="h-3 w-3" />
-                          Gratis {item.freeQuantity}
+                        <p className="text-base font-semibold break-words">
+                          {isCartItem(item)
+                            ? item.product.name
+                            : item.pack.name}
                         </p>
-                        {(!item.freeItems ||
-                          item.freeItems.length === 0 ||
-                          item.freeItems.reduce((s, f) => s + f.quantity, 0) <
-                            item.freeQuantity!) && (
+                      </div>
+
+                      {isCartItem(item) ? (
+                        <p className="text-sm text-muted-foreground">
+                          {formatRupiah(item.product.price)}
+                        </p>
+                      ) : (
+                        <>
+                          <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+                            {item.variants && item.variants.length > 0 ? (
+                              item.variants.map((variant, idx) => (
+                                <p key={idx}>
+                                  {variant.product.name} ×{variant.quantity}
+                                </p>
+                              ))
+                            ) : (
+                              <p>
+                                {item.pack.pack_items
+                                  ?.map(
+                                    (pi) =>
+                                      `${pi.product.name} ×${pi.quantity}`,
+                                  )
+                                  .join(', ')}
+                              </p>
+                            )}
+                          </div>
                           <Button
+                            type="button"
                             variant="outline"
                             size="sm"
-                            style={{
-                              padding: '0 8px',
-                              height: '24px',
-                              fontSize: '11px',
-                            }}
-                            onClick={() => openFreeModal(item)}
+                            className="mt-2 h-9"
+                            onClick={() =>
+                              openPackVariantModal(item, item.variants || [])
+                            }
                           >
-                            Pilih Gratis
+                            Ubah isi paket
                           </Button>
-                        )}
-                        {item.freeItems &&
-                          item.freeItems.reduce((s, f) => s + f.quantity, 0) >=
-                            item.freeQuantity! && (
-                            <Badge variant="default" className="text-xs">
-                              Selesai
-                            </Badge>
-                          )}
-                      </div>
-                    )}
-                    {item.stock <= 0 && (
-                      <p className="mt-2 text-xs text-destructive">
-                        Stok habis — produk tidak dapat ditambahkan
-                      </p>
-                    )}
+                        </>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      aria-label="Hapus dari keranjang"
+                      onClick={() => {
+                        if (isCartItem(item)) {
+                          onRemoveProduct(item.product.id);
+                        } else {
+                          onRemovePack(item.pack.id);
+                        }
+                      }}
+                      className="-mt-1 -mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-destructive hover:bg-destructive/10 active:bg-destructive/20"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
                   </div>
-                  <QuantityStepper
-                    value={item.quantity}
-                    max={
-                      item.stock <= 0
-                        ? 0
-                        : isCartItem(item)
-                          ? item.product.stock
-                          : 999
-                    }
-                    disabled={item.stock <= 0}
-                    onChange={(qty) => {
-                      if (isCartItem(item)) {
-                        onSetProductQuantity(item.product.id, qty);
-                      } else {
-                        onSetPackQuantity(item.pack.id, qty);
+
+                  {/* Tombol pilih produk gratis: besar, selebar kartu */}
+                  {freeQty > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => openFreeModal(item)}
+                      className={`mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border text-xs font-semibold transition-colors active:scale-[0.99] ${
+                        freeDone
+                          ? 'border-green-600/40 bg-green-600/10 text-green-600'
+                          : 'border-green-600 bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      <Gift className="h-4 w-4" />
+                      {freeDone
+                        ? `Gratis ${freeQty} sudah dipilih · Ubah`
+                        : `Pilih Gratis (${freeQty - pickedFree} lagi)`}
+                    </button>
+                  )}
+
+                  {item.stock <= 0 && (
+                    <p className="mt-2 text-sm text-destructive">
+                      Stok habis — produk tidak dapat ditambahkan
+                    </p>
+                  )}
+
+                  {/* Jumlah dan total */}
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <QuantityStepper
+                      value={item.quantity}
+                      max={
+                        item.stock <= 0
+                          ? 0
+                          : isCartItem(item)
+                            ? item.product.stock
+                            : 999
                       }
-                    }}
-                  />
-                  <span className="w-16 text-center text-xs text-muted-foreground">
-                    Total: {item.totalQuantity ?? item.quantity}
-                  </span>
-                  <button
-                    onClick={() => {
-                      if (isCartItem(item)) {
-                        onRemoveProduct(item.product.id);
-                      } else {
-                        onRemovePack(item.pack.id);
-                      }
-                    }}
-                    className="text-destructive hover:opacity-70"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                      disabled={item.stock <= 0}
+                      onChange={(qty) => {
+                        if (isCartItem(item)) {
+                          onSetProductQuantity(item.product.id, qty);
+                        } else {
+                          onSetPackQuantity(item.pack.id, qty);
+                        }
+                      }}
+                    />
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Total</p>
+                      <p className="text-lg leading-tight font-semibold">
+                        {item.totalQuantity ?? item.quantity}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {items.length > 0 && availableAddons.length > 0 && (
             <div className="border-t pt-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Addon (untuk transaksi ini):
+              <p className="mb-2 text-sm font-medium">
+                Addon (untuk transaksi ini)
               </p>
-              <div className="flex flex-wrap gap-1">
+              <div className="space-y-2">
                 {availableAddons.map((addon) => {
-                  const selected = cartAddons.find(
-                    (a) => a.addon.id === addon.id,
-                  );
-                  const qty = selected?.quantity || 0;
+                  const qty =
+                    cartAddons.find((a) => a.addon.id === addon.id)?.quantity ??
+                    0;
+
                   return (
                     <div
                       key={addon.id}
-                      className={`flex items-center gap-1 rounded border px-2 py-1 text-xs ${
-                        qty > 0
-                          ? 'border-primary bg-primary/10'
-                          : 'border-muted'
+                      className={`flex items-center justify-between gap-2 rounded-lg border p-2 pl-3 ${
+                        qty > 0 ? 'border-primary bg-primary/10' : ''
                       }`}
                     >
-                      <span>{addon.name}</span>
-                      <span className="text-muted-foreground">
-                        ({formatRupiah(addon.price)})
-                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium break-words">
+                          {addon.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatRupiah(addon.price)}
+                        </p>
+                      </div>
+
                       {qty > 0 ? (
-                        <>
-                          <button
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            aria-label={`Kurangi ${addon.name}`}
                             onClick={() => onRemoveAddon(addon.id)}
-                            className="hover:text-destructive"
                           >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span>{qty}</span>
-                          <button
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-8 text-center font-semibold">
+                            {qty}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            aria-label={`Tambah ${addon.name}`}
                             onClick={() => onAddAddon(addon)}
-                            className="hover:text-primary"
                           >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                       ) : (
-                        <button
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 shrink-0"
                           onClick={() => onAddAddon(addon)}
-                          className="hover:text-primary"
                         >
-                          <Plus className="h-3 w-3" />
-                        </button>
+                          <Plus className="mr-1 h-4 w-4" />
+                          Tambah
+                        </Button>
                       )}
                     </div>
                   );
