@@ -50,11 +50,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('stok')->middleware('role:owner,kasir,produksi')->group(function () {
         Route::get('/', [StockAdjustmentController::class, 'index'])->name('stok.index');
         Route::post('/', [StockAdjustmentController::class, 'store'])->name('stok.store');
+        Route::put('/{adjustment}', [StockAdjustmentController::class, 'update'])
+            ->name('stok.update')
+            ->middleware('role:produksi');
     });
-
-    Route::put('/{adjustment}', [StockAdjustmentController::class, 'update'])
-    ->name('stok.update')
-    ->middleware('role:produksi');
 
     Route::resource('users', UserController::class)
         ->only(['index', 'store', 'update', 'destroy'])
