@@ -187,4 +187,69 @@ class StockAdjustmentController extends Controller
 
         return redirect()->back()->with('success', 'Stok berhasil diubah.');
     }
+
+    public function update(Request $request, StockAdjustment $adjustment): RedirectResponse
+    {
+        abort_unless($request->user()->isProduksi(), 403);
+    
+        $validated = $request->validate([
+            'type' => ['required', 'in:increase,decrease'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+    
+        $allowedReasons = $validated['type'] === 'increase'
+            ? self::INCREASE_REASONS
+            : self::DECREASE_REASONS;
+    
+        if (! in_array($validated['reason'], $allowedReasons, true)) {
+            throw ValidationException::withMessages([
+                'reason' => 'Alasan tidak sesuai dengan jenis perubahan.',
+            ]);
+        }
+    
+        DB::transaction(function () use ($adjustment, $validated, $request) {
+            $product = Product::lockForUpdate()->findOrFail($adjustment->product_id);
+    
+            $oldEffect = $adjustment->type === 'increase'
+                ? $adjustment->quantity
+                : -$adjustment->quantity;
+            $newEffect = $validated['type'] === 'increase'
+                ? $validated['quantity']
+                : -$validated['quantity'];
+            $delta = $newEffect - $oldEffect;
+    
+            $newProductStock = $product->stock + $delta;
+            $newRowStock = $adjustment->previous_stock + $newEffect;
+    
+            if ($newProductStock < 0 || $newRowStock < 0) {
+                throw ValidationException::withMessages([
+                    'quantity' => "Perubahan ini membuat stok negatif. Stok produk saat ini: {$product->stock}.",
+                ]);
+            }
+    
+            $product->update(['stock' => $newProductStock]);
+    
+            // Riwayat setelahnya untuk produk yang sama ikut bergeser supaya urutannya tetap konsisten
+            if ($delta !== 0) {
+                StockAdjustment::where('product_id', $adjustment->product_id)
+                    ->where('id', '>', $adjustment->id)
+                    ->incrementEach([
+                        'previous_stock' => $delta,
+                        'new_stock' => $delta,
+                    ]);
+            }
+    
+            $adjustment->update([
+                'type' => $validated['type'],
+                'quantity' => $validated['quantity'],
+                'reason' => $validated['reason'],
+                'new_stock' => $newRowStock,
+                'edited_at' => now(),
+                'edited_by' => $request->user()->operator_name ?? $request->user()->name,
+            ]);
+        });
+    
+        return redirect()->back()->with('success', 'Riwayat stok berhasil diubah.');
+    }
 }

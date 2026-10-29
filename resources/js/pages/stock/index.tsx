@@ -1,7 +1,14 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  ArrowUp,
+  ArrowDown,
+  RefreshCw,
+  Pencil,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,6 +49,8 @@ interface Adjustment {
   previous_stock: number;
   new_stock: number;
   created_at: string;
+  edited_at?: string | null;
+  edited_by?: string | null;
 }
 
 interface Props {
@@ -108,6 +117,17 @@ export default function StockIndex({
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCabangId, setSelectedCabangId] = useState('');
+
+  // Edit riwayat stok (khusus role produksi)
+  const isProduksi = user.role === 'produksi';
+  const [editing, setEditing] = useState<Adjustment | null>(null);
+  const [editType, setEditType] = useState<'increase' | 'decrease'>('increase');
+  const [editQuantity, setEditQuantity] = useState('');
+  const [editReason, setEditReason] = useState('');
+  const editQty = parseInt(editQuantity, 10);
+  const validEditQty = !Number.isNaN(editQty) && editQty >= 1;
+  const editReasonOptions: readonly string[] =
+    editType === 'increase' ? INCREASE_REASONS : DECREASE_REASONS;
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null,
   );
@@ -227,6 +247,44 @@ export default function StockIndex({
         onError: (errors) => {
           toast.error(
             Object.values(errors).flat().join(', ') || 'Gagal mengubah stok.',
+          );
+        },
+      },
+    );
+  }
+
+  function openEdit(adj: Adjustment) {
+    setEditing(adj);
+    setEditType(adj.type);
+    setEditQuantity(String(adj.quantity));
+    setEditReason(adj.reason ?? '');
+  }
+
+  function handleEditTypeChange(value: string) {
+    const next = value as 'increase' | 'decrease';
+    setEditType(next);
+    const allowed: readonly string[] =
+      next === 'increase' ? INCREASE_REASONS : DECREASE_REASONS;
+    if (!allowed.includes(editReason)) setEditReason('');
+  }
+
+  function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing || !validEditQty || !editReason.trim()) return;
+
+    router.put(
+      `/stok/${editing.id}`,
+      { type: editType, quantity: editQuantity, reason: editReason },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          toast.success('Riwayat stok berhasil diubah.');
+          setEditing(null);
+        },
+        onError: (errors) => {
+          toast.error(
+            Object.values(errors).flat().join(', ') ||
+              'Gagal mengubah riwayat.',
           );
         },
       },
@@ -416,6 +474,73 @@ export default function StockIndex({
           </DialogContent>
         </Dialog>
 
+        <Dialog
+          open={!!editing}
+          onOpenChange={(open) => !open && setEditing(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Riwayat Stok</DialogTitle>
+              <DialogDescription>
+                {editing?.product.name} • stok produk akan ikut disesuaikan.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Jenis Perubahan</label>
+                <Select value={editType} onValueChange={handleEditTypeChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="increase">Tambah Stok</SelectItem>
+                    <SelectItem value="decrease">Kurang Stok</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Jumlah</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Alasan</label>
+                <Select value={editReason} onValueChange={setEditReason}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih alasan..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {editReasonOptions.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditing(null)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!validEditQty || !editReason.trim()}
+                >
+                  Simpan Perubahan
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <div className="mb-4 flex flex-wrap items-end gap-3">
           <div className="space-y-1">
             <label className="text-sm font-medium">Alasan</label>
@@ -536,7 +661,10 @@ export default function StockIndex({
                   <dl className="mt-3 space-y-1 text-sm">
                     <div className="flex justify-between gap-3">
                       <dt className="text-muted-foreground">Alasan</dt>
-                      <dd className="text-right">{adj.reason || '-'}</dd>
+                      <dd className="text-right">
+                        {adj.reason || '-'}
+                        {adj.edited_at && ' (diedit)'}
+                      </dd>
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt className="text-muted-foreground">Oleh</dt>
@@ -554,6 +682,18 @@ export default function StockIndex({
                       </dd>
                     </div>
                   </dl>
+
+                  {isProduksi && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={() => openEdit(adj)}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -561,7 +701,6 @@ export default function StockIndex({
         </div>
 
         <div className="hidden overflow-x-auto rounded-lg border lg:block">
-          {/* <div className="overflow-x-auto rounded-lg border"> */}
           <table className="w-full min-w-[900px] text-sm">
             <caption>
               Riwayat perubahan stok ({adjustments.total} total)
@@ -578,13 +717,14 @@ export default function StockIndex({
                 <th className="px-4 py-3 text-left">Alasan</th>
                 <th className="px-4 py-3 text-center">Oleh</th>
                 <th className="px-4 py-3 text-center">Waktu</th>
+                {isProduksi && <th className="px-4 py-3 text-center">Aksi</th>}
               </tr>
             </thead>
             <tbody className="whitespace-nowrap">
               {adjustments.data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={isProduksi ? 9 : 8}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     Belum ada riwayat perubahan stok.
@@ -615,7 +755,17 @@ export default function StockIndex({
                         <span className="font-medium">{adj.new_stock}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-left">{adj.reason || '-'}</td>
+                    <td className="px-4 py-3 text-left">
+                      {adj.reason || '-'}
+                      {adj.edited_at && (
+                        <span
+                          className="ml-1 text-xs text-muted-foreground"
+                          title={`Diedit oleh ${adj.edited_by ?? '-'} • ${formatDate(adj.edited_at)}`}
+                        >
+                          (diedit)
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       {adj.operator_name ??
                         adj.user?.operator_name ??
@@ -625,6 +775,18 @@ export default function StockIndex({
                     <td className="px-4 py-3 text-center">
                       {formatDate(adj.created_at)}
                     </td>
+                    {isProduksi && (
+                      <td className="px-4 py-3 text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(adj)}
+                          aria-label="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

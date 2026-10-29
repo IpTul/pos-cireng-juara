@@ -52,6 +52,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [StockAdjustmentController::class, 'store'])->name('stok.store');
     });
 
+    Route::put('/{adjustment}', [StockAdjustmentController::class, 'update'])
+    ->name('stok.update')
+    ->middleware('role:produksi');
+
     Route::resource('users', UserController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->middleware('role:owner');
