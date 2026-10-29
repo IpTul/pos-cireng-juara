@@ -50,6 +50,11 @@ class User extends Authenticatable implements PasskeyUser
         return $this->role === 'kasir';
     }
 
+    public function isProduksi(): bool
+    {
+        return $this->role === 'produksi';
+    }
+
     public function cabang(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Cabang::class);

@@ -20,11 +20,12 @@ class CheckRole
     {
         $user = $request->user();
 
-        if (! $user || ! $user->role || ! in_array($user->role, $roles, true)) 
-        {
-            return redirect()
-            ->back()
-            ->with('error', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
+        if (! $user || ! $user->role || ! in_array($user->role, $roles, true)) {
+            if ($user?->isProduksi()) {
+                return redirect()->route('stok.index');
+            }
+        
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
         }
         return $next($request);
     }

@@ -27,7 +27,7 @@ interface Props {
     id: number;
     name: string;
     email: string;
-    role: 'owner' | 'kasir';
+    role: 'owner' | 'kasir' | 'produksi';
   };
 }
 
@@ -110,6 +110,7 @@ export default function UserIndex({ users, user }: Props) {
   const roleLabels: Record<string, string> = {
     owner: 'Owner',
     kasir: 'Kasir',
+    produksi: 'Produksi',
   };
 
   const passwordMismatch =
@@ -271,6 +272,7 @@ export default function UserIndex({ users, user }: Props) {
                 <SelectContent>
                   <SelectItem value="owner">Owner</SelectItem>
                   <SelectItem value="kasir">Kasir</SelectItem>
+                  <SelectItem value="produksi">Produksi</SelectItem>
                 </SelectContent>
               </Select>
               <InputError message={errors.role} />

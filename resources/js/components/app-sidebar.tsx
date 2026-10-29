@@ -123,6 +123,8 @@ export function AppSidebar() {
   //   { title: 'Manajemen Pengguna', href: '/users', icon: Users },
   // ];
 
+  const isProduksi = auth.user?.role === 'produksi';
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-3 py-4">
@@ -163,29 +165,38 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="gap-2 py-2">
-        <SidebarGroup>
-          <NavMain items={posItems} />
-          <NavMain items={otherItems} />
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Operasional</SidebarGroupLabel>
-          <NavMain items={operationalItems} />
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Produk</SidebarGroupLabel>
-          <NavMain items={catalogItems} />
-        </SidebarGroup>
-
-        {auth.user?.role === 'owner' && (
+        {isProduksi ? (
           <SidebarGroup>
-            <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
-            <NavMain items={managementItems} />
+            <SidebarGroupLabel>Produksi</SidebarGroupLabel>
+            <NavMain
+              items={[{ title: 'Riwayat Stok', href: '/stok', icon: Activity }]}
+            />
           </SidebarGroup>
-        )}
+        ) : (
+          <>
+            <SidebarGroup>
+              <NavMain items={posItems} />
+              <NavMain items={otherItems} />
+            </SidebarGroup>
 
-        {/* {auth.user?.role === 'owner' && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Operasional</SidebarGroupLabel>
+              <NavMain items={operationalItems} />
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Produk</SidebarGroupLabel>
+              <NavMain items={catalogItems} />
+            </SidebarGroup>
+
+            {auth.user?.role === 'owner' && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
+                <NavMain items={managementItems} />
+              </SidebarGroup>
+            )}
+
+            {/* {auth.user?.role === 'owner' && (
           <SidebarGroup>
             <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
             <NavMain items={financeItems} />
@@ -198,6 +209,8 @@ export function AppSidebar() {
             <NavMain items={settingsItems} />
           </SidebarGroup>
         )} */}
+          </>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t px-2 py-3">

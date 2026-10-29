@@ -12,7 +12,7 @@ class MemberHistoryController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        abort_if($user->isKasir(), 403);
+        abort_if($user->isOwner(), 403);
 
         $search = trim((string) $request->input('q', ''));
 

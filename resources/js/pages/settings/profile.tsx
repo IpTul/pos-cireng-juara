@@ -142,7 +142,7 @@ export default function Profile({
         </Form>
       </div>
 
-      {auth.user.role !== 'kasir' && <DeleteUser />}
+      {auth.user.role === 'owner' && <DeleteUser />}
     </>
   );
 }

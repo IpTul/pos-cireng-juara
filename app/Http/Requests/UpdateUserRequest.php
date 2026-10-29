@@ -19,7 +19,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'string', Rule::in(['owner', 'kasir'])],
+            'role' => ['required', 'string', Rule::in(['owner', 'kasir', 'produksi'])],
             'cabang_id' => ['nullable', 'required_if:role,kasir', 'exists:cabangs,id'],
         ];
     }
@@ -28,7 +28,7 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
-            'role.in' => 'Role harus owner atau kasir.',
+            'role.in' => 'Role harus owner, kasir, atau produksi.',
             'cabang_id.required_if' => 'Cabang wajib dipilih untuk akun kasir.',
         ];
     }

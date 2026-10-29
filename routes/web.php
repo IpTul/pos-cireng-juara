@@ -40,14 +40,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/history', [SaleHistoryController::class, 'index'])->name('history.index')->middleware('role:owner,kasir');
     Route::get('/history/export-data', [SaleHistoryController::class, 'exportData'])->name('history.export-data');
 
-    Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout');
-    Route::get('receipt/{sale}', [CheckoutController::class, 'receipt'])->name('receipt');
+    Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout')->middleware('role:owner,kasir');
+    Route::get('receipt/{sale}', [CheckoutController::class, 'receipt'])->name('receipt')->middleware('role:owner,kasir');
 
     Route::get('/keuangan', [FinancialReportController::class, 'index'])
         ->middleware('role:owner')
         ->name('keuangan.index');
 
-    Route::prefix('stok')->middleware('role:owner,kasir')->group(function () {
+    Route::prefix('stok')->middleware('role:owner,kasir,produksi')->group(function () {
         Route::get('/', [StockAdjustmentController::class, 'index'])->name('stok.index');
         Route::post('/', [StockAdjustmentController::class, 'store'])->name('stok.store');
     });

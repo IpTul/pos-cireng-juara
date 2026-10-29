@@ -1,5 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Plus, Search, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ interface Product {
   id: number;
   name: string;
   stock: number;
+  cabang_id: number;
   cabang: { name: string };
 }
 
@@ -59,7 +60,7 @@ interface Props {
     name: string;
     operator_name: string;
     email: string;
-    role: 'owner' | 'kasir';
+    role: 'owner' | 'kasir' | 'produksi';
   };
   can: { create: boolean };
   filters?: {
@@ -89,12 +90,6 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'custom', label: 'Pilih tanggal' },
 ];
 
-function newRequestId() {
-  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
 export default function StockIndex({
   adjustments,
   products,
@@ -102,7 +97,17 @@ export default function StockIndex({
   can,
   filters,
 }: Props) {
+  // Cabang & cabang aktif dari shared props (HandleInertiaRequests).
+  // activeCabangId null = user tidak terkunci ke 1 cabang (produksi, atau owner saat "Semua Cabang"),
+  // jadi cabang dipilih manual di form sebelum memilih produk.
+  const { cabangs, activeCabangId } = usePage().props as unknown as {
+    cabangs: { id: number; name: string }[];
+    activeCabangId: number | null;
+  };
+  const needsCabangPick = !activeCabangId;
+
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCabangId, setSelectedCabangId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null,
   );
@@ -112,10 +117,6 @@ export default function StockIndex({
   const validQty = !Number.isNaN(qty) && qty >= 1;
   const [reason, setReason] = useState('');
   const [search, setSearch] = useState('');
-
-  const [submitting, setSubmitting] = useState(false);
-  const submitLock = useRef(false);
-  const [requestId, setRequestId] = useState(newRequestId);
 
   const [reasonFilter, setReasonFilter] = useState(filters?.reason ?? 'all');
   const [period, setPeriod] = useState<Period>(
@@ -194,20 +195,18 @@ export default function StockIndex({
     applyFilters({ reason: value });
   }
 
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredProducts = products
+    .filter((p) => !needsCabangPick || String(p.cabang_id) === selectedCabangId)
+    .filter(
+      (p) =>
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
+    );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Kunci langsung (sinkron), supaya ketukan kedua yang super cepat ditolak
-    if (submitLock.current) return;
+    if (needsCabangPick && !selectedCabangId) return;
     if (!selectedProductId || !validQty || !reason.trim()) return;
-
-    submitLock.current = true;
-    setSubmitting(true);
 
     router.post(
       '/stok',
@@ -216,26 +215,19 @@ export default function StockIndex({
         type,
         quantity,
         reason,
-        request_id: requestId,
       },
       {
-        preserveScroll: true,
         onSuccess: () => {
           toast.success('Stok berhasil diubah.');
           setModalOpen(false);
           setSelectedProductId(null);
           setQuantity('');
           setReason('');
-          setRequestId(newRequestId());
         },
         onError: (errors) => {
           toast.error(
             Object.values(errors).flat().join(', ') || 'Gagal mengubah stok.',
           );
-        },
-        onFinish: () => {
-          submitLock.current = false;
-          setSubmitting(false);
         },
       },
     );
@@ -292,6 +284,30 @@ export default function StockIndex({
             </DialogHeader>
             <form onSubmit={handleSubmit}>
               <div className="grid gap-4 py-4">
+                {needsCabangPick && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Cabang</label>
+                    <Select
+                      value={selectedCabangId}
+                      onValueChange={(v) => {
+                        setSelectedCabangId(v);
+                        setSelectedProductId(null); // ganti cabang = pilih produk ulang
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih cabang..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cabangs.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Produk</label>
                   <div className="relative">
@@ -301,6 +317,7 @@ export default function StockIndex({
                       onValueChange={(v) =>
                         setSelectedProductId(v ? Number(v) : null)
                       }
+                      disabled={needsCabangPick && !selectedCabangId}
                     >
                       <SelectTrigger className="w-full pl-9">
                         <SelectValue placeholder="Pilih produk..." />
@@ -385,16 +402,14 @@ export default function StockIndex({
                 <Button
                   type="submit"
                   disabled={
-                    submitting ||
+                    (needsCabangPick && !selectedCabangId) ||
                     !selectedProductId ||
                     !validQty ||
                     !reason.trim()
                   }
                 >
-                  <RefreshCw
-                    className={`mr-2 h-4 w-4 ${submitting ? 'animate-spin' : ''}`}
-                  />
-                  {submitting ? 'Menyimpan…' : 'Simpan Perubahan'}
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Simpan Perubahan
                 </Button>
               </DialogFooter>
             </form>

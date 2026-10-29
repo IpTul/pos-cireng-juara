@@ -2,7 +2,7 @@ export type User = {
   id: number;
   name: string;
   email: string;
-  role: 'owner' | 'kasir';
+  role: 'owner' | 'kasir' | 'produksi';
   cabang_id?: number | null;
   cabang?: { id: number; name: string } | null;
   avatar?: string;
