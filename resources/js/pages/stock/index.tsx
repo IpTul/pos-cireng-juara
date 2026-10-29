@@ -448,7 +448,7 @@ export default function StockIndex({
         )}
 
         {/* HP & tablet: kartu, tidak perlu geser */}
-        {/* <div className="lg:hidden">
+        <div className="lg:hidden">
           <p className="mb-2 text-sm text-muted-foreground">
             Riwayat perubahan stok ({adjustments.total} total)
           </p>
@@ -514,10 +514,10 @@ export default function StockIndex({
               ))}
             </div>
           )}
-        </div> */}
+        </div>
 
-        {/* <div className="hidden overflow-x-auto rounded-lg border lg:block"> */}
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="hidden overflow-x-auto rounded-lg border lg:block">
+          {/* <div className="overflow-x-auto rounded-lg border"> */}
           <table className="w-full min-w-[900px] text-sm">
             <caption>
               Riwayat perubahan stok ({adjustments.total} total)

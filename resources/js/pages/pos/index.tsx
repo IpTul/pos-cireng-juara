@@ -1,7 +1,9 @@
 import { Input } from '@/components/ui/input';
 import { Product, Pack, Addon, PackVariant } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { LayoutGrid, Search, ShoppingCart } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { Search, ShoppingCart } from 'lucide-react';
+import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useMemo, useState } from 'react';
 import ProductGrid from './product-grid';
 import CartPanel from './cart-panel';
@@ -127,68 +129,94 @@ export default function PosIndex({ products, packs, addons }: Props) {
 
   return (
     <>
-      <Head title="Jual" />
-      {/* h-dvh (bukan h-screen) supaya tidak tertutup toolbar Safari iOS */}
-      <div className="flex h-dvh flex-col bg-background">
-        {/* Top Bar */}
-        <div className="flex items-center gap-4 border-b px-4 py-3 [@media(max-height:500px)]:gap-2 [@media(max-height:500px)]:py-1.5">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <LayoutGrid className="h-5 w-5" />
-          </Link>
-          <span className="font-semibold">Jual</span>
-          <div className="relative ml-4 max-w-sm flex-1">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Cari produk atau paket…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      <SidebarProvider defaultOpen={false} className="h-dvh min-h-0">
+        <Head title="Jual" />
+        {/* h-dvh (bukan h-screen) supaya tidak tertutup toolbar Safari iOS */}
+        <AppSidebar />
+        <div className="flex h-dvh flex-col bg-background">
+          {/* Top Bar */}
+          <div className="flex items-center gap-4 border-b px-4 py-3 [@media(max-height:500px)]:gap-2 [@media(max-height:500px)]:py-1.5">
+            <SidebarTrigger className="h-10 w-10 text-muted-foreground hover:text-foreground" />
+            <span className="font-semibold">Jual</span>
+            <div className="relative ml-4 max-w-sm flex-1">
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Cari produk atau paket…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex border-b md:hidden">
-          <button
-            onClick={() => setMobileTab('produk')}
-            className={`flex-1 border-b-2 py-2 text-sm font-medium ${
-              mobileTab === 'produk'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground'
-            }`}
-          >
-            Produk
-          </button>
-          <button
-            onClick={() => setMobileTab('keranjang')}
-            className={`relative flex flex-1 items-center justify-center gap-1 border-b-2 py-2 text-sm font-medium ${
-              mobileTab === 'keranjang'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground'
-            }`}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Keranjang
-            {totalItems > 0 && (
-              <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
-                {totalItems}
-              </span>
+          <div className="flex border-b md:hidden">
+            <button
+              onClick={() => setMobileTab('produk')}
+              className={`flex-1 border-b-2 py-2 text-sm font-medium ${
+                mobileTab === 'produk'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground'
+              }`}
+            >
+              Produk
+            </button>
+            <button
+              onClick={() => setMobileTab('keranjang')}
+              className={`relative flex flex-1 items-center justify-center gap-1 border-b-2 py-2 text-sm font-medium ${
+                mobileTab === 'keranjang'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground'
+              }`}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Keranjang
+              {totalItems > 0 && (
+                <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Main area - Mobile: tampilkan satu panel sesuai tab aktif */}
+          <div className="flex min-h-0 flex-1 overflow-hidden md:hidden">
+            {mobileTab === 'produk' ? (
+              <ProductGrid
+                products={filteredProducts}
+                packs={displayPacks}
+                onAddProduct={handleAddProduct}
+                onAddPack={handleAddPack}
+              />
+            ) : (
+              <CartPanel
+                items={items}
+                subtotal={subtotal}
+                totalItems={totalItems}
+                onRemoveProduct={removeProduct}
+                onRemovePack={removePack}
+                onSetProductQuantity={setProductQuantity}
+                onSetPackQuantity={setPackQuantity}
+                onClear={clear}
+                onCheckout={() => setShowCheckout(true)}
+                products={products}
+                availableAddons={addons}
+                cartAddons={cartAddons}
+                onSetFreeItems={setFreeItems}
+                onAddAddon={addAddon}
+                onRemoveAddon={removeAddon}
+                onSetPackVariants={setPackVariants}
+              />
             )}
-          </button>
-        </div>
+          </div>
 
-        {/* Main area - Mobile: tampilkan satu panel sesuai tab aktif */}
-        <div className="flex min-h-0 flex-1 overflow-hidden md:hidden">
-          {mobileTab === 'produk' ? (
+          {/* Main area - Desktop: ProductGrid dan CartPanel berdampingan */}
+          <div className="hidden min-h-0 flex-1 overflow-hidden md:flex">
             <ProductGrid
               products={filteredProducts}
-              packs={displayPacks}
-              onAddProduct={handleAddProduct}
+              packs={packs}
+              onAddProduct={addProduct}
               onAddPack={handleAddPack}
             />
-          ) : (
             <CartPanel
               items={items}
               subtotal={subtotal}
@@ -207,56 +235,28 @@ export default function PosIndex({ products, packs, addons }: Props) {
               onRemoveAddon={removeAddon}
               onSetPackVariants={setPackVariants}
             />
-          )}
+          </div>
         </div>
-
-        {/* Main area - Desktop: ProductGrid dan CartPanel berdampingan */}
-        <div className="hidden min-h-0 flex-1 overflow-hidden md:flex">
-          <ProductGrid
-            products={filteredProducts}
-            packs={packs}
-            onAddProduct={addProduct}
-            onAddPack={handleAddPack}
-          />
-          <CartPanel
-            items={items}
-            subtotal={subtotal}
-            totalItems={totalItems}
-            onRemoveProduct={removeProduct}
-            onRemovePack={removePack}
-            onSetProductQuantity={setProductQuantity}
-            onSetPackQuantity={setPackQuantity}
-            onClear={clear}
-            onCheckout={() => setShowCheckout(true)}
-            products={products}
-            availableAddons={addons}
-            cartAddons={cartAddons}
-            onSetFreeItems={setFreeItems}
-            onAddAddon={addAddon}
-            onRemoveAddon={removeAddon}
-            onSetPackVariants={setPackVariants}
-          />
-        </div>
-      </div>
-      <CheckoutDialog
-        open={showCheckout}
-        items={items}
-        cartAddons={cartAddons}
-        subtotal={subtotal}
-        totalItems={totalItems}
-        onSuccess={handleCheckoutSuccess}
-        onClose={() => setShowCheckout(false)}
-      />
-      {/* FIX: hanya render modal kalau pack sudah terisi (bukan null) */}
-      {packVariantModal.pack && (
-        <PackVariantModal
-          open={packVariantModal.open}
-          onClose={handlePackVariantCancel}
-          onConfirm={handlePackVariantConfirm}
-          pack={packVariantModal.pack}
-          products={displayProducts}
+        <CheckoutDialog
+          open={showCheckout}
+          items={items}
+          cartAddons={cartAddons}
+          subtotal={subtotal}
+          totalItems={totalItems}
+          onSuccess={handleCheckoutSuccess}
+          onClose={() => setShowCheckout(false)}
         />
-      )}
+        {/* FIX: hanya render modal kalau pack sudah terisi (bukan null) */}
+        {packVariantModal.pack && (
+          <PackVariantModal
+            open={packVariantModal.open}
+            onClose={handlePackVariantCancel}
+            onConfirm={handlePackVariantConfirm}
+            pack={packVariantModal.pack}
+            products={displayProducts}
+          />
+        )}
+      </SidebarProvider>
     </>
   );
 }
