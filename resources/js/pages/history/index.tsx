@@ -175,6 +175,7 @@ interface Props {
     start_date: string;
     end_date: string;
     payment_method: string;
+    free?: string;
   };
 }
 
@@ -187,6 +188,7 @@ export default function History({ sales, filters }: Props) {
   const [paymentMethod, setPaymentMethod] = useState(
     filters?.payment_method ?? 'all',
   );
+  const [freeFilter, setFreeFilter] = useState(filters?.free ?? 'all');
   const [exporting, setExporting] = useState(false);
 
   function handleViewDetail(sale: SaleRow) {
@@ -205,6 +207,7 @@ export default function History({ sales, filters }: Props) {
         start_date: startDate,
         end_date: endDate,
         payment_method: paymentMethod,
+        free: freeFilter,
       },
       { preserveState: true, preserveScroll: true },
     );
@@ -217,6 +220,7 @@ export default function History({ sales, filters }: Props) {
         start_date: startDate,
         end_date: endDate,
         payment_method: paymentMethod,
+        free: freeFilter,
       });
       const response = await fetch(
         `/history/export-data?${params.toString()}`,
@@ -318,7 +322,7 @@ export default function History({ sales, filters }: Props) {
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
+          <div className="w-full space-y-1 sm:w-auto">
             <Label htmlFor="payment_method">Metode Pembayaran</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger
@@ -336,9 +340,26 @@ export default function History({ sales, filters }: Props) {
               </SelectContent>
             </Select>
           </div>
+          <div className="w-full space-y-1 sm:w-auto">
+            <Label htmlFor="free_filter">Produk Gratis</Label>
+            <Select value={freeFilter} onValueChange={setFreeFilter}>
+              <SelectTrigger id="free_filter" className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Semua transaksi" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua transaksi</SelectItem>
+                <SelectItem value="with">Ada produk gratis</SelectItem>
+                <SelectItem value="without">Tanpa produk gratis</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button className="w-full sm:w-auto" onClick={handleFilter}>
             Terapkan Filter
           </Button>
+        </div>
+
+        <div className="mb-4 rounded-lg border bg-muted/50 px-4 py-3 print:hidden">
+          <p>Total Transaksi: {sales.data.length}</p>
         </div>
 
         <div className="rounded-lg border">

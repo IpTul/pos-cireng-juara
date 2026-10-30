@@ -38,6 +38,7 @@ class SaleHistoryController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $paymentMethod = $request->input('payment_method');
+        $free = $request->input('free');
         $activeCabangId = $request->user()->activeCabangId();
 
         return Sale::with(['items.product.cabang', 'items.pack', 'user', 'member', 'cabang'])
@@ -52,6 +53,12 @@ class SaleHistoryController extends Controller
             })
             ->when($paymentMethod && $paymentMethod !== 'all', function ($query) use ($paymentMethod) {
                 $query->where('payment_method', $paymentMethod);
+            })
+            ->when($free === 'with', function ($query) {
+                $query->whereHas('items', fn ($i) => $i->where('is_free', true));
+            })
+            ->when($free === 'without', function ($query) {
+                $query->whereDoesntHave('items', fn ($i) => $i->where('is_free', true));
             })
             ->latest()
             ->latest('id');
@@ -201,7 +208,8 @@ class SaleHistoryController extends Controller
         $startDate = $request->input('start_date', now()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
         $paymentMethod = $request->input('payment_method', 'all');
-        $request->merge(['start_date' => $startDate, 'end_date' => $endDate, 'payment_method' => $paymentMethod]);
+        $free = $request->input('free', 'all');
+        $request->merge(['start_date' => $startDate, 'end_date' => $endDate, 'payment_method' => $paymentMethod, 'free' => $free]);
 
         // Paginasi per TRANSAKSI langsung di database (bukan per item)
         $sales = $this->baseSalesQuery($request)
@@ -210,6 +218,7 @@ class SaleHistoryController extends Controller
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'payment_method' => $paymentMethod,
+                'free' => $free,
             ])
             ->through(fn (Sale $sale) => $this->transformSale($sale));
 
@@ -225,6 +234,7 @@ class SaleHistoryController extends Controller
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'payment_method' => $paymentMethod,
+                'free' => $free,
             ],
         ]);
     }
