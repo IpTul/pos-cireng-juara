@@ -213,8 +213,8 @@ export default function PosIndex({ products, packs, addons }: Props) {
           <div className="hidden min-h-0 flex-1 overflow-hidden md:flex">
             <ProductGrid
               products={filteredProducts}
-              packs={packs}
-              onAddProduct={addProduct}
+              packs={displayPacks}
+              onAddProduct={handleAddProduct}
               onAddPack={handleAddPack}
             />
             <CartPanel
