@@ -359,7 +359,7 @@ export default function History({ sales, filters }: Props) {
         </div>
 
         <div className="mb-4 rounded-lg border bg-muted/50 px-4 py-3 print:hidden">
-          <p>Total Transaksi: {sales.data.length}</p>
+          <p>Total Transaksi: {sales.total}</p>
         </div>
 
         <div className="rounded-lg border">
