@@ -21,6 +21,14 @@ import {
 import FreeProductModal from './free-product-modal';
 import PackVariantModal from './pack-variant-modal';
 import { FreeItemSelection } from './use-cart';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Props {
   items: (
@@ -173,6 +181,15 @@ export default function CartPanel({
     pack: null,
     variants: null,
   });
+  const [freeWarningOpen, setFreeWarningOpen] = useState(false);
+
+  // Jumlah gratis yang menjadi hak pelanggan vs yang sudah dipilih
+  const freeEntitled = items.reduce((s, i) => s + (i.freeQuantity || 0), 0);
+  const freeChosen = items.reduce(
+    (s, i) => s + (i.freeItems || []).reduce((a, f) => a + f.quantity, 0),
+    0,
+  );
+  const freeMissing = Math.max(0, freeEntitled - freeChosen);
 
   function openPackVariantModal(packItem: any, variants: PackVariant[] = []) {
     setPackVariantModal({
@@ -209,6 +226,25 @@ export default function CartPanel({
   function handleFreeItemsConfirm(freeItems: FreeItemSelection[]) {
     onSetFreeItems(freeItems);
     setModalOpen(false);
+  }
+
+  function handleCheckoutClick() {
+    if (freeMissing > 0) {
+      setFreeWarningOpen(true);
+      return;
+    }
+    onCheckout();
+  }
+
+  function handleChooseFreeNow() {
+    const itemWithFree = items.find((i) => (i.freeQuantity || 0) > 0);
+    setFreeWarningOpen(false);
+    if (itemWithFree) openFreeModal(itemWithFree);
+  }
+
+  function handleCheckoutWithoutFree() {
+    setFreeWarningOpen(false);
+    onCheckout();
   }
 
   return (
@@ -463,12 +499,34 @@ export default function CartPanel({
             className="w-full [@media(max-height:500px)]:h-8"
             size="lg"
             disabled={items.length === 0}
-            onClick={onCheckout}
+            onClick={handleCheckoutClick}
           >
             Bayar
           </Button>
         </div>
       </div>
+
+      <Dialog open={freeWarningOpen} onOpenChange={setFreeWarningOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-amber-500" />
+              Gratis belum dipilih
+            </DialogTitle>
+            <DialogDescription>
+              Pelanggan berhak mendapat {freeEntitled} item gratis (Beli 10
+              Gratis 1), tapi baru {freeChosen} yang dipilih. Pilih gratisnya
+              dulu sebelum membayar?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={handleCheckoutWithoutFree}>
+              Lanjut Tanpa Gratis
+            </Button>
+            <Button onClick={handleChooseFreeNow}>Pilih Gratis</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <FreeProductModal
         open={modalOpen}

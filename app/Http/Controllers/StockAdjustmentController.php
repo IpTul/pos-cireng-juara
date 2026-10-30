@@ -65,7 +65,7 @@ class StockAdjustmentController extends Controller
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->latest()
             ->latest('id')
-            ->paginate(20)
+            ->paginate(15)
             ->withQueryString();
 
         $products = Product::with('cabang')
@@ -73,9 +73,36 @@ class StockAdjustmentController extends Controller
             ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->get();
 
+        $totalsByProduct = StockAdjustment::query()
+            ->selectRaw('product_id, reason, SUM(quantity) as total')
+            ->whereIn('product_id', $products->modelKeys())
+            ->whereIn('reason', self::REASONS)
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
+            ->groupBy('product_id', 'reason')
+            ->get()
+            ->groupBy('product_id');
+
+        $stockSummary = $products->map(function ($product) use ($totalsByProduct) {
+            $rows = $totalsByProduct->get($product->id, collect())->pluck('total', 'reason');
+
+            return [
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'cabang' => $product->cabang?->name,
+                'stock' => $product->stock,
+                'stok_awal' => (int) ($rows['Stok Awal'] ?? 0),
+                'tambahan' => (int) ($rows['Tambahan'] ?? 0),
+                'pengurangan' => (int) ($rows['Pengurangan'] ?? 0),
+                'rusak' => (int) ($rows['Rusak'] ?? 0),
+                'ke_double' => (int) ($rows['Ke double (konfirmasi owner)'] ?? 0),
+            ];
+        })->values();
+
         return Inertia::render('stock/index', [
             'adjustments' => $adjustments,
             'products' => $products,
+            'stockSummary' => $stockSummary,
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
