@@ -63,6 +63,8 @@ export interface SaleItem {
   cabang_name?: string;
   addon_name?: string;
   addon_id?: number;
+  pack_variants?:
+    { product_id: number; name: string; quantity: number }[] | null;
 }
 
 export interface Sale {

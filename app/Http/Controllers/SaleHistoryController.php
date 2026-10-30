@@ -93,6 +93,7 @@ class SaleHistoryController extends Controller
                 'unit_price' => $item->unit_price,
                 'subtotal' => $item->subtotal,
                 'is_free' => (bool) $item->is_free,
+                'variants' => $item->pack_variants ?? [],
             ])->values(),
         ];
     }

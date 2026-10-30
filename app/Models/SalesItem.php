@@ -6,10 +6,17 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['sale_id', 'product_id', 'pack_id', 'product_name', 'unit_price', 'quantity', 'subtotal', 'is_free'])]
+#[Fillable(['sale_id', 'product_id', 'pack_id', 'addon_id', 'pack_variants', 'product_name', 'unit_price', 'quantity', 'subtotal', 'is_free'])]
 class SalesItem extends Model
 {
     protected $table = 'sales_items';
+
+    protected function casts(): array
+    {
+        return [
+            'pack_variants' => 'array',
+        ];
+    }
 
     public function sale() : BelongsTo
     {
@@ -24,5 +31,10 @@ class SalesItem extends Model
     public function pack() : BelongsTo
     {
         return $this->belongsTo(Pack::class);
+    }
+
+    public function addon() : BelongsTo
+    {
+        return $this->belongsTo(Addon::class);
     }
 }

@@ -134,8 +134,10 @@ class CheckoutController extends Controller
                         $requiredStock[$productId] = ($requiredStock[$productId] ?? 0) + $qty;
                     }
 
+                    $variantNames = [];
                     foreach ($requiredStock as $productId => $required) {
                         $product = Product::lockForUpdate()->findOrFail($productId);
+                        $variantNames[$productId] = $product->name;
                         if (! $product->is_active || $product->stock < $required) {
                             throw ValidationException::withMessages([
                                 'packs' => "Stok tidak mencukupi untuk \"{$product->name}\" (diperlukan: {$required}).",
@@ -149,6 +151,11 @@ class CheckoutController extends Controller
                         'product_id'   => null,
                         'pack_id'      => $pack->id,
                         'product_name' => "[Paket] {$pack->name}",
+                        'pack_variants' => collect($variants)->map(fn ($v) => [
+                            'product_id' => $v['product_id'],
+                            'name'       => $variantNames[$v['product_id']] ?? '-',
+                            'quantity'   => $v['quantity'],
+                        ])->values()->all(),
                         'unit_price'   => $pack->price,
                         'quantity'     => $packQty,
                         'subtotal'     => round($subtotal),
@@ -175,6 +182,11 @@ class CheckoutController extends Controller
                         'product_id'   => null,
                         'pack_id'      => $pack->id,
                         'product_name' => "[Paket] {$pack->name}",
+                        'pack_variants' => $pack->packItems->map(fn ($pi) => [
+                            'product_id' => $pi->product_id,
+                            'name'       => $pi->product->name,
+                            'quantity'   => $pi->quantity,
+                        ])->values()->all(),
                         'unit_price'   => $pack->price,
                         'quantity'     => $packQty,
                         'subtotal'     => round($subtotal),

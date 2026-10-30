@@ -249,7 +249,7 @@ export default function PackVariantModal({
                             Stok habis
                           </span>
                         ) : (
-                          <>Stok: {product.stock}</>
+                          <>Stok: {product.stock - selectedQty}</>
                         )}
                       </p>
                       <p className="text-sm font-bold text-primary">

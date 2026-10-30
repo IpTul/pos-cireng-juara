@@ -46,6 +46,7 @@ interface SaleLine {
   unit_price: number;
   subtotal: number;
   is_free: boolean;
+  variants?: { name: string; quantity: number }[];
 }
 
 // Satu transaksi (satu baris di tabel)
@@ -151,6 +152,20 @@ function ItemName({ item }: { item: SaleLine }) {
         </Badge>
       )}
     </span>
+  );
+}
+
+function ItemVariants({ item }: { item: SaleLine }) {
+  if (!item.variants || item.variants.length === 0) return null;
+
+  return (
+    <ul className="mt-1 space-y-0.5 text-xs font-normal text-muted-foreground">
+      {item.variants.map((v, i) => (
+        <li key={i}>
+          - {v.name} ×{v.quantity * item.quantity}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -261,7 +276,7 @@ export default function History({ sales, filters }: Props) {
   return (
     <>
       <Head title="Riwayat Penjualan" />
-      <div className="p-6 print:p-0">
+      <div className="p-3 md:p-6 print:p-0">
         <div className="mb-4 flex items-center justify-between print:mb-4">
           <h1 className="text-2xl font-bold">Riwayat Penjualan</h1>
           <p className="hidden text-sm text-muted-foreground print:block">
@@ -269,7 +284,7 @@ export default function History({ sales, filters }: Props) {
           </p>
         </div>
 
-        <div className="mb-4 flex gap-2 print:hidden">
+        {/* <div className="mb-4 flex gap-2 print:hidden">
           <Button variant="outline" onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" />
             Print
@@ -282,7 +297,7 @@ export default function History({ sales, filters }: Props) {
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             {exporting ? 'Mengekspor…' : 'Export Excel'}
           </Button>
-        </div>
+        </div> */}
 
         <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border p-4 print:hidden">
           <div className="space-y-1">
@@ -306,7 +321,10 @@ export default function History({ sales, filters }: Props) {
           <div className="space-y-1">
             <Label htmlFor="payment_method">Metode Pembayaran</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger id="payment_method" className="w-[160px]">
+              <SelectTrigger
+                id="payment_method"
+                className="w-full sm:w-[160px]"
+              >
                 <SelectValue placeholder="Semua Metode" />
               </SelectTrigger>
               <SelectContent>
@@ -318,11 +336,113 @@ export default function History({ sales, filters }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleFilter}>Terapkan Filter</Button>
+          <Button className="w-full sm:w-auto" onClick={handleFilter}>
+            Terapkan Filter
+          </Button>
         </div>
 
         <div className="rounded-lg border">
-          <div className="overflow-x-auto">
+          {/* HP & tablet: kartu per transaksi, tidak perlu geser */}
+          <div className="lg:hidden print:hidden">
+            {sales.data.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                Belum ada riwayat penjualan.
+              </div>
+            ) : (
+              <div className="divide-y">
+                {sales.data.map((sale) => {
+                  const settled = isSettled(sale.payment_method);
+
+                  return (
+                    <div key={sale.id} className="space-y-3 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm text-muted-foreground">
+                          {formatDate(sale.created_at)}
+                        </p>
+                        <StatusBadge status={sale.status} />
+                      </div>
+
+                      {sale.items.length > 0 && (
+                        <ul className="space-y-1.5">
+                          {sale.items.map((item) => (
+                            <li key={item.id} className="font-medium">
+                              <ItemName item={item} />{' '}
+                              <span className="font-normal text-muted-foreground">
+                                ×{item.quantity}
+                              </span>
+                              <ItemVariants item={item} />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
+                        <PaymentLabel method={sale.payment_method} />
+                        <span className="text-lg font-semibold">
+                          {formatRupiah(sale.total)}
+                        </span>
+                      </div>
+
+                      <dl className="space-y-1 text-sm">
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Customer</dt>
+                          <dd className="text-right">
+                            {sale.customer_name || '-'}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted-foreground">Operator</dt>
+                          <dd className="text-right">
+                            {sale.operator_name || sale.user.name}
+                          </dd>
+                        </div>
+                        {!settled && (
+                          <>
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Tunai</dt>
+                              <dd className="text-right">
+                                {formatRupiah(sale.cash_tendered)}
+                              </dd>
+                            </div>
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">
+                                Kembalian
+                              </dt>
+                              <dd className="text-right">
+                                {formatRupiah(sale.change_amount)}
+                              </dd>
+                            </div>
+                          </>
+                        )}
+                      </dl>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          className="h-11"
+                          onClick={() => handleViewDetail(sale)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Detail
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-11"
+                          onClick={() => handlePrintReceipt(sale)}
+                        >
+                          <Printer className="mr-2 h-4 w-4" />
+                          Struk
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* PC: tabel */}
+          <div className="hidden overflow-x-auto lg:block print:block">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
@@ -372,6 +492,7 @@ export default function History({ sales, filters }: Props) {
                                   <span className="font-normal text-muted-foreground">
                                     ×{item.quantity}
                                   </span>
+                                  <ItemVariants item={item} />
                                 </li>
                               ))}
                             </ul>
@@ -494,6 +615,7 @@ export default function History({ sales, filters }: Props) {
                       <tr key={item.id} className="border-b last:border-0">
                         <td className="px-3 py-2">
                           <ItemName item={item} />
+                          <ItemVariants item={item} />
                           <div className="text-xs text-muted-foreground">
                             {formatRupiah(item.unit_price)}
                           </div>

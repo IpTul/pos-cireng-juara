@@ -116,6 +116,15 @@ export default function Receipt({ sale }: Props) {
               </div>
               <div className="rc-small rc-muted">
                 {item.quantity} × {rupiah(item.unit_price)}
+                {item.pack_variants && item.pack_variants.length > 0 && (
+                  <ul className="rc-variants">
+                    {item.pack_variants.map((v, i) => (
+                      <li key={i}>
+                        {v.name} ×{v.quantity * item.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           ))}

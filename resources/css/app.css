@@ -219,6 +219,15 @@
   margin-top: 20px;
   border-top: 1px dashed currentColor;
 }
+
+.receipt-paper .rc-variants {
+  margin-top: 0.2em;
+  padding-left: 0.6em;
+  font-size: var(--rc-small);
+}
+.receipt-paper .rc-variants li::before {
+  content: '- ';
+}
  
 @media print {
   body { background: #fff; }
