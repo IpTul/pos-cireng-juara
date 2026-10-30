@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DailyStockLeftover;
 use App\Models\Product;
 use App\Models\StockAdjustment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class StockAdjustmentController extends Controller
 {
@@ -73,6 +73,7 @@ class StockAdjustmentController extends Controller
             ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->get();
 
+        // Ringkasan per produk untuk periode terpilih (tanpa filter alasan)
         $totalsByProduct = StockAdjustment::query()
             ->selectRaw('product_id, reason, SUM(quantity) as total')
             ->whereIn('product_id', $products->modelKeys())
@@ -83,14 +84,29 @@ class StockAdjustmentController extends Controller
             ->get()
             ->groupBy('product_id');
 
-        $stockSummary = $products->map(function ($product) use ($totalsByProduct) {
+        // Sisa stok: catatan harian untuk hari yang sudah lewat, stok saat ini untuk hari ini
+        $includesToday = (! $from || $from->lte(now())) && (! $to || $to->gte(now()->startOfDay()));
+
+        $leftovers = DailyStockLeftover::query()
+            ->selectRaw('product_id, SUM(stock) as total')
+            ->whereIn('product_id', $products->modelKeys())
+            ->when($from, fn ($q) => $q->where('date', '>=', $from->toDateString()))
+            ->when($to, fn ($q) => $q->where('date', '<=', $to->toDateString()))
+            ->groupBy('product_id')
+            ->pluck('total', 'product_id');
+
+        $stockSummary = $products->map(function ($product) use ($totalsByProduct, $leftovers, $includesToday) {
             $rows = $totalsByProduct->get($product->id, collect())->pluck('total', 'reason');
+            $snapshot = $leftovers->get($product->id);
 
             return [
                 'product_id' => $product->id,
                 'name' => $product->name,
                 'cabang' => $product->cabang?->name,
                 'stock' => $product->stock,
+                'sisa' => ($snapshot === null && ! $includesToday)
+                    ? null
+                    : (int) $snapshot + ($includesToday ? $product->stock : 0),
                 'stok_awal' => (int) ($rows['Stok Awal'] ?? 0),
                 'tambahan' => (int) ($rows['Tambahan'] ?? 0),
                 'pengurangan' => (int) ($rows['Pengurangan'] ?? 0),
@@ -143,7 +159,6 @@ class StockAdjustmentController extends Controller
             'type' => ['required', 'in:increase,decrease'],
             'quantity' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'max:255'],
-            'request_id' => ['nullable', 'string', 'max:100'],
         ]);
 
         $allowedReasons = $validated['type'] === 'increase'
@@ -156,61 +171,42 @@ class StockAdjustmentController extends Controller
             ]);
         }
 
-        // Tolak kiriman ganda: ID yang sama hanya boleh diproses satu kali
-        $dedupeKey = ! empty($validated['request_id'])
-            ? 'stock-adjust:'.$validated['request_id']
-            : null;
+        $product = Product::lockForUpdate()->findOrFail($validated['product_id']);
 
-        if ($dedupeKey && ! Cache::add($dedupeKey, true, now()->addMinutes(10))) {
-            return redirect()->back()->with('success', 'Perubahan stok sudah tercatat.');
+        if ($this->user->isKasir() && $product->cabang_id !== $this->user->cabang_id) {
+            abort(403, 'Produk ini bukan milik cabang kamu.');
         }
 
-        try {
-            DB::transaction(function () use ($validated, $request) {
-                $product = Product::lockForUpdate()->findOrFail($validated['product_id']);
-
-                if ($this->user->isKasir() && $product->cabang_id !== $this->user->cabang_id) {
-                    abort(403, 'Produk ini bukan milik cabang kamu.');
-                }
-
-                if (! $product->is_active) {
-                    throw ValidationException::withMessages([
-                        'product_id' => 'Produk tidak aktif.',
-                    ]);
-                }
-
-                $previousStock = $product->stock;
-                $newStock = $validated['type'] === 'increase'
-                    ? $previousStock + $validated['quantity']
-                    : $previousStock - $validated['quantity'];
-
-                if ($newStock < 0) {
-                    throw ValidationException::withMessages([
-                        'quantity' => "Stok tidak boleh negatif. Stok saat ini: {$previousStock}.",
-                    ]);
-                }
-
-                $product->stock = $newStock;
-                $product->save();
-
-                StockAdjustment::create([
-                    'product_id' => $product->id,
-                    'user_id' => auth()->id(),
-                    'operator_name' => $request->user()->operator_name ?? $request->user()->name,
-                    'type' => $validated['type'],
-                    'quantity' => $validated['quantity'],
-                    'reason' => $validated['reason'],
-                    'previous_stock' => $previousStock,
-                    'new_stock' => $newStock,
-                ]);
-            });
-        } catch (\Throwable $e) {
-            // Gagal (mis. stok negatif): bebaskan ID supaya bisa dicoba lagi
-            if ($dedupeKey) {
-                Cache::forget($dedupeKey);
-            }
-            throw $e;
+        if (!$product->is_active) {
+            throw ValidationException::withMessages([
+                'product_id' => 'Produk tidak aktif.',
+            ]);
         }
+
+        $previousStock = $product->stock;
+        $newStock = $validated['type'] === 'increase'
+            ? $previousStock + $validated['quantity']
+            : $previousStock - $validated['quantity'];
+
+        if ($newStock < 0) {
+            throw ValidationException::withMessages([
+                'quantity' => "Stok tidak boleh negatif. Stok saat ini: {$previousStock}.",
+            ]);
+        }
+
+        $product->stock = $newStock;
+        $product->save();
+
+        StockAdjustment::create([
+            'product_id' => $product->id,
+            'user_id' => auth()->id(),
+            'operator_name' => $request->user()->operator_name ?? $request->user()->name,
+            'type' => $validated['type'],
+            'quantity' => $validated['quantity'],
+            'reason' => $validated['reason'],
+            'previous_stock' => $previousStock,
+            'new_stock' => $newStock,
+        ]);
 
         return redirect()->back()->with('success', 'Stok berhasil diubah.');
     }
@@ -218,26 +214,26 @@ class StockAdjustmentController extends Controller
     public function update(Request $request, StockAdjustment $adjustment): RedirectResponse
     {
         abort_unless($request->user()->isProduksi(), 403);
-    
+
         $validated = $request->validate([
             'type' => ['required', 'in:increase,decrease'],
             'quantity' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'max:255'],
         ]);
-    
+
         $allowedReasons = $validated['type'] === 'increase'
             ? self::INCREASE_REASONS
             : self::DECREASE_REASONS;
-    
+
         if (! in_array($validated['reason'], $allowedReasons, true)) {
             throw ValidationException::withMessages([
                 'reason' => 'Alasan tidak sesuai dengan jenis perubahan.',
             ]);
         }
-    
+
         DB::transaction(function () use ($adjustment, $validated, $request) {
             $product = Product::lockForUpdate()->findOrFail($adjustment->product_id);
-    
+
             $oldEffect = $adjustment->type === 'increase'
                 ? $adjustment->quantity
                 : -$adjustment->quantity;
@@ -245,18 +241,18 @@ class StockAdjustmentController extends Controller
                 ? $validated['quantity']
                 : -$validated['quantity'];
             $delta = $newEffect - $oldEffect;
-    
+
             $newProductStock = $product->stock + $delta;
             $newRowStock = $adjustment->previous_stock + $newEffect;
-    
+
             if ($newProductStock < 0 || $newRowStock < 0) {
                 throw ValidationException::withMessages([
                     'quantity' => "Perubahan ini membuat stok negatif. Stok produk saat ini: {$product->stock}.",
                 ]);
             }
-    
+
             $product->update(['stock' => $newProductStock]);
-    
+
             // Riwayat setelahnya untuk produk yang sama ikut bergeser supaya urutannya tetap konsisten
             if ($delta !== 0) {
                 StockAdjustment::where('product_id', $adjustment->product_id)
@@ -266,7 +262,7 @@ class StockAdjustmentController extends Controller
                         'new_stock' => $delta,
                     ]);
             }
-    
+
             $adjustment->update([
                 'type' => $validated['type'],
                 'quantity' => $validated['quantity'],
@@ -276,7 +272,7 @@ class StockAdjustmentController extends Controller
                 'edited_by' => $request->user()->operator_name ?? $request->user()->name,
             ]);
         });
-    
+
         return redirect()->back()->with('success', 'Riwayat stok berhasil diubah.');
     }
 }

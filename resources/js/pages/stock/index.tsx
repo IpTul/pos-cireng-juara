@@ -60,6 +60,7 @@ interface StockSummary {
   name: string;
   cabang: string | null;
   stock: number;
+  sisa: number | null;
   stok_awal: number;
   tambahan: number;
   pengurangan: number;
@@ -299,6 +300,10 @@ export default function StockIndex({
     }),
     { stok_awal: 0, tambahan: 0, pengurangan: 0, rusak: 0, ke_double: 0 },
   );
+
+  const sisaTotal = stockSummary.some((r) => r.sisa !== null)
+    ? stockSummary.reduce((sum, r) => sum + (r.sisa ?? 0), 0)
+    : null;
 
   const [summaryPage, setSummaryPage] = useState(1);
   const summaryLastPage = Math.max(
@@ -1070,6 +1075,11 @@ export default function StockIndex({
               <p className="text-sm text-muted-foreground">
                 Periode: {periodLabel}
               </p>
+              <p className="text-xs text-muted-foreground">
+                Sisa = stok yang tidak terjual. Dicatat otomatis saat reset jam
+                07.00; untuk hari ini sama dengan stok saat ini. "–" berarti
+                belum ada catatan.
+              </p>
             </div>
 
             {/* HP & tablet: kartu */}
@@ -1108,6 +1118,10 @@ export default function StockIndex({
                           </div>
                         ))}
                       </dl>
+                      <div className="mt-3 flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm">
+                        <span className="text-muted-foreground">Sisa stok</span>
+                        <span className="font-semibold">{row.sisa ?? '–'}</span>
+                      </div>
                     </div>
                   ))}
 
@@ -1128,6 +1142,10 @@ export default function StockIndex({
                         </div>
                       ))}
                     </dl>
+                    <div className="mt-3 flex items-center justify-between rounded-md bg-background px-3 py-2 text-sm">
+                      <span className="text-muted-foreground">Sisa stok</span>
+                      <span className="font-semibold">{sisaTotal ?? '–'}</span>
+                    </div>
                   </div>
                 </>
               )}
@@ -1135,7 +1153,7 @@ export default function StockIndex({
 
             {/* Desktop: tabel */}
             <div className="hidden overflow-x-auto rounded-lg border lg:block">
-              <table className="w-full min-w-[700px] text-sm">
+              <table className="w-full min-w-[800px] text-sm">
                 <thead className="border-b bg-muted/50">
                   <tr>
                     <th className="px-4 py-3 text-left">#</th>
@@ -1148,6 +1166,7 @@ export default function StockIndex({
                         {c.label}
                       </th>
                     ))}
+                    <th className="px-4 py-3 text-center">Sisa</th>
                     <th className="px-4 py-3 text-center">Stok Saat Ini</th>
                   </tr>
                 </thead>
@@ -1155,7 +1174,7 @@ export default function StockIndex({
                   {stockSummary.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={needsCabangPick ? 9 : 8}
+                        colSpan={needsCabangPick ? 10 : 9}
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         Belum ada produk.
@@ -1181,6 +1200,9 @@ export default function StockIndex({
                           </td>
                         ))}
                         <td className="px-4 py-3 text-center font-semibold">
+                          {row.sisa ?? '–'}
+                        </td>
+                        <td className="px-4 py-3 text-center font-semibold">
                           {row.stock}
                         </td>
                       </tr>
@@ -1201,6 +1223,9 @@ export default function StockIndex({
                           {summaryTotals[c.key]}
                         </td>
                       ))}
+                      <td className="px-4 py-3 text-center">
+                        {sisaTotal ?? '–'}
+                      </td>
                       <td className="px-4 py-3" />
                     </tr>
                   </tfoot>
