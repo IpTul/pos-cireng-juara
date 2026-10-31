@@ -53,6 +53,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{adjustment}', [StockAdjustmentController::class, 'update'])
             ->name('stok.update')
             ->middleware('role:produksi');
+        Route::delete('/{adjustment}', [StockAdjustmentController::class, 'destroy'])
+            ->name('stok.destroy')
+            ->middleware('role:owner,produksi');
     });
 
     Route::resource('users', UserController::class)

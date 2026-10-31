@@ -8,6 +8,7 @@ import {
   ArrowDown,
   RefreshCw,
   Pencil,
+  Trash2,
   ChevronLeft,
   ChevronRight,
   History,
@@ -252,15 +253,27 @@ export default function StockIndex({
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCabangId, setSelectedCabangId] = useState('');
 
-  const isProduksi = user.role === 'produksi';
+  const isRole = user.role === 'owner' || user.role === 'produksi';
   const [editing, setEditing] = useState<Adjustment | null>(null);
   const [editType, setEditType] = useState<'increase' | 'decrease'>('increase');
   const [editQuantity, setEditQuantity] = useState('');
   const [editReason, setEditReason] = useState('');
+  const [deleting, setDeleting] = useState<Adjustment | null>(null);
   const editQty = parseInt(editQuantity, 10);
   const validEditQty = !Number.isNaN(editQty) && editQty >= 1;
   const editReasonOptions: readonly string[] =
     editType === 'increase' ? INCREASE_REASONS : DECREASE_REASONS;
+
+  // Pratinjau stok setelah riwayat dihapus (efeknya dibatalkan)
+  const deleteEffect = deleting
+    ? deleting.type === 'increase'
+      ? deleting.quantity
+      : -deleting.quantity
+    : 0;
+  const deleteRestoredStock = deleting
+    ? deleting.product.stock - deleteEffect
+    : 0;
+  const deleteBlocked = !!deleting && deleteRestoredStock < 0;
 
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null,
@@ -487,6 +500,29 @@ export default function StockIndex({
     );
   }
 
+  function handleDelete() {
+    if (!deleting || deleteBlocked) return;
+
+    // Kalau ini satu-satunya baris di halaman, setelah dihapus pindah ke halaman sebelumnya
+    const wasLastOnPage =
+      adjustments.data.length === 1 && adjustments.current_page > 1;
+    const previousPage = adjustments.current_page - 1;
+
+    router.delete(`/stok/${deleting.id}`, {
+      preserveScroll: true,
+      onSuccess: () => {
+        toast.success('Riwayat dihapus dan stok dikembalikan.');
+        setDeleting(null);
+        if (wasLastOnPage) goToHistoryPage(previousPage);
+      },
+      onError: (errors) => {
+        toast.error(
+          Object.values(errors).flat().join(', ') || 'Gagal menghapus riwayat.',
+        );
+      },
+    });
+  }
+
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleString('id-ID', {
       day: '2-digit',
@@ -691,7 +727,8 @@ export default function StockIndex({
             <DialogHeader>
               <DialogTitle>Edit Riwayat Stok</DialogTitle>
               <DialogDescription>
-                {editing?.product.name} • stok produk akan ikut disesuaikan.
+                {editing?.product.name} ({editing?.product.cabang?.name ?? '-'})
+                • stok produk akan ikut disesuaikan.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -747,6 +784,77 @@ export default function StockIndex({
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog hapus riwayat (khusus produksi) */}
+        <Dialog
+          open={!!deleting}
+          onOpenChange={(open) => !open && setDeleting(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Hapus riwayat stok?</DialogTitle>
+              <DialogDescription>
+                {deleting?.product.name} (
+                {deleting?.product.cabang?.name ?? '-'}) •{' '}
+                {deleting?.type === 'increase' ? 'Tambah' : 'Kurang'}{' '}
+                {deleting?.quantity} ({deleting?.reason ?? '-'})
+              </DialogDescription>
+            </DialogHeader>
+
+            {deleting && (
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
+                  <span className="text-muted-foreground">
+                    Stok produk sekarang
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span>{deleting.product.stock}</span>
+                    <span className="text-muted-foreground">→</span>
+                    <span
+                      className={
+                        deleteBlocked
+                          ? 'font-semibold text-destructive'
+                          : 'font-semibold'
+                      }
+                    >
+                      {deleteRestoredStock}
+                    </span>
+                  </span>
+                </div>
+                {deleteBlocked ? (
+                  <p className="text-destructive">
+                    Tidak bisa dihapus: stok akan menjadi negatif. Biasanya
+                    karena stok dari riwayat ini sudah terjual.
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Efek riwayat ini dibatalkan dan stok produk dikembalikan.
+                    Riwayat yang dihapus tidak bisa dipulihkan.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleting(null)}
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deleteBlocked}
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Hapus
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
@@ -890,6 +998,9 @@ export default function StockIndex({
                           <p className="font-medium break-words">
                             {adj.product.name}
                           </p>
+                          <p className="text-xs text-muted-foreground">
+                            Cabang: {adj.product.cabang?.name ?? '-'}
+                          </p>
                         </div>
                         {getTypeBadge(adj.type)}
                       </div>
@@ -939,16 +1050,26 @@ export default function StockIndex({
                         </div>
                       </dl>
 
-                      {isProduksi && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 w-full"
-                          onClick={() => openEdit(adj)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </Button>
+                      {isRole && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEdit(adj)}
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleting(adj)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -974,16 +1095,14 @@ export default function StockIndex({
                     <th className="px-4 py-3 text-left">Alasan</th>
                     <th className="px-4 py-3 text-center">Oleh</th>
                     <th className="px-4 py-3 text-center">Waktu</th>
-                    {isProduksi && (
-                      <th className="px-4 py-3 text-center">Aksi</th>
-                    )}
+                    {isRole && <th className="px-4 py-3 text-center">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody className="whitespace-nowrap">
                   {adjustments.data.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isProduksi ? 9 : 8}
+                        colSpan={isRole ? 9 : 8}
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         Belum ada riwayat perubahan stok.
@@ -998,8 +1117,11 @@ export default function StockIndex({
                         <td className="px-4 py-3 font-medium">
                           {adjustments.from + index}
                         </td>
-                        <td className="px-4 py-3 font-medium">
-                          {adj.product.name}
+                        <td className="px-4 py-3">
+                          <p className="font-medium">{adj.product.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {adj.product.cabang?.name ?? '-'}
+                          </p>
                         </td>
                         <td className="px-4 py-3 text-center">
                           {getTypeBadge(adj.type)}
@@ -1036,16 +1158,27 @@ export default function StockIndex({
                         <td className="px-4 py-3 text-center">
                           {formatDate(adj.created_at)}
                         </td>
-                        {isProduksi && (
+                        {isRole && (
                           <td className="px-4 py-3 text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEdit(adj)}
-                              aria-label="Edit"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEdit(adj)}
+                                aria-label="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setDeleting(adj)}
+                                aria-label="Hapus"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         )}
                       </tr>
@@ -1095,11 +1228,9 @@ export default function StockIndex({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium break-words">{row.name}</p>
-                          {needsCabangPick && (
-                            <p className="text-xs text-muted-foreground">
-                              {row.cabang}
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Cabang: {row.cabang ?? '-'}
+                          </p>
                         </div>
                         <Badge variant="secondary" className="shrink-0 text-xs">
                           Stok: {row.stock}
@@ -1158,9 +1289,7 @@ export default function StockIndex({
                   <tr>
                     <th className="px-4 py-3 text-left">#</th>
                     <th className="px-4 py-3 text-left">Produk</th>
-                    {needsCabangPick && (
-                      <th className="px-4 py-3 text-left">Cabang</th>
-                    )}
+                    <th className="px-4 py-3 text-left">Cabang</th>
                     {SUMMARY_COLUMNS.map((c) => (
                       <th key={c.key} className="px-4 py-3 text-center">
                         {c.label}
@@ -1174,7 +1303,7 @@ export default function StockIndex({
                   {stockSummary.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={needsCabangPick ? 10 : 9}
+                        colSpan={10}
                         className="px-4 py-8 text-center text-muted-foreground"
                       >
                         Belum ada produk.
@@ -1188,9 +1317,7 @@ export default function StockIndex({
                       >
                         <td className="px-4 py-3">{summaryOffset + i + 1}</td>
                         <td className="px-4 py-3 font-medium">{row.name}</td>
-                        {needsCabangPick && (
-                          <td className="px-4 py-3">{row.cabang}</td>
-                        )}
+                        <td className="px-4 py-3">{row.cabang ?? '-'}</td>
                         {SUMMARY_COLUMNS.map((c) => (
                           <td
                             key={c.key}
@@ -1212,10 +1339,7 @@ export default function StockIndex({
                 {stockSummary.length > 0 && (
                   <tfoot className="border-t bg-muted/50 font-semibold">
                     <tr>
-                      <td
-                        className="px-4 py-3"
-                        colSpan={needsCabangPick ? 3 : 2}
-                      >
+                      <td className="px-4 py-3" colSpan={3}>
                         Total semua produk
                       </td>
                       {SUMMARY_COLUMNS.map((c) => (

@@ -8,6 +8,7 @@ use App\Models\StockAdjustment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Illuminate\Support\Carbon;
@@ -274,5 +275,53 @@ class StockAdjustmentController extends Controller
         });
 
         return redirect()->back()->with('success', 'Riwayat stok berhasil diubah.');
+    }
+
+    public function destroy(Request $request, StockAdjustment $adjustment): RedirectResponse
+    {
+        abort_unless($request->user()->isProduksi(), 403);
+
+        DB::transaction(function () use ($adjustment, $request) {
+            $product = Product::lockForUpdate()->findOrFail($adjustment->product_id);
+
+            // Batalkan efek riwayat ini: tambah stok -> dikurangi lagi, kurang stok -> dikembalikan
+            $effect = $adjustment->type === 'increase'
+                ? $adjustment->quantity
+                : -$adjustment->quantity;
+            $restoredStock = $product->stock - $effect;
+
+            if ($restoredStock < 0) {
+                throw ValidationException::withMessages([
+                    'adjustment' => "Riwayat ini tidak bisa dihapus karena stok akan menjadi negatif ({$restoredStock}). Stok produk saat ini: {$product->stock}.",
+                ]);
+            }
+
+            $product->update(['stock' => $restoredStock]);
+
+            // Riwayat setelahnya untuk produk yang sama ikut bergeser supaya urutannya tetap konsisten
+            StockAdjustment::where('product_id', $adjustment->product_id)
+                ->where('id', '>', $adjustment->id)
+                ->incrementEach([
+                    'previous_stock' => -$effect,
+                    'new_stock' => -$effect,
+                ]);
+
+            // Jejak penghapusan (riwayat dihapus permanen) ada di storage/logs/laravel.log
+            Log::info('Riwayat stok dihapus', [
+                'adjustment_id' => $adjustment->id,
+                'product_id' => $adjustment->product_id,
+                'type' => $adjustment->type,
+                'quantity' => $adjustment->quantity,
+                'reason' => $adjustment->reason,
+                'previous_stock' => $adjustment->previous_stock,
+                'new_stock' => $adjustment->new_stock,
+                'stock_restored_to' => $restoredStock,
+                'deleted_by' => $request->user()->operator_name ?? $request->user()->name,
+            ]);
+
+            $adjustment->delete();
+        });
+
+        return redirect()->back()->with('success', 'Riwayat stok dihapus dan stok produk dikembalikan.');
     }
 }
