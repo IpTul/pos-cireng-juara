@@ -16,7 +16,7 @@ interface FreeItemSelection {
   product_id: number;
   quantity: number;
 }
-
+const EXCLUDED_FREE_PRODUCTS = new Set(['chili oil', 'mentai', 'kuah creamy']);
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -57,7 +57,12 @@ export default function FreeProductModal({
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         (p.cabang?.name || '').toLowerCase().includes(search.toLowerCase()),
     )
-    .filter((p) => p.is_active && p.stock > 0);
+    .filter(
+      (p) =>
+        p.is_active &&
+        p.stock > 0 &&
+        !EXCLUDED_FREE_PRODUCTS.has(p.name.trim().toLowerCase()),
+    );
 
   function handleQuantityChange(productId: number, qty: number) {
     if (qty < 0) return;
