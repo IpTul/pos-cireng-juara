@@ -80,7 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/operator-name', [OperatorNameController::class, 'store'])->name('operator-name.store');
 
     Route::post('/switch-cabang', [CabangSwitchController::class, 'store'])
-        ->middleware('role:owner')
+        ->middleware('role:owner,produksi')
         ->name('cabang.switch');
 });
 

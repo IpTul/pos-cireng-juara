@@ -245,6 +245,7 @@ export default function StockIndex({
     activeCabangId: number | null;
   };
   const needsCabangPick = !activeCabangId;
+  const isProduksi = user.role === 'produksi';
 
   const [view, setView] = useState<View>('riwayat');
   const historyRef = useRef<HTMLDivElement>(null);
@@ -357,7 +358,24 @@ export default function StockIndex({
     );
   }
 
-  // Kirim semua filter sekaligus; `next` menimpa nilai state yang baru diubah
+  function handleCabangSwitch(value: string) {
+    const wasOnLaterPage = adjustments.current_page > 1;
+
+    router.post(
+      '/switch-cabang',
+      { cabang_id: value === 'all' ? null : value },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setSelectedCabangId('');
+          setSelectedProductId(null);
+          setSummaryPage(1);
+          if (wasOnLaterPage) goToHistoryPage(1);
+        },
+      },
+    );
+  }
+
   function applyFilters(next: {
     reason?: string;
     period?: Period;
@@ -857,6 +875,33 @@ export default function StockIndex({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Cabang aktif (khusus produksi, di halaman ini) */}
+        {isProduksi && (
+          <div className="mb-4 rounded-lg border p-3 md:p-4">
+            <label className="text-sm font-medium">Cabang</label>
+            <Select
+              value={activeCabangId ? String(activeCabangId) : 'all'}
+              onValueChange={handleCabangSwitch}
+            >
+              <SelectTrigger className="mt-1 w-full sm:w-64">
+                <SelectValue placeholder="Semua cabang" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua cabang</SelectItem>
+                {cabangs.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* <p className="mt-1 text-xs text-muted-foreground">
+              Menentukan riwayat, ringkasan, dan produk yang bisa diubah
+              stoknya.
+            </p> */}
+          </div>
+        )}
 
         {/* Pilih tampilan: Riwayat / Ringkasan */}
         <div
