@@ -47,10 +47,13 @@ export default function BottomNav() {
     auth: { user: { role: string } };
   };
 
+  const role = auth.user?.role;
   const navItems =
-    auth.user?.role === 'produksi'
+    role === 'produksi'
       ? [{ title: 'Stok', href: '/stok', icon: Activity }]
-      : items;
+      : role === 'kasir'
+        ? items.filter((item) => item.href !== '/products')
+        : items;
 
   // Kalau halaman aktif tidak ada di bar, tandai "Lainnya" sebagai aktif
   const moreActive = !navItems.some((item) => isActive(item.href));

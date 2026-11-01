@@ -25,8 +25,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard')
         ->middleware('role:owner,kasir');
 
-    Route::resource('pack', PackController::class)->except(['create', 'show', 'edit']);
-    Route::resource('products', ProductController::class)->except(['create', 'show', 'edit']);
+    Route::resource('pack', PackController::class)
+        ->except(['create', 'show', 'edit'])
+        ->middleware('role:owner');
+
+    Route::resource('products', ProductController::class)
+        ->except(['create', 'show', 'edit'])
+        ->middleware('role:owner');
+        
     Route::resource('cabangs', CabangController::class)->except(['create', 'show', 'edit']);
 
     Route::get('pos', [PosController::class, 'index'])

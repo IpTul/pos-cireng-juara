@@ -25,7 +25,9 @@ class CheckRole
                 return redirect()->route('stok.index');
             }
         
-            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
+            return redirect()
+                ->back(302, [], route('dashboard'))
+                ->with('error', 'Anda tidak memiliki izin untuk mengakses halaman ini.');
         }
         return $next($request);
     }

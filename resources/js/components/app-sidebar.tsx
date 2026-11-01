@@ -124,6 +124,14 @@ export function AppSidebar() {
   // ];
 
   const isProduksi = auth.user?.role === 'produksi';
+  const isKasir = auth.user?.role === 'kasir';
+
+  // Kasir tidak melihat menu Produk dan Paket
+  const visibleCatalogItems = isKasir
+    ? catalogItems.filter(
+        (item) => item.href !== '/products' && item.href !== '/pack',
+      )
+    : catalogItems;
 
   return (
     <Sidebar>
@@ -186,7 +194,7 @@ export function AppSidebar() {
 
             <SidebarGroup>
               <SidebarGroupLabel>Produk</SidebarGroupLabel>
-              <NavMain items={catalogItems} />
+              <NavMain items={visibleCatalogItems} />
             </SidebarGroup>
 
             {auth.user?.role === 'owner' && (
