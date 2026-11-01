@@ -105,7 +105,8 @@ class StockAdjustmentController extends Controller
                 'name' => $product->name,
                 'cabang' => $product->cabang?->name,
                 'stock' => $product->stock,
-                'sisa' => ($snapshot === null && ! $includesToday)
+                // Kuah Creamy, Chili Oil, Mentai tidak punya sisa harian (stoknya diisi ulang 1000)
+                'sisa' => ($product->isSide() || ($snapshot === null && ! $includesToday))
                     ? null
                     : (int) $snapshot + ($includesToday ? $product->stock : 0),
                 'stok_awal' => (int) ($rows['Stok Awal'] ?? 0),
