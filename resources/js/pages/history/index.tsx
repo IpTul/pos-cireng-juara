@@ -1,5 +1,3 @@
-// resources/js/pages/history/index.tsx
-
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -14,6 +12,8 @@ import {
   FileSpreadsheet,
   User,
   Award,
+  Gift,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,18 +25,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import * as XLSX from 'xlsx';
 
 type PaymentMethod = 'cash' | 'qris' | 'grab' | 'gofood';
 
-// Satu item di dalam transaksi
 interface SaleLine {
   id: number;
   name: string;
@@ -49,7 +41,6 @@ interface SaleLine {
   variants?: { name: string; quantity: number }[];
 }
 
-// Satu transaksi (satu baris di tabel)
 interface SaleRow {
   id: number;
   customer_name?: string | null;
@@ -66,7 +57,6 @@ interface SaleRow {
   items: SaleLine[];
 }
 
-// Baris untuk export Excel (per item, dari /history/export-data)
 interface ExportRow {
   id: number;
   sale: {
@@ -95,7 +85,6 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString('id-ID');
 }
 
-// QRIS / Grab / GoFood dibayar pas, tanpa uang tunai dan kembalian
 function isSettled(method: PaymentMethod) {
   return method === 'qris' || method === 'grab' || method === 'gofood';
 }
@@ -169,17 +158,60 @@ function ItemVariants({ item }: { item: SaleLine }) {
   );
 }
 
+const PAYMENT_FILTERS: { value: string; label: string }[] = [
+  { value: 'all', label: 'Semua' },
+  { value: 'cash', label: 'Tunai' },
+  { value: 'qris', label: 'QRIS' },
+  { value: 'grab', label: 'Grab' },
+  { value: 'gofood', label: 'GoFood' },
+];
+
+// Item pelengkap yang bisa disaring + dihitung jumlah transaksinya
+const SIDE_FILTERS = [
+  { value: 'kuah_creamy', label: 'Kuah Creamy' },
+  { value: 'chili_oil', label: 'Chili Oil' },
+  { value: 'mentai', label: 'Mentai' },
+] as const;
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors ${
+        active
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'bg-background hover:bg-muted'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 interface Props {
   sales: PaginatedData<SaleRow>;
+  sideCounts: { kuah_creamy: number; chili_oil: number; mentai: number };
   filters?: {
     start_date: string;
     end_date: string;
     payment_method: string;
     free?: string;
+    addon?: string;
+    side?: string;
   };
 }
 
-export default function History({ sales, filters }: Props) {
+export default function History({ sales, sideCounts, filters }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState<SaleRow | null>(null);
 
@@ -189,6 +221,8 @@ export default function History({ sales, filters }: Props) {
     filters?.payment_method ?? 'all',
   );
   const [freeFilter, setFreeFilter] = useState(filters?.free ?? 'all');
+  const [addonFilter, setAddonFilter] = useState(filters?.addon ?? 'all');
+  const [sideFilter, setSideFilter] = useState(filters?.side ?? 'all');
   const [exporting, setExporting] = useState(false);
 
   function handleViewDetail(sale: SaleRow) {
@@ -200,18 +234,67 @@ export default function History({ sales, filters }: Props) {
     window.open(`/receipt/${sale.id}`, '_blank');
   }
 
-  function handleFilter() {
+  function applyFilters(
+    next: {
+      payment?: string;
+      free?: string;
+      addon?: string;
+      side?: string;
+    } = {},
+  ) {
     router.get(
       '/history',
       {
         start_date: startDate,
         end_date: endDate,
-        payment_method: paymentMethod,
-        free: freeFilter,
+        payment_method: next.payment ?? paymentMethod,
+        free: next.free ?? freeFilter,
+        addon: next.addon ?? addonFilter,
+        side: next.side ?? sideFilter,
       },
       { preserveState: true, preserveScroll: true },
     );
   }
+
+  function selectPayment(value: string) {
+    setPaymentMethod(value);
+    applyFilters({ payment: value });
+  }
+
+  function toggleFree() {
+    const value = freeFilter === 'with' ? 'all' : 'with';
+    setFreeFilter(value);
+    applyFilters({ free: value });
+  }
+
+  function toggleAddon() {
+    const value = addonFilter === 'with' ? 'all' : 'with';
+    setAddonFilter(value);
+    applyFilters({ addon: value });
+  }
+
+  function toggleSide(value: string) {
+    const next = sideFilter === value ? 'all' : value;
+    setSideFilter(next);
+    applyFilters({ side: next });
+  }
+
+  function clearFilters() {
+    setPaymentMethod('all');
+    setFreeFilter('all');
+    setAddonFilter('all');
+    setSideFilter('all');
+    applyFilters({ payment: 'all', free: 'all', addon: 'all', side: 'all' });
+  }
+
+  const datesChanged =
+    startDate !== (filters?.start_date ?? '') ||
+    endDate !== (filters?.end_date ?? '');
+  const filterActive =
+    paymentMethod !== 'all' ||
+    freeFilter !== 'all' ||
+    addonFilter !== 'all' ||
+    sideFilter !== 'all';
 
   async function handleExportExcel() {
     setExporting(true);
@@ -221,6 +304,8 @@ export default function History({ sales, filters }: Props) {
         end_date: endDate,
         payment_method: paymentMethod,
         free: freeFilter,
+        addon: addonFilter,
+        side: sideFilter,
       });
       const response = await fetch(
         `/history/export-data?${params.toString()}`,
@@ -303,59 +388,85 @@ export default function History({ sales, filters }: Props) {
           </Button>
         </div> */}
 
-        <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border p-4 print:hidden">
-          <div className="space-y-1">
-            <Label htmlFor="start_date">Dari Tanggal</Label>
-            <Input
-              id="start_date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="end_date">Sampai Tanggal</Label>
-            <Input
-              id="end_date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-          <div className="w-full space-y-1 sm:w-auto">
-            <Label htmlFor="payment_method">Metode Pembayaran</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger
-                id="payment_method"
-                className="w-full sm:w-[160px]"
+        <div className="mb-4 space-y-3 rounded-lg border p-3 md:p-4 print:hidden">
+          <div className="grid grid-cols-2 items-end gap-3 sm:flex">
+            <div className="space-y-1">
+              <Label htmlFor="start_date">Dari</Label>
+              <Input
+                id="start_date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="end_date">Sampai</Label>
+              <Input
+                id="end_date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            {datesChanged && (
+              <Button
+                className="col-span-2 sm:col-span-1"
+                onClick={() => applyFilters()}
               >
-                <SelectValue placeholder="Semua Metode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
-                <SelectItem value="cash">Tunai</SelectItem>
-                <SelectItem value="qris">QRIS</SelectItem>
-                <SelectItem value="grab">Grab</SelectItem>
-                <SelectItem value="gofood">GoFood</SelectItem>
-              </SelectContent>
-            </Select>
+                Terapkan
+              </Button>
+            )}
           </div>
-          <div className="w-full space-y-1 sm:w-auto">
-            <Label htmlFor="free_filter">Produk Gratis</Label>
-            <Select value={freeFilter} onValueChange={setFreeFilter}>
-              <SelectTrigger id="free_filter" className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Semua transaksi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua transaksi</SelectItem>
-                <SelectItem value="with">Ada produk gratis</SelectItem>
-                <SelectItem value="without">Tanpa produk gratis</SelectItem>
-              </SelectContent>
-            </Select>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {PAYMENT_FILTERS.map((p) => (
+              <Chip
+                key={p.value}
+                active={paymentMethod === p.value}
+                onClick={() => selectPayment(p.value)}
+              >
+                {p.label}
+              </Chip>
+            ))}
+
+            <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
+
+            <Chip active={freeFilter === 'with'} onClick={toggleFree}>
+              <Gift className="h-4 w-4" />
+              Ada gratis
+            </Chip>
+            <Chip active={addonFilter === 'with'} onClick={toggleAddon}>
+              <Plus className="h-4 w-4" />
+              Ada addon
+            </Chip>
+
+            <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
+
+            {SIDE_FILTERS.map((s) => (
+              <Chip
+                key={s.value}
+                active={sideFilter === s.value}
+                onClick={() => toggleSide(s.value)}
+              >
+                {s.label}
+                <span
+                  className={`rounded-full px-1.5 text-xs ${
+                    sideFilter === s.value
+                      ? 'bg-primary-foreground/20'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {sideCounts?.[s.value] ?? 0}
+                </span>
+              </Chip>
+            ))}
+
+            {filterActive && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Hapus filter
+              </Button>
+            )}
           </div>
-          <Button className="w-full sm:w-auto" onClick={handleFilter}>
-            Terapkan Filter
-          </Button>
         </div>
 
         <div className="mb-4 rounded-lg border bg-muted/50 px-4 py-3 print:hidden">

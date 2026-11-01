@@ -1268,6 +1268,28 @@ export default function StockIndex({
                 </div>
               ) : (
                 <>
+                  <div className="rounded-lg border bg-muted/50 p-3">
+                    <p className="font-medium">Total semua produk</p>
+                    <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      {SUMMARY_COLUMNS.map((c) => (
+                        <div
+                          key={c.key}
+                          className="flex justify-between last:odd:col-span-2"
+                        >
+                          <dt className="text-muted-foreground">{c.label}</dt>
+                          <dd
+                            className={valueClass(c.tone, summaryTotals[c.key])}
+                          >
+                            {summaryTotals[c.key]}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="mt-3 flex items-center justify-between rounded-md bg-background px-3 py-2 text-sm">
+                      <span className="text-muted-foreground">Sisa stok</span>
+                      <span className="font-semibold">{sisaTotal ?? '–'}</span>
+                    </div>
+                  </div>
                   {pagedSummary.map((row) => (
                     <div key={row.product_id} className="rounded-lg border p-3">
                       <div className="flex items-start justify-between gap-2">
@@ -1300,29 +1322,6 @@ export default function StockIndex({
                       </div>
                     </div>
                   ))}
-
-                  <div className="rounded-lg border bg-muted/50 p-3">
-                    <p className="font-medium">Total semua produk</p>
-                    <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                      {SUMMARY_COLUMNS.map((c) => (
-                        <div
-                          key={c.key}
-                          className="flex justify-between last:odd:col-span-2"
-                        >
-                          <dt className="text-muted-foreground">{c.label}</dt>
-                          <dd
-                            className={valueClass(c.tone, summaryTotals[c.key])}
-                          >
-                            {summaryTotals[c.key]}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                    <div className="mt-3 flex items-center justify-between rounded-md bg-background px-3 py-2 text-sm">
-                      <span className="text-muted-foreground">Sisa stok</span>
-                      <span className="font-semibold">{sisaTotal ?? '–'}</span>
-                    </div>
-                  </div>
                 </>
               )}
             </div>
@@ -1385,7 +1384,7 @@ export default function StockIndex({
                   <tfoot className="border-t bg-muted/50 font-semibold">
                     <tr>
                       <td className="px-4 py-3" colSpan={3}>
-                        Total semua produk
+                        Total semua produk test
                       </td>
                       {SUMMARY_COLUMNS.map((c) => (
                         <td key={c.key} className="px-4 py-3 text-center">
