@@ -16,7 +16,11 @@ interface FreeItemSelection {
   product_id: number;
   quantity: number;
 }
-const EXCLUDED_FREE_PRODUCTS = new Set(['chili oil', 'mentai', 'kuah creamy']);
+const EXCLUDED_FREE_PRODUCTS = new Set([
+  'chili oil juara',
+  'mentai juara',
+  'kuah creamy juara',
+]);
 interface Props {
   open: boolean;
   onClose: () => void;

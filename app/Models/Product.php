@@ -22,7 +22,7 @@ class Product extends Model
      * Produk pelengkap (bukan cireng). Dicocokkan dengan nama, tidak peka huruf besar/kecil.
      * Stoknya tidak di-nol-kan saat reset harian, dan tidak dicatat sebagai sisa stok.
      */
-    public const SIDE_NAMES = ['kuah creamy', 'chili oil', 'mentai'];
+    public const SIDE_NAMES = ['kuah creamy juara', 'chili oil juara', 'mentai juara'];
 
     /** Stok yang diisi ulang untuk produk pelengkap setiap reset harian. */
     public const SIDE_DAILY_STOCK = 1000;

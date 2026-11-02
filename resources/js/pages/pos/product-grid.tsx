@@ -8,7 +8,11 @@ interface Props {
   onAddPack: (pack: Pack, variants?: any[]) => void;
 }
 
-const SIDE_PRODUCT_NAMES = ['kuah creamy', 'chili oil', 'mentai'];
+const SIDE_PRODUCT_NAMES = [
+  'kuah creamy juara',
+  'chili oil juara',
+  'mentai juara',
+];
 const isSideProduct = (p: Product) =>
   SIDE_PRODUCT_NAMES.includes(p.name.trim().toLowerCase());
 
