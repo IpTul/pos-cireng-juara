@@ -1,8 +1,12 @@
-import { Head, router } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { Head } from '@inertiajs/react';
+import { SalesHistory } from '@/components/sales-history';
+import type { SalesHistoryProps } from '@/components/sales-history';
+import { StockSummarySection } from '@/components/stock-summary';
+import type {
+  StockSummaryFilters,
+  StockSummaryRow,
+} from '@/components/stock-summary';
 import { dashboard } from '@/routes';
-import { SimplePagination } from '@/components/ui/pagination';
-import type { Sale, User } from '@/types';
 
 interface Stats {
   today_revenue: number;
@@ -21,32 +25,11 @@ interface TopProduct {
   total_revenue: number;
 }
 
-interface PaginatedData<T> {
-  data: T[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
-  from: number | null;
-  to: number | null;
-}
-
-interface SaleWithItems extends Sale {
-  items: Array<{
-    id: number;
-    product_name: string;
-    unit_price: number;
-    quantity: number;
-    subtotal: number;
-    is_free?: boolean;
-    cabang_name?: string;
-  }>;
-}
-
-interface Props {
+interface Props extends SalesHistoryProps {
   stats: Stats;
   top_products: TopProduct[];
-  recent_sales: PaginatedData<SaleWithItems>;
+  stockSummary: StockSummaryRow[];
+  stockFilters: StockSummaryFilters;
   user: {
     id: number;
     name: string;
@@ -59,9 +42,32 @@ interface Props {
 export default function Dashboard({
   stats,
   top_products,
-  recent_sales,
+  sales,
+  sideCounts,
+  filters,
+  stockSummary,
+  stockFilters,
   user,
 }: Props) {
+  // Dua bagian punya filter sendiri di URL yang sama; saling membawa filter
+  // satu sama lain supaya mengganti salah satunya tidak mereset yang lain.
+  const stockParams: Record<string, string> = {
+    stok_period: stockFilters?.period ?? 'today',
+  };
+  if (stockFilters?.period === 'custom') {
+    if (stockFilters.start_date) {
+      stockParams.stok_start = stockFilters.start_date;
+    }
+    if (stockFilters.end_date) {
+      stockParams.stok_end = stockFilters.end_date;
+    }
+  }
+
+  const historyParams: Record<string, string> = {};
+  Object.entries(filters ?? {}).forEach(([key, value]) => {
+    if (typeof value === 'string' && value !== '') historyParams[key] = value;
+  });
+
   return (
     <>
       <Head title="Halaman Utama" />
@@ -89,7 +95,7 @@ export default function Dashboard({
             title="Transaksi Hari Ini"
             value={stats.today_transactions.toString()}
           />
-          <StatCard
+          {/* <StatCard
             title="Produk Aktif"
             value={stats.total_products.toString()}
           />
@@ -97,7 +103,7 @@ export default function Dashboard({
             title="Stok Rendah"
             value={stats.low_stock_count.toString()}
             highlight={stats.low_stock_count > 0}
-          />
+          /> */}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -119,7 +125,7 @@ export default function Dashboard({
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="overflow-x-auto rounded-lg border">
+          {/* <div className="overflow-x-auto rounded-lg border">
             <div className="border-b px-4 py-3">
               <h2 className="font-semibold">Produk Terlaris</h2>
             </div>
@@ -158,67 +164,29 @@ export default function Dashboard({
                 )}
               </tbody>
             </table>
-          </div>
-          <div className="overflow-x-auto rounded-lg border">
-            <div className="border-b px-4 py-3">
-              <h2 className="font-semibold">Penjualan Terbaru</h2>
-            </div>
-            <div className="divide-y">
-              {recent_sales.data.length === 0 ? (
-                <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                  Tidak ada penjualan yang direkam.
-                </p>
-              ) : (
-                recent_sales.data.map((sale) => (
-                  <div
-                    key={sale.id}
-                    className="flex items-center justify-between px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        Penjualan #{sale.id}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {Object.entries(
-                          sale.items.reduce(
-                            (acc, i) => {
-                              const cat = i.cabang_name || 'Lainnya';
-                              if (!acc[cat]) acc[cat] = [];
-                              acc[cat].push(`${i.product_name} ×${i.quantity}`);
-                              return acc;
-                            },
-                            {} as Record<string, string[]>,
-                          ),
-                        )
-                          .map(([cat, items]) => `${items.join(', ')} - ${cat}`)
-                          .join('; ')}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {user.role === 'owner'
-                          ? `Rp ${sale.total.toLocaleString('id-ID')}`
-                          : '*****'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(sale.created_at).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {recent_sales.last_page > 1 && (
-              <div className="border-t p-4">
-                <SimplePagination
-                  currentPage={recent_sales.current_page}
-                  totalPages={recent_sales.last_page}
-                  baseUrl={dashboard()}
-                />
-              </div>
-            )}
-          </div>
+          </div> */}
         </div>
+
+        <section className="space-y-3">
+          <h2 className="text-xl font-bold">Ringkasan Stok</h2>
+          <StockSummarySection
+            stockSummary={stockSummary}
+            filters={stockFilters}
+            basePath={dashboard().url}
+            extraParams={historyParams}
+          />
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-xl font-bold">Riwayat Penjualan</h2>
+          <SalesHistory
+            sales={sales}
+            sideCounts={sideCounts}
+            filters={filters}
+            basePath={dashboard().url}
+            extraParams={stockParams}
+          />
+        </section>
       </div>
     </>
   );

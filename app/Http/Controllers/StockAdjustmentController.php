@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DailyStockLeftover;
 use App\Models\Product;
 use App\Models\StockAdjustment;
+use App\Services\StockSummaryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -74,48 +75,7 @@ class StockAdjustmentController extends Controller
             ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->get();
 
-        // Ringkasan per produk untuk periode terpilih (tanpa filter alasan)
-        $totalsByProduct = StockAdjustment::query()
-            ->selectRaw('product_id, reason, SUM(quantity) as total')
-            ->whereIn('product_id', $products->modelKeys())
-            ->whereIn('reason', self::REASONS)
-            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
-            ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
-            ->groupBy('product_id', 'reason')
-            ->get()
-            ->groupBy('product_id');
-
-        // Sisa stok: catatan harian untuk hari yang sudah lewat, stok saat ini untuk hari ini
-        $includesToday = (! $from || $from->lte(now())) && (! $to || $to->gte(now()->startOfDay()));
-
-        $leftovers = DailyStockLeftover::query()
-            ->selectRaw('product_id, SUM(stock) as total')
-            ->whereIn('product_id', $products->modelKeys())
-            ->when($from, fn ($q) => $q->where('date', '>=', $from->toDateString()))
-            ->when($to, fn ($q) => $q->where('date', '<=', $to->toDateString()))
-            ->groupBy('product_id')
-            ->pluck('total', 'product_id');
-
-        $stockSummary = $products->map(function ($product) use ($totalsByProduct, $leftovers, $includesToday) {
-            $rows = $totalsByProduct->get($product->id, collect())->pluck('total', 'reason');
-            $snapshot = $leftovers->get($product->id);
-
-            return [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'cabang' => $product->cabang?->name,
-                'stock' => $product->stock,
-                // Kuah Creamy, Chili Oil, Mentai tidak punya sisa harian (stoknya diisi ulang 1000)
-                'sisa' => ($product->isSide() || ($snapshot === null && ! $includesToday))
-                    ? null
-                    : (int) $snapshot + ($includesToday ? $product->stock : 0),
-                'stok_awal' => (int) ($rows['Stok Awal'] ?? 0),
-                'tambahan' => (int) ($rows['Tambahan'] ?? 0),
-                'pengurangan' => (int) ($rows['Pengurangan'] ?? 0),
-                'rusak' => (int) ($rows['Rusak'] ?? 0),
-                'ke_double' => (int) ($rows['Ke double (konfirmasi owner)'] ?? 0),
-            ];
-        })->values();
+        $stockSummary = app(StockSummaryService::class)->build($products, $from, $to);
 
         return Inertia::render('stock/index', [
             'adjustments' => $adjustments,
@@ -141,17 +101,11 @@ class StockAdjustmentController extends Controller
 
     private function resolvePeriod(Request $request): array
     {
-        return match ($request->input('period', 'all')) {
-            'today' => [now()->startOfDay(), now()->endOfDay()],
-            'yesterday' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
-            '7days' => [now()->subDays(6)->startOfDay(), now()->endOfDay()],
-            '30days' => [now()->subDays(29)->startOfDay(), now()->endOfDay()],
-            'custom' => [
-                $request->filled('start_date') ? Carbon::parse($request->input('start_date'))->startOfDay() : null,
-                $request->filled('end_date') ? Carbon::parse($request->input('end_date'))->endOfDay() : null,
-            ],
-            default => [null, null],
-        };
+        return app(StockSummaryService::class)->resolvePeriod(
+            $request->input('period', 'all'),
+            $request->input('start_date'),
+            $request->input('end_date'),
+        );
     }
 
     public function store(Request $request): RedirectResponse

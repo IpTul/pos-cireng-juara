@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\BuildsSaleHistory;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SalesItem;
+use App\Services\StockSummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -12,6 +14,8 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    use BuildsSaleHistory;
+
     protected $user;
 
     public function __construct()
@@ -63,25 +67,18 @@ class DashboardController extends Controller
             'total_revenue' => (float) $p->total_revenue,
         ]);
 
-        // recent sales (paginated)
-        $recentSales = Sale::with(['items.product.cabang', 'items.pack'])
-            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
-            ->latest()
-            ->paginate(5)
-            ->through(fn($sale) => [
-                'id'         => $sale->id,
-                'total'      => (float) $sale->total,
-                'created_at' => $sale->created_at,
-                'items'      => $sale->items->map(fn($item) => [
-                    'id'            => $item->id,
-                    'product_name'  => $item->product_name,
-                    'unit_price'    => $item->unit_price,
-                    'quantity'      => $item->quantity,
-                    'subtotal'      => $item->subtotal,
-                    'is_free'       => $item->is_free,
-                    'cabang_name' => $item->product?->cabang?->name ?? ($item->pack ? 'Paket' : '—'),
-                ]),
-            ]);
+        // Ringkasan stok per produk. Periode dashboard punya parameter sendiri
+        // (stok_*) supaya tidak bentrok dengan filter riwayat penjualan.
+        $stockService = app(StockSummaryService::class);
+        $stokPeriod = $request->input('stok_period', 'today');
+        $stokStart = $request->input('stok_start');
+        $stokEnd = $request->input('stok_end');
+        [$stokFrom, $stokTo] = $stockService->resolvePeriod($stokPeriod, $stokStart, $stokEnd);
+        $stockSummary = $stockService->build(
+            $stockService->activeProducts($activeCabangId),
+            $stokFrom,
+            $stokTo,
+        );
 
         return Inertia::render('dashboard',[
             'stats' => [
@@ -97,7 +94,13 @@ class DashboardController extends Controller
                         ->count(),
             ],
             'top_products' => $topProduct,
-            'recent_sales' => $recentSales,
+            ...$this->saleHistoryProps($request, $request->only(['stok_period', 'stok_start', 'stok_end'])),
+            'stockSummary' => $stockSummary,
+            'stockFilters' => [
+                'period' => $stokPeriod,
+                'start_date' => $stokStart,
+                'end_date' => $stokEnd,
+            ],
             'user' => [
                 'id'    => $this->user->id,
                 'name'  => $this->user->name,
