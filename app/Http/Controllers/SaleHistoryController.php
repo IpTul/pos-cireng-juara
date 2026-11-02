@@ -57,17 +57,25 @@ class SaleHistoryController extends Controller
         $paymentMethod = $request->input('payment_method');
         $activeCabangId = $request->user()->activeCabangId();
 
+        // Dasar hitungan: filter cabang, tanggal, dan metode bayar yang sedang dipakai
+        $base = fn () => Sale::query()
+            ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+            ->when($startDate, fn ($q) => $q->whereDate('created_at', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('created_at', '<=', $endDate))
+            ->when($paymentMethod && $paymentMethod !== 'all', fn ($q) => $q->where('payment_method', $paymentMethod));
+
         $counts = [];
 
         foreach (self::SIDE_PRODUCTS as $key => $name) {
-            $counts[$key] = Sale::query()
-                ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
-                ->when($startDate, fn ($q) => $q->whereDate('created_at', '>=', $startDate))
-                ->when($endDate, fn ($q) => $q->whereDate('created_at', '<=', $endDate))
-                ->when($paymentMethod && $paymentMethod !== 'all', fn ($q) => $q->where('payment_method', $paymentMethod))
+            $counts[$key] = $base()
                 ->whereHas('items', fn ($q) => $this->matchSideItem($q, $name))
                 ->count();
         }
+
+        // Transaksi yang membeli paket (item berbayar dengan pack_id)
+        $counts['paket'] = $base()
+            ->whereHas('items', fn ($q) => $q->where('is_free', false)->whereNotNull('pack_id'))
+            ->count();
 
         return $counts;
     }
@@ -80,6 +88,7 @@ class SaleHistoryController extends Controller
         $free = $request->input('free');
         $addon = $request->input('addon');
         $side = $request->input('side');
+        $pack = $request->input('pack');
         $activeCabangId = $request->user()->activeCabangId();
 
         return Sale::with(['items.product.cabang', 'items.pack', 'user', 'member', 'cabang'])
@@ -100,6 +109,9 @@ class SaleHistoryController extends Controller
             })
             ->when($addon === 'with', function ($query) {
                 $query->whereHas('items', fn ($q) => $q->whereNotNull('addon_id'));
+            })
+            ->when($pack === 'with', function ($query) {
+                $query->whereHas('items', fn ($q) => $q->where('is_free', false)->whereNotNull('pack_id'));
             })
             ->when($side && isset(self::SIDE_PRODUCTS[$side]), function ($query) use ($side) {
                 $query->whereHas('items', fn ($q) => $this->matchSideItem($q, self::SIDE_PRODUCTS[$side]));
@@ -144,6 +156,11 @@ class SaleHistoryController extends Controller
                 'unit_price' => $item->unit_price,
                 'subtotal' => $item->subtotal,
                 'is_free' => (bool) $item->is_free,
+                'variants' => collect($item->pack_variants ?? [])
+                    ->map(fn ($v) => [
+                        'name' => $v['name'] ?? '-',
+                        'quantity' => $v['quantity'] ?? 0,
+                    ])
             ])->values(),
         ];
     }
@@ -254,6 +271,7 @@ class SaleHistoryController extends Controller
         $free = $request->input('free', 'all');
         $addon = $request->input('addon', 'all');
         $side = $request->input('side', 'all');
+        $pack = $request->input('pack', 'all');
         $request->merge([
             'start_date' => $startDate,
             'end_date' => $endDate,
@@ -261,6 +279,7 @@ class SaleHistoryController extends Controller
             'free' => $free,
             'addon' => $addon,
             'side' => $side,
+            'pack' => $pack,
         ]);
 
         // Paginasi per TRANSAKSI langsung di database (bukan per item)
@@ -273,6 +292,7 @@ class SaleHistoryController extends Controller
                 'free' => $free,
                 'addon' => $addon,
                 'side' => $side,
+                'pack' => $pack,
             ])
             ->through(fn (Sale $sale) => $this->transformSale($sale));
 
@@ -292,6 +312,7 @@ class SaleHistoryController extends Controller
                 'free' => $free,
                 'addon' => $addon,
                 'side' => $side,
+                'pack' => $pack,
             ],
         ]);
     }

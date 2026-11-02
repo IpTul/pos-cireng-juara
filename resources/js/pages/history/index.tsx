@@ -200,7 +200,12 @@ function Chip({
 
 interface Props {
   sales: PaginatedData<SaleRow>;
-  sideCounts: { kuah_creamy: number; chili_oil: number; mentai: number };
+  sideCounts: {
+    kuah_creamy: number;
+    chili_oil: number;
+    mentai: number;
+    paket: number;
+  };
   filters?: {
     start_date: string;
     end_date: string;
@@ -208,6 +213,7 @@ interface Props {
     free?: string;
     addon?: string;
     side?: string;
+    pack?: string;
   };
 }
 
@@ -223,6 +229,7 @@ export default function History({ sales, sideCounts, filters }: Props) {
   const [freeFilter, setFreeFilter] = useState(filters?.free ?? 'all');
   const [addonFilter, setAddonFilter] = useState(filters?.addon ?? 'all');
   const [sideFilter, setSideFilter] = useState(filters?.side ?? 'all');
+  const [packFilter, setPackFilter] = useState(filters?.pack ?? 'all');
   const [exporting, setExporting] = useState(false);
 
   function handleViewDetail(sale: SaleRow) {
@@ -240,6 +247,7 @@ export default function History({ sales, sideCounts, filters }: Props) {
       free?: string;
       addon?: string;
       side?: string;
+      pack?: string;
     } = {},
   ) {
     router.get(
@@ -251,6 +259,7 @@ export default function History({ sales, sideCounts, filters }: Props) {
         free: next.free ?? freeFilter,
         addon: next.addon ?? addonFilter,
         side: next.side ?? sideFilter,
+        pack: next.pack ?? packFilter,
       },
       { preserveState: true, preserveScroll: true },
     );
@@ -279,12 +288,25 @@ export default function History({ sales, sideCounts, filters }: Props) {
     applyFilters({ side: next });
   }
 
+  function togglePack() {
+    const value = packFilter === 'with' ? 'all' : 'with';
+    setPackFilter(value);
+    applyFilters({ pack: value });
+  }
+
   function clearFilters() {
     setPaymentMethod('all');
     setFreeFilter('all');
     setAddonFilter('all');
     setSideFilter('all');
-    applyFilters({ payment: 'all', free: 'all', addon: 'all', side: 'all' });
+    setPackFilter('all');
+    applyFilters({
+      payment: 'all',
+      free: 'all',
+      addon: 'all',
+      side: 'all',
+      pack: 'all',
+    });
   }
 
   const datesChanged =
@@ -294,7 +316,8 @@ export default function History({ sales, sideCounts, filters }: Props) {
     paymentMethod !== 'all' ||
     freeFilter !== 'all' ||
     addonFilter !== 'all' ||
-    sideFilter !== 'all';
+    sideFilter !== 'all' ||
+    packFilter !== 'all';
 
   async function handleExportExcel() {
     setExporting(true);
@@ -306,6 +329,7 @@ export default function History({ sales, sideCounts, filters }: Props) {
         free: freeFilter,
         addon: addonFilter,
         side: sideFilter,
+        pack: packFilter,
       });
       const response = await fetch(
         `/history/export-data?${params.toString()}`,
@@ -438,6 +462,19 @@ export default function History({ sales, sideCounts, filters }: Props) {
             <Chip active={addonFilter === 'with'} onClick={toggleAddon}>
               <Plus className="h-4 w-4" />
               Ada addon
+            </Chip>
+            <Chip active={packFilter === 'with'} onClick={togglePack}>
+              <Package className="h-4 w-4" />
+              Ada paket
+              <span
+                className={`rounded-full px-1.5 text-xs ${
+                  packFilter === 'with'
+                    ? 'bg-primary-foreground/20'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {sideCounts?.paket ?? 0}
+              </span>
             </Chip>
 
             <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
