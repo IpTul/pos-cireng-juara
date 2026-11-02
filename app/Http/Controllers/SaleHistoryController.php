@@ -33,20 +33,40 @@ class SaleHistoryController extends Controller
         }
     }
 
-    private const SIDE_PRODUCTS = [
-        'kuah_creamy' => 'Kuah Creamy',
-        'chili_oil' => 'Chili Oil',
-        'mentai' => 'Mentai',
+    // Filter kuah & saus. Produk dan addon DIPISAH: 'product' hanya baris produk biasa,
+    // 'addon' hanya baris addon. Nama dicocokkan dengan awalan, jadi "Kuah Creamy"
+    // maupun "Kuah Creamy Juara" sama-sama terhitung.
+    private const SIDE_FILTERS = [
+        'kuah_creamy' => ['name' => 'Kuah Creamy', 'type' => 'product'],
+        'chili_oil' => ['name' => 'Chili Oil', 'type' => 'product'],
+        'mentai' => ['name' => 'Mentai', 'type' => 'product'],
+        'addon_kuah_creamy' => ['name' => 'Kuah Creamy', 'type' => 'addon'],
+        'addon_chili_oil' => ['name' => 'Chili Oil', 'type' => 'addon'],
+        'addon_mentai' => ['name' => 'Mentai', 'type' => 'addon'],
     ];
 
-    // Item berbayar yang namanya cocok: produk biasa ("Mentai") atau addon ("[ADDON] Mentai").
-    // Item gratis ("[GRATIS] ...") tidak dihitung sebagai "membeli".
-    private function matchSideItem($query, string $name): void
+    // Item berbayar (bukan gratis, bukan paket) yang namanya diawali $name.
+    // type 'product': hanya produk biasa ("Mentai", "Mentai Juara").
+    // type 'addon'  : hanya addon ("[ADDON] Mentai ...").
+    private function matchSideItem($query, string $name, string $type): void
     {
-        $query->where('is_free', false)
+        $query->where('is_free', false);
+
+        if ($type === 'addon') {
+            $query->whereNotNull('addon_id')
+                ->where(function ($q) use ($name) {
+                    $q->where('product_name', 'like', "[ADDON] {$name}%")
+                        ->orWhereHas('addon', fn ($a) => $a->where('name', 'like', "{$name}%"));
+                });
+
+            return;
+        }
+
+        $query->whereNull('addon_id')
+            ->whereNull('pack_id')
             ->where(function ($q) use ($name) {
-                $q->whereIn('product_name', [$name, "[ADDON] {$name}"])
-                    ->orWhereHas('product', fn ($p) => $p->where('name', $name));
+                $q->where('product_name', 'like', "{$name}%")
+                    ->orWhereHas('product', fn ($p) => $p->where('name', 'like', "{$name}%"));
             });
     }
 
@@ -66,9 +86,9 @@ class SaleHistoryController extends Controller
 
         $counts = [];
 
-        foreach (self::SIDE_PRODUCTS as $key => $name) {
+        foreach (self::SIDE_FILTERS as $key => $filter) {
             $counts[$key] = $base()
-                ->whereHas('items', fn ($q) => $this->matchSideItem($q, $name))
+                ->whereHas('items', fn ($q) => $this->matchSideItem($q, $filter['name'], $filter['type']))
                 ->count();
         }
 
@@ -113,8 +133,9 @@ class SaleHistoryController extends Controller
             ->when($pack === 'with', function ($query) {
                 $query->whereHas('items', fn ($q) => $q->where('is_free', false)->whereNotNull('pack_id'));
             })
-            ->when($side && isset(self::SIDE_PRODUCTS[$side]), function ($query) use ($side) {
-                $query->whereHas('items', fn ($q) => $this->matchSideItem($q, self::SIDE_PRODUCTS[$side]));
+            ->when($side && isset(self::SIDE_FILTERS[$side]), function ($query) use ($side) {
+                $filter = self::SIDE_FILTERS[$side];
+                $query->whereHas('items', fn ($q) => $this->matchSideItem($q, $filter['name'], $filter['type']));
             })
             ->latest()
             ->latest('id');
@@ -156,11 +177,13 @@ class SaleHistoryController extends Controller
                 'unit_price' => $item->unit_price,
                 'subtotal' => $item->subtotal,
                 'is_free' => (bool) $item->is_free,
+                // Isi paket (produk yang dipilih saat transaksi); kosong untuk transaksi lama
                 'variants' => collect($item->pack_variants ?? [])
                     ->map(fn ($v) => [
                         'name' => $v['name'] ?? '-',
                         'quantity' => $v['quantity'] ?? 0,
                     ])
+                    ->values(),
             ])->values(),
         ];
     }

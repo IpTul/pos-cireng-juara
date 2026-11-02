@@ -166,12 +166,23 @@ const PAYMENT_FILTERS: { value: string; label: string }[] = [
   { value: 'gofood', label: 'GoFood' },
 ];
 
-// Item pelengkap yang bisa disaring + dihitung jumlah transaksinya
-const SIDE_FILTERS = [
-  { value: 'kuah_creamy', label: 'Kuah Creamy' },
-  { value: 'chili_oil', label: 'Chili Oil' },
-  { value: 'mentai', label: 'Mentai' },
+// Kuah & saus yang dijual sebagai PRODUK (dipisah dari addon)
+const SIDE_PRODUCT_FILTERS = [
+  { value: 'kuah_creamy', label: 'Kuah Creamy Juara' },
+  { value: 'chili_oil', label: 'Chili Oil Juara' },
+  { value: 'mentai', label: 'Mentai Juara' },
 ] as const;
+
+// Kuah & saus yang dijual sebagai ADDON
+const SIDE_ADDON_FILTERS = [
+  { value: 'addon_kuah_creamy', label: 'Addon Kuah Creamy' },
+  { value: 'addon_chili_oil', label: 'Addon Chili Oil' },
+  { value: 'addon_mentai', label: 'Addon Mentai' },
+] as const;
+
+type SideKey =
+  | (typeof SIDE_PRODUCT_FILTERS)[number]['value']
+  | (typeof SIDE_ADDON_FILTERS)[number]['value'];
 
 function Chip({
   active,
@@ -200,12 +211,7 @@ function Chip({
 
 interface Props {
   sales: PaginatedData<SaleRow>;
-  sideCounts: {
-    kuah_creamy: number;
-    chili_oil: number;
-    mentai: number;
-    paket: number;
-  };
+  sideCounts: Record<SideKey | 'paket', number>;
   filters?: {
     start_date: string;
     end_date: string;
@@ -308,6 +314,25 @@ export default function History({ sales, sideCounts, filters }: Props) {
       pack: 'all',
     });
   }
+
+  const renderSideChip = (s: { value: SideKey; label: string }) => (
+    <Chip
+      key={s.value}
+      active={sideFilter === s.value}
+      onClick={() => toggleSide(s.value)}
+    >
+      {s.label}
+      <span
+        className={`rounded-full px-1.5 text-xs ${
+          sideFilter === s.value
+            ? 'bg-primary-foreground/20'
+            : 'bg-muted text-muted-foreground'
+        }`}
+      >
+        {sideCounts?.[s.value] ?? 0}
+      </span>
+    </Chip>
+  );
 
   const datesChanged =
     startDate !== (filters?.start_date ?? '') ||
@@ -479,24 +504,11 @@ export default function History({ sales, sideCounts, filters }: Props) {
 
             <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
 
-            {SIDE_FILTERS.map((s) => (
-              <Chip
-                key={s.value}
-                active={sideFilter === s.value}
-                onClick={() => toggleSide(s.value)}
-              >
-                {s.label}
-                <span
-                  className={`rounded-full px-1.5 text-xs ${
-                    sideFilter === s.value
-                      ? 'bg-primary-foreground/20'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {sideCounts?.[s.value] ?? 0}
-                </span>
-              </Chip>
-            ))}
+            {SIDE_PRODUCT_FILTERS.map(renderSideChip)}
+
+            <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
+
+            {SIDE_ADDON_FILTERS.map(renderSideChip)}
 
             {filterActive && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
