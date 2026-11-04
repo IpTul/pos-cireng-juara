@@ -44,6 +44,7 @@ export default function Dashboard({
   top_products,
   sales,
   sideCounts,
+  itemsSold,
   filters,
   stockSummary,
   stockFilters,
@@ -182,6 +183,7 @@ export default function Dashboard({
           <SalesHistory
             sales={sales}
             sideCounts={sideCounts}
+            itemsSold={itemsSold}
             filters={filters}
             basePath={dashboard().url}
             extraParams={stockParams}

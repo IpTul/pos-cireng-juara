@@ -3,6 +3,7 @@
 namespace App\Concerns;
 
 use App\Models\Sale;
+use App\Models\SalesItem;
 use Illuminate\Http\Request;
 
 /**
@@ -76,6 +77,39 @@ trait BuildsSaleHistory
             ->count();
 
         return $counts;
+    }
+
+    /**
+     * Total item (jumlah qty) di SEMUA transaksi hasil filter, bukan hanya halaman yang tampil.
+     * Kalau satu filter item aktif, yang dihitung hanya item yang cocok dengan filter itu:
+     *   kuah/saus/addon (chip side) > paket > addon > gratis.
+     * Tanpa filter item, semua item dihitung.
+     */
+    private function itemsSold(Request $request): int
+    {
+        $side = $request->input('side');
+        $sideFilter = $side && isset(self::SIDE_FILTERS[$side]) ? self::SIDE_FILTERS[$side] : null;
+
+        $saleIds = $this->baseSalesQuery($request)->reorder()->select('id');
+
+        return (int) SalesItem::query()
+            ->whereIn('sale_id', $saleIds)
+            ->when($sideFilter, function ($q) use ($sideFilter) {
+                $this->matchSideItem($q, $sideFilter['name'], $sideFilter['type']);
+            })
+            ->when(! $sideFilter && $request->input('pack') === 'with', function ($q) {
+                $q->where('is_free', false)->whereNotNull('pack_id');
+            })
+            ->when(! $sideFilter && $request->input('pack') !== 'with' && $request->input('addon') === 'with', function ($q) {
+                $q->whereNotNull('addon_id');
+            })
+            ->when(
+                ! $sideFilter && $request->input('pack') !== 'with' && $request->input('addon') !== 'with' && $request->input('free') === 'with',
+                function ($q) {
+                    $q->where('is_free', true);
+                }
+            )
+            ->sum('quantity');
     }
 
     private function baseSalesQuery(Request $request)
@@ -195,6 +229,7 @@ trait BuildsSaleHistory
         return [
             'sales' => $sales,
             'sideCounts' => $this->sideCounts($request),
+            'itemsSold' => $this->itemsSold($request),
             'filters' => $filters,
         ];
     }
