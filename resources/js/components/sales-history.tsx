@@ -530,6 +530,18 @@ export function SalesHistory({
 
         <div className="mb-4 rounded-lg border bg-muted/50 px-4 py-3 print:hidden">
           <p>Total Transaksi: {sales.total}</p>
+          <p>
+            Total Item Terjual:{' '}
+            {sales.data.reduce(
+              (sum, sale) =>
+                sum +
+                sale.items.reduce(
+                  (itemSum, item) => itemSum + item.quantity,
+                  0,
+                ),
+              0,
+            )}
+          </p>
         </div>
 
         <div className="rounded-lg border">
