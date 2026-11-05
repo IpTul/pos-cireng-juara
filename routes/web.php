@@ -60,7 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [StockAdjustmentController::class, 'store'])->name('stok.store');
         Route::put('/{adjustment}', [StockAdjustmentController::class, 'update'])
             ->name('stok.update')
-            ->middleware('role:produksi');
+            ->middleware('role:owner,produksi');
         Route::delete('/{adjustment}', [StockAdjustmentController::class, 'destroy'])
             ->name('stok.destroy')
             ->middleware('role:owner,produksi');

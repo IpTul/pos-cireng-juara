@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DailyStockLeftover;
 use App\Models\Product;
 use App\Models\StockAdjustment;
 use App\Services\StockSummaryService;
@@ -12,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Illuminate\Support\Carbon;
 
 class StockAdjustmentController extends Controller
 {
@@ -133,7 +131,7 @@ class StockAdjustmentController extends Controller
             abort(403, 'Produk ini bukan milik cabang kamu.');
         }
 
-        if (!$product->is_active) {
+        if (! $product->is_active) {
             throw ValidationException::withMessages([
                 'product_id' => 'Produk tidak aktif.',
             ]);
@@ -169,7 +167,7 @@ class StockAdjustmentController extends Controller
 
     public function update(Request $request, StockAdjustment $adjustment): RedirectResponse
     {
-        abort_unless($request->user()->isProduksi(), 403);
+        abort_unless($request->user()->isOwner() || $request->user()->isProduksi(), 403);
 
         $validated = $request->validate([
             'type' => ['required', 'in:increase,decrease'],
@@ -234,7 +232,7 @@ class StockAdjustmentController extends Controller
 
     public function destroy(Request $request, StockAdjustment $adjustment): RedirectResponse
     {
-        abort_unless($request->user()->isProduksi(), 403);
+        abort_unless($request->user()->isOwner() || $request->user()->isProduksi(), 403);
 
         DB::transaction(function () use ($adjustment, $request) {
             $product = Product::lockForUpdate()->findOrFail($adjustment->product_id);
