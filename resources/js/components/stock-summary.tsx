@@ -144,7 +144,7 @@ export function StockSummarySection({
       <div className="mb-2">
         <p className="text-sm text-muted-foreground">Periode: {periodLabel}</p>
         <p className="text-xs text-muted-foreground">
-          Sisa = stok yang tidak terjual. Dicatat otomatis saat reset jam 07.00;
+          Sisa = stok yang tidak terjual. Dicatat otomatis saat reset jam 00.00;
           untuk hari ini sama dengan stok saat ini. "–" berarti belum ada
           catatan.
         </p>

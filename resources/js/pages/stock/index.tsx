@@ -1255,7 +1255,7 @@ export default function StockIndex({
               </p>
               <p className="text-xs text-muted-foreground">
                 Sisa = stok yang tidak terjual. Dicatat otomatis saat reset jam
-                07.00; untuk hari ini sama dengan stok saat ini. "–" berarti
+                00.00; untuk hari ini sama dengan stok saat ini. "–" berarti
                 belum ada catatan.
               </p>
             </div>

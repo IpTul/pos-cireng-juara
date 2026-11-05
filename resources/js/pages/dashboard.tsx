@@ -6,6 +6,7 @@ import type {
   StockSummaryFilters,
   StockSummaryRow,
 } from '@/components/stock-summary';
+import { FinancialReportSection } from '@/components/financial-report-section';
 import { dashboard } from '@/routes';
 
 interface Stats {
@@ -25,11 +26,43 @@ interface TopProduct {
   total_revenue: number;
 }
 
+interface FinancialData {
+  summary: {
+    total_revenue: number;
+    total_transactions: number;
+    average_transaction: number;
+  };
+  payments: Array<{
+    method: string;
+    label: string;
+    revenue: number;
+    transactions: number;
+  }>;
+  dailyRevenue: Array<{
+    date: string;
+    revenue: number;
+    transactions: number;
+    by_method: Record<string, number>;
+  }>;
+  topItems: Array<{
+    name: string;
+    type: 'produk' | 'paket';
+    total_qty: number;
+    total_revenue: number;
+  }>;
+  cabangName: string;
+  filters: {
+    start_date: string;
+    end_date: string;
+  };
+}
+
 interface Props extends SalesHistoryProps {
   stats: Stats;
   top_products: TopProduct[];
   stockSummary: StockSummaryRow[];
   stockFilters: StockSummaryFilters;
+  financialData: FinancialData | null;
   user: {
     id: number;
     name: string;
@@ -48,6 +81,7 @@ export default function Dashboard({
   filters,
   stockSummary,
   stockFilters,
+  financialData,
   user,
 }: Props) {
   // Dua bagian punya filter sendiri di URL yang sama; saling membawa filter
@@ -83,90 +117,54 @@ export default function Dashboard({
             {/* <strong>{user.role === 'owner' ? 'Owner' : 'Kasir'}</strong> */}
           </p>
         </h1>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard
-            title="Pendapatan Hari Ini"
-            value={
-              user.role === 'owner'
-                ? `Rp ${stats.today_revenue.toLocaleString('id-ID')}`
-                : '*****'
-            }
-          />
-          <StatCard
-            title="Transaksi Hari Ini"
-            value={stats.today_transactions.toString()}
-          />
-          {/* <StatCard
-            title="Produk Aktif"
-            value={stats.total_products.toString()}
-          />
-          <StatCard
-            title="Stok Rendah"
-            value={stats.low_stock_count.toString()}
-            highlight={stats.low_stock_count > 0}
-          /> */}
-        </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {(
-            [
-              ['cash', 'Tunai'],
-              ['qris', 'QRIS'],
-              ['grab', 'Grab'],
-              ['gofood', 'GoFood'],
-            ] as const
-          ).map(([key, label]) => (
-            <StatCard
-              key={key}
-              title={`${label} Hari Ini`}
-              value={`Rp ${(stats.payment_breakdown?.[key]?.total ?? 0).toLocaleString('id-ID')}`}
-              subtitle={`${stats.payment_breakdown?.[key]?.count ?? 0} transaksi`}
-            />
-          ))}
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* <div className="overflow-x-auto rounded-lg border">
-            <div className="border-b px-4 py-3">
-              <h2 className="font-semibold">Produk Terlaris</h2>
+        {/* Stat cards hanya untuk kasir (owner pakai FinancialReportSection) */}
+        {user.role === 'kasir' && (
+          <>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard
+                title="Pendapatan Hari Ini"
+                value={`Rp ${stats.today_revenue.toLocaleString('id-ID')}`}
+              />
+              <StatCard
+                title="Transaksi Hari Ini"
+                value={stats.today_transactions.toString()}
+              />
             </div>
-            <table className="w-full min-w-[900px] text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-4 py-2 text-left">Produk</th>
-                  <th className="px-4 py-2 text-right">Unit</th>
-                  <th className="px-4 py-2 text-right">
-                    {user.role === 'owner' ? 'Pendapatan' : '-'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {top_products.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={3}
-                      className="px-4 py-6 text-center text-muted-foreground"
-                    >
-                      Tidak ada penjualan hari ini.
-                    </td>
-                  </tr>
-                ) : (
-                  top_products.map((p) => (
-                    <tr key={p.product_name} className="border-t">
-                      <td className="px-4 py-2">{p.product_name}</td>
-                      <td className="px-4 py-2 text-right">{p.total_qty}</td>
-                      <td className="px-4 py-2 text-right">
-                        {user.role === 'owner'
-                          ? `Rp ${p.total_revenue.toLocaleString('id-ID')}`
-                          : '*****'}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div> */}
-        </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {(
+                [
+                  ['cash', 'Tunai'],
+                  ['qris', 'QRIS'],
+                  ['grab', 'Grab'],
+                  ['gofood', 'GoFood'],
+                ] as const
+              ).map(([key, label]) => (
+                <StatCard
+                  key={key}
+                  title={`${label} Hari Ini`}
+                  value={`Rp ${(stats.payment_breakdown?.[key]?.total ?? 0).toLocaleString('id-ID')}`}
+                  subtitle={`${stats.payment_breakdown?.[key]?.count ?? 0} transaksi`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Financial Report Section untuk owner */}
+        {user.role === 'owner' && financialData && (
+          <FinancialReportSection
+            summary={financialData.summary}
+            payments={financialData.payments}
+            dailyRevenue={financialData.dailyRevenue}
+            // topItems={financialData.topItems}
+            cabangName={financialData.cabangName}
+            filters={financialData.filters}
+            basePath={dashboard().url}
+            extraParams={stockParams}
+          />
+        )}
 
         <section className="space-y-3">
           <h2 className="text-xl font-bold">Ringkasan Stok</h2>

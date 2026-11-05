@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -80,6 +81,93 @@ class DashboardController extends Controller
             $stokTo,
         );
 
+        // Financial report data (owner only)
+        $financialData = null;
+        if ($this->user->isOwner()) {
+            $finStartDate = $request->input('fin_start_date')
+                ? Carbon::parse($request->input('fin_start_date'))->startOfDay()
+                : now()->startOfDay();
+
+            $finEndDate = $request->input('fin_end_date')
+                ? Carbon::parse($request->input('fin_end_date'))->endOfDay()
+                : now()->endOfDay();
+
+            $salesQuery = Sale::where('status', 'completed')
+                ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
+                ->whereBetween('created_at', [$finStartDate, $finEndDate]);
+
+            $totalRevenue = (clone $salesQuery)->sum('total');
+            $totalTransactions = (clone $salesQuery)->count();
+            $averageTransaction = $totalTransactions > 0
+                ? round($totalRevenue / $totalTransactions)
+                : 0;
+
+            $methods = [
+                'cash' => 'Tunai',
+                'qris' => 'QRIS',
+                'grab' => 'Grab',
+                'gofood' => 'GoFood',
+            ];
+
+            $methodRows = (clone $salesQuery)
+                ->select(
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw("COALESCE(payment_method, 'cash') as method"),
+                    DB::raw('SUM(total) as revenue'),
+                    DB::raw('COUNT(*) as transactions')
+                )
+                ->groupBy('date', 'method')
+                ->get();
+
+            $payments = collect($methods)->map(function ($label, $key) use ($methodRows) {
+                $rows = $methodRows->where('method', $key);
+                return [
+                    'method' => $key,
+                    'label' => $label,
+                    'revenue' => (float) $rows->sum('revenue'),
+                    'transactions' => (int) $rows->sum('transactions'),
+                ];
+            })->values();
+
+            $dailyRevenue = (clone $salesQuery)
+                ->select(
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('SUM(total) as revenue'),
+                    DB::raw('COUNT(*) as transactions')
+                )
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get()
+                ->map(fn ($row) => [
+                    'date' => $row->date,
+                    'revenue' => (float) $row->revenue,
+                    'transactions' => (int) $row->transactions,
+                    'by_method' => collect($methods)->mapWithKeys(fn ($label, $key) => [
+                        $key => (float) $methodRows
+                            ->where('date', $row->date)
+                            ->where('method', $key)
+                            ->sum('revenue'),
+                    ]),
+                ]);
+
+            $financialData = [
+                'summary' => [
+                    'total_revenue' => (float) $totalRevenue,
+                    'total_transactions' => $totalTransactions,
+                    'average_transaction' => (float) $averageTransaction,
+                ],
+                'payments' => $payments,
+                'dailyRevenue' => $dailyRevenue,
+                'filters' => [
+                    'start_date' => $finStartDate->toDateString(),
+                    'end_date' => $finEndDate->toDateString(),
+                ],
+                'cabangName' => $activeCabangId
+                    ? (app(\App\Models\Cabang::class)->find($activeCabangId)?->name ?? 'Cabang')
+                    : 'Semua Cabang',
+            ];
+        }
+
         return Inertia::render('dashboard',[
             'stats' => [
                     'today_revenue'      => (float) $todaySales->sum('total'),
@@ -101,6 +189,7 @@ class DashboardController extends Controller
                 'start_date' => $stokStart,
                 'end_date' => $stokEnd,
             ],
+            'financialData' => $financialData,
             'user' => [
                 'id'    => $this->user->id,
                 'name'  => $this->user->name,
