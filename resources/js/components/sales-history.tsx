@@ -14,6 +14,7 @@ import {
   Award,
   Gift,
   Plus,
+  Edit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -611,7 +612,7 @@ export function SalesHistory({
                         )}
                       </dl>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         <Button
                           variant="outline"
                           className="h-11"
@@ -627,6 +628,14 @@ export function SalesHistory({
                         >
                           <Printer className="mr-2 h-4 w-4" />
                           Struk
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-11"
+                          onClick={() => router.get(`/history/${sale.id}/edit`)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
                         </Button>
                       </div>
                     </div>
@@ -732,6 +741,14 @@ export function SalesHistory({
                             onClick={() => handlePrintReceipt(sale)}
                           >
                             <Printer className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Edit transaksi"
+                            onClick={() => router.get(`/history/${sale.id}/edit`)}
+                          >
+                            <Edit className="h-4 w-4" />
                           </Button>
                         </td>
                       </tr>
