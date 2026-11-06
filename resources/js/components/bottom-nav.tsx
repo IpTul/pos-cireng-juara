@@ -5,7 +5,6 @@ import {
   LayoutGrid,
   Menu,
   ShoppingCart,
-  History,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -21,7 +20,7 @@ const items: BottomNavItem[] = [
   { title: 'Utama', href: '/dashboard', icon: LayoutGrid },
   { title: 'Produk', href: '/products', icon: Package },
   { title: 'Jual', href: '/pos', icon: ShoppingCart },
-  { title: 'Riwayat', href: '/history', icon: History },
+  { title: 'Stok', href: '/stok', icon: Activity },
 ];
 
 const base =
