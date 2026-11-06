@@ -181,9 +181,15 @@ const SIDE_ADDON_FILTERS = [
   { value: 'addon_mentai', label: 'Addon Mentai' },
 ] as const;
 
+// Produk yang difilter khusus
+const PRODUCT_FILTERS = [
+  { value: 'rendang', label: 'Daging Rendang' },
+] as const;
+
 type SideKey =
   | (typeof SIDE_PRODUCT_FILTERS)[number]['value']
-  | (typeof SIDE_ADDON_FILTERS)[number]['value'];
+  | (typeof SIDE_ADDON_FILTERS)[number]['value']
+  | (typeof PRODUCT_FILTERS)[number]['value'];
 
 function Chip({
   active,
@@ -524,6 +530,10 @@ export function SalesHistory({
 
             {SIDE_ADDON_FILTERS.map(renderSideChip)}
 
+            <span className="mx-1 hidden h-6 w-px bg-border sm:block" />
+
+            {PRODUCT_FILTERS.map(renderSideChip)}
+
             {filterActive && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 Hapus filter
@@ -746,7 +756,9 @@ export function SalesHistory({
                             variant="ghost"
                             size="icon"
                             title="Edit transaksi"
-                            onClick={() => router.get(`/history/${sale.id}/edit`)}
+                            onClick={() =>
+                              router.get(`/history/${sale.id}/edit`)
+                            }
                           >
                             <Edit className="h-4 w-4" />
                           </Button>

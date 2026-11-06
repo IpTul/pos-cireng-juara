@@ -22,6 +22,7 @@ trait BuildsSaleHistory
         'addon_kuah_creamy' => ['name' => 'Kuah Creamy', 'type' => 'addon'],
         'addon_chili_oil' => ['name' => 'Chili Oil', 'type' => 'addon'],
         'addon_mentai' => ['name' => 'Mentai', 'type' => 'addon'],
+        'rendang' => ['name' => 'Daging Rendang', 'type' => 'product'],
     ];
 
     // Item berbayar (bukan gratis, bukan paket) yang namanya diawali $name.
