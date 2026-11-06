@@ -17,6 +17,7 @@ use App\Http\Controllers\OperatorNameController;
 use App\Http\Controllers\CabangSwitchController;
 use App\Http\Controllers\MemberHistoryController;
 use App\Http\Controllers\SOPController;
+use App\Http\Controllers\NoteController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -65,6 +66,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('stok.destroy')
             ->middleware('role:owner,produksi');
     });
+
+    Route::resource('note', NoteController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('role:owner,produksi');
 
     Route::resource('users', UserController::class)
         ->only(['index', 'store', 'update', 'destroy'])

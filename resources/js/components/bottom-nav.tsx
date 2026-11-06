@@ -5,6 +5,7 @@ import {
   LayoutGrid,
   Menu,
   ShoppingCart,
+  StickyNote,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -49,7 +50,10 @@ export default function BottomNav() {
   const role = auth.user?.role;
   const navItems =
     role === 'produksi'
-      ? [{ title: 'Stok', href: '/stok', icon: Activity }]
+      ? [
+          { title: 'Stok', href: '/stok', icon: Activity },
+          { title: 'Note', href: '/note', icon: StickyNote },
+        ]
       : role === 'kasir'
         ? items.filter((item) => item.href !== '/products')
         : items;

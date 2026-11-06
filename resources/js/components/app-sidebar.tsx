@@ -11,6 +11,7 @@ import {
   Activity,
   PlusCircle,
   UserPlus,
+  StickyNote,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -104,6 +105,7 @@ export function AppSidebar() {
       icon: Tag,
     },
     { title: 'Keuangan', href: '/keuangan', icon: Wallet },
+    { title: 'Note', href: '/note', icon: StickyNote },
     { title: 'Manajemen Pengguna', href: '/users', icon: Users },
   ];
 
@@ -177,7 +179,10 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel>Produksi</SidebarGroupLabel>
             <NavMain
-              items={[{ title: 'Riwayat Stok', href: '/stok', icon: Activity }]}
+              items={[
+                { title: 'Riwayat Stok', href: '/stok', icon: Activity },
+                { title: 'Note', href: '/note', icon: StickyNote },
+              ]}
             />
           </SidebarGroup>
         ) : (
