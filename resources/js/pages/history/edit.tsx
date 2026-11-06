@@ -101,6 +101,7 @@ interface Sale {
   operator_name: string;
   cabang_id: number | null;
   created_at: string;
+  affects_stock?: boolean;
   items: SaleItem[];
 }
 
@@ -117,6 +118,52 @@ interface Props {
     role: 'owner' | 'kasir';
   };
   canEditAll: boolean;
+}
+
+/**
+ * Input angka yang boleh dikosongkan saat mengetik (mis. hapus "1" lalu
+ * ketik "20"). Nilai baru dikirim ke induk hanya kalau angkanya valid;
+ * kalau dibiarkan kosong, saat keluar dari kolom nilainya kembali ke semula.
+ */
+function NumberInput({
+  value,
+  onCommit,
+  min = 0,
+  ...rest
+}: {
+  value: number;
+  onCommit: (value: number) => void;
+  min?: number;
+} & Omit<
+  React.ComponentProps<typeof Input>,
+  'value' | 'onChange' | 'type' | 'min'
+>) {
+  const [text, setText] = useState(String(value));
+
+  // Ikuti nilai dari induk (mis. perubahan ditolak atau diubah dari tempat lain)
+  useEffect(() => {
+    setText((current) =>
+      current !== '' && Number(current) === value ? current : String(value),
+    );
+  }, [value]);
+
+  return (
+    <Input
+      {...rest}
+      type="number"
+      min={min}
+      value={text}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        setText(e.target.value);
+        const n = Number(e.target.value);
+        if (e.target.value !== '' && Number.isFinite(n) && n >= min) {
+          onCommit(n);
+        }
+      }}
+      onBlur={() => setText(String(value))}
+    />
+  );
 }
 
 export default function HistoryEdit(props: Props) {
@@ -277,44 +324,41 @@ export default function HistoryEdit(props: Props) {
 
     // Validasi stok (server tetap yang memutuskan). Stok yang dipakai
     // transaksi ini sebelum diedit dianggap tersedia kembali.
-    if (!item.is_free) {
-      const need = new Map<number, number>();
-      const add = (productId: number, qty: number) =>
-        need.set(productId, (need.get(productId) ?? 0) + qty);
+    // Item gratis juga mengurangi stok (sama seperti saat checkout)
+    const need = new Map<number, number>();
+    const add = (productId: number, qty: number) =>
+      need.set(productId, (need.get(productId) ?? 0) + qty);
 
-      items.forEach((it, i) => {
-        if (it.is_free) return;
-        const q = i === index ? quantity : it.quantity;
-        if (it.type === 'product' && it.product_id) add(it.product_id, q);
-        if (it.type === 'pack')
-          (it.pack_variants ?? []).forEach((v) =>
-            add(v.product_id, v.quantity * q),
-          );
-      });
+    items.forEach((it, i) => {
+      const q = i === index ? quantity : it.quantity;
+      if (it.type === 'product' && it.product_id) add(it.product_id, q);
+      if (it.type === 'pack')
+        (it.pack_variants ?? []).forEach((v) =>
+          add(v.product_id, v.quantity * q),
+        );
+    });
 
-      const back = new Map<number, number>();
-      sale.items.forEach((it) => {
-        if (it.is_free) return;
-        if (it.type === 'product' && it.product_id)
-          back.set(it.product_id, (back.get(it.product_id) ?? 0) + it.quantity);
-        if (it.type === 'pack')
-          (it.pack_variants ?? []).forEach((v) =>
-            back.set(
-              v.product_id,
-              (back.get(v.product_id) ?? 0) + v.quantity * it.quantity,
-            ),
-          );
-      });
+    const back = new Map<number, number>();
+    sale.items.forEach((it) => {
+      if (it.type === 'product' && it.product_id)
+        back.set(it.product_id, (back.get(it.product_id) ?? 0) + it.quantity);
+      if (it.type === 'pack')
+        (it.pack_variants ?? []).forEach((v) =>
+          back.set(
+            v.product_id,
+            (back.get(v.product_id) ?? 0) + v.quantity * it.quantity,
+          ),
+        );
+    });
 
-      for (const [productId, qty] of need) {
-        const available =
-          getProductStock(productId) + (back.get(productId) ?? 0);
-        if (qty > available) {
-          toast.error(
-            `Stok "${getProductName(productId)}" tidak mencukupi (tersedia ${available})`,
-          );
-          return;
-        }
+    // Transaksi hari stok lama tidak mengubah stok, jadi tidak perlu dicek
+    for (const [productId, qty] of sale.affects_stock === false ? [] : need) {
+      const available = getProductStock(productId) + (back.get(productId) ?? 0);
+      if (qty > available) {
+        toast.error(
+          `Stok "${getProductName(productId)}" tidak mencukupi (tersedia ${available})`,
+        );
+        return;
       }
     }
 
@@ -493,14 +537,20 @@ export default function HistoryEdit(props: Props) {
     setShowPackVariantModal({ open: false });
   }
 
-  function resetNewItemForm() {
-    setNewItemType('product');
+  // Kosongkan isian saja (jenis item dan dialog tetap)
+  function resetNewItemFields() {
     setNewProductId('');
     setNewPackId('');
     setNewAddonId('');
     setNewQuantity(1);
     setNewUnitPrice('');
     setPackVariants([]);
+  }
+
+  // Kosongkan isian, kembali ke "Produk", dan tutup dialog
+  function resetNewItemForm() {
+    setNewItemType('product');
+    resetNewItemFields();
     setShowAddItem(false);
   }
 
@@ -568,7 +618,7 @@ export default function HistoryEdit(props: Props) {
   return (
     <>
       <Head title="Edit Transaksi" />
-      <div className="p-3 md:p-6">
+      <div className="min-w-0 overflow-x-hidden p-3 md:p-6">
         <div className="mb-4 flex items-center gap-4">
           <Link
             href="/history"
@@ -579,9 +629,9 @@ export default function HistoryEdit(props: Props) {
           <h1 className="text-2xl font-bold">Edit Transaksi</h1>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-3">
           {/* Left: Form */}
-          <div className="space-y-6 lg:col-span-2">
+          <div className="min-w-0 space-y-6 lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle>Item Transaksi</CardTitle>
@@ -596,7 +646,7 @@ export default function HistoryEdit(props: Props) {
                     {items.map((item, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 rounded-lg border bg-card p-3"
+                        className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -606,10 +656,10 @@ export default function HistoryEdit(props: Props) {
                             {item.type === 'addon' && (
                               <Tag className="h-4 w-4 text-orange-500" />
                             )}
-                            {item.is_free && (
+                            {!!item.is_free && (
                               <Gift className="h-4 w-4 text-green-600" />
                             )}
-                            {item.type === 'product' && !item.is_free ? (
+                            {item.type === 'product' ? (
                               <Select
                                 value={String(item.product_id ?? '')}
                                 onValueChange={(v) =>
@@ -644,21 +694,16 @@ export default function HistoryEdit(props: Props) {
                               </div>
                             )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Label htmlFor={`qty-${index}`} className="sr-only">
                             Quantity
                           </Label>
-                          <Input
+                          <NumberInput
                             id={`qty-${index}`}
-                            type="number"
                             min={1}
-                            max={99}
                             value={item.quantity}
-                            onChange={(e) =>
-                              updateItemQuantity(
-                                index,
-                                parseInt(e.target.value) || 1,
-                              )
+                            onCommit={(n) =>
+                              updateItemQuantity(index, Math.floor(n))
                             }
                             className="w-20 text-center"
                           />
@@ -672,17 +717,13 @@ export default function HistoryEdit(props: Props) {
                                 >
                                   Harga
                                 </Label>
-                                <Input
+                                <NumberInput
                                   id={`price-${index}`}
-                                  type="number"
                                   min={0}
                                   step={100}
                                   value={item.unit_price}
-                                  onChange={(e) =>
-                                    updateItemUnitPrice(
-                                      index,
-                                      parseFloat(e.target.value) || 0,
-                                    )
+                                  onCommit={(n) =>
+                                    updateItemUnitPrice(index, n)
                                   }
                                   className="w-28 text-right"
                                 />
@@ -699,7 +740,7 @@ export default function HistoryEdit(props: Props) {
                             </Button>
                           )}
                         </div>
-                        <div className="w-32 text-right font-medium">
+                        <div className="text-right font-medium sm:w-32">
                           {formatRupiah(item.subtotal)}
                         </div>
                       </div>
@@ -944,7 +985,7 @@ export default function HistoryEdit(props: Props) {
           </div>
 
           {/* Right: Summary */}
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Ringkasan</CardTitle>
@@ -1022,7 +1063,7 @@ export default function HistoryEdit(props: Props) {
                     className="flex-1"
                     onClick={() => {
                       setNewItemType(type);
-                      resetNewItemForm();
+                      resetNewItemFields();
                     }}
                   >
                     {type === 'product' && 'Produk'}
@@ -1036,7 +1077,7 @@ export default function HistoryEdit(props: Props) {
                 <div className="space-y-2">
                   <Label>Produk</Label>
                   <Select value={newProductId} onValueChange={setNewProductId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih produk" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1058,7 +1099,7 @@ export default function HistoryEdit(props: Props) {
                 <div className="space-y-2">
                   <Label>Paket</Label>
                   <Select value={newPackId} onValueChange={setNewPackId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih paket" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1076,7 +1117,7 @@ export default function HistoryEdit(props: Props) {
                 <div className="space-y-2">
                   <Label>Addon</Label>
                   <Select value={newAddonId} onValueChange={setNewAddonId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih addon" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1092,14 +1133,10 @@ export default function HistoryEdit(props: Props) {
 
               <div className="space-y-2">
                 <Label>Quantity</Label>
-                <Input
-                  type="number"
+                <NumberInput
                   min={1}
-                  max={99}
                   value={newQuantity}
-                  onChange={(e) =>
-                    setNewQuantity(parseInt(e.target.value) || 1)
-                  }
+                  onCommit={(n) => setNewQuantity(Math.floor(n))}
                 />
               </div>
 
@@ -1172,27 +1209,26 @@ export default function HistoryEdit(props: Props) {
                             Max/paket: {maxQty}
                           </p>
                         </div>
-                        <Input
-                          type="number"
+                        <NumberInput
                           min={0}
                           max={maxQty}
                           value={currentQty}
-                          onChange={(e) => {
-                            const qty = parseInt(e.target.value) || 0;
-                            if (qty === 0) {
-                              setPackVariants(
-                                packVariants.filter(
-                                  (v) => v.product_id !== pi.product_id,
-                                ),
-                              );
-                            } else {
-                              setPackVariants([
-                                ...packVariants.filter(
-                                  (v) => v.product_id !== pi.product_id,
-                                ),
-                                { product_id: pi.product_id, quantity: qty },
-                              ]);
-                            }
+                          onCommit={(n) => {
+                            const qty = Math.floor(n);
+                            const others = packVariants.filter(
+                              (v) => v.product_id !== pi.product_id,
+                            );
+                            setPackVariants(
+                              qty === 0
+                                ? others
+                                : [
+                                    ...others,
+                                    {
+                                      product_id: pi.product_id,
+                                      quantity: qty,
+                                    },
+                                  ],
+                            );
                           }}
                           className="w-20 text-center"
                         />

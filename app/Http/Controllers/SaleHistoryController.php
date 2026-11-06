@@ -212,7 +212,7 @@ class SaleHistoryController extends Controller
                 'unit_price' => $item->unit_price,
                 'quantity' => $item->quantity,
                 'subtotal' => $item->subtotal,
-                'is_free' => $item->is_free,
+                'is_free' => (bool) $item->is_free,
                 'pack_variants' => $item->pack_variants ?? [],
             ];
         })->values();
@@ -237,6 +237,8 @@ class SaleHistoryController extends Controller
                 'operator_name' => $sale->operator_name,
                 'cabang_id' => $sale->cabang_id,
                 'created_at' => $sale->created_at,
+                // Transaksi hari stok lama tidak mengubah stok saat diedit
+                'affects_stock' => $sale->created_at->gte($this->stockWindowStart()),
                 'items' => $formattedItems,
             ],
             'products' => $products,
@@ -457,7 +459,8 @@ class SaleHistoryController extends Controller
     private function restoreStock(Sale $sale): void
     {
         foreach ($sale->items as $item) {
-            if ($item->is_free || $item->addon_id) {
+            // Item gratis ikut mengurangi stok saat checkout, jadi ikut dikembalikan
+            if ($item->addon_id) {
                 continue;
             }
 
@@ -496,7 +499,7 @@ class SaleHistoryController extends Controller
             if (! $unchanged && ! $product->is_active) {
                 throw ValidationException::withMessages(['items' => "Produk \"{$product->name}\" tidak aktif."]);
             }
-            if ($touchStock && ! $isFree && $product->stock < $quantity) {
+            if ($touchStock && $product->stock < $quantity) {
                 throw ValidationException::withMessages(['items' => "Stok tidak mencukupi untuk \"{$product->name}\" (diperlukan: {$quantity}, tersedia: {$product->stock})."]);
             }
 
@@ -511,7 +514,7 @@ class SaleHistoryController extends Controller
             $price = $isFree ? 0 : $price;
             $subtotal = $price * $quantity;
 
-            if ($touchStock && ! $isFree) {
+            if ($touchStock) {
                 $product->decrement('stock', $quantity);
             }
 
