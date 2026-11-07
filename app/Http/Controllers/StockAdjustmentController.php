@@ -73,7 +73,13 @@ class StockAdjustmentController extends Controller
             ->when($activeCabangId, fn ($q) => $q->where('cabang_id', $activeCabangId))
             ->get();
 
-        $stockSummary = app(StockSummaryService::class)->build($products, $from, $to);
+        $summaryService = app(StockSummaryService::class);
+        $stockSummary = $summaryService->build($products, $from, $to);
+
+        // Semua cabang: produk bernama sama digabung jadi satu baris
+        if (! $activeCabangId) {
+            $stockSummary = $summaryService->mergeByName($stockSummary);
+        }
 
         return Inertia::render('stock/index', [
             'adjustments' => $adjustments,

@@ -105,6 +105,36 @@ class StockSummaryService
         })->values();
     }
 
+    /**
+     * Gabungkan baris dengan nama produk yang sama dari beberapa cabang menjadi
+     * satu baris (semua angka dijumlahkan). Dipakai saat "Semua cabang".
+     */
+    public function mergeByName(Collection $rows): Collection
+    {
+        $numeric = ['stock', 'stok_awal', 'tambahan', 'pengurangan', 'rusak', 'ke_double'];
+
+        return $rows
+            ->groupBy(fn (array $row) => mb_strtolower(trim($row['name'])))
+            ->map(function (Collection $group) use ($numeric) {
+                $first = $group->first();
+                $merged = $first;
+
+                foreach ($numeric as $key) {
+                    $merged[$key] = (int) $group->sum($key);
+                }
+
+                // Sisa: kosong ("-") hanya kalau semua cabang tidak punya catatan
+                $withSisa = $group->whereNotNull('sisa');
+                $merged['sisa'] = $withSisa->isEmpty() ? null : (int) $withSisa->sum('sisa');
+
+                $count = $group->pluck('cabang')->filter()->unique()->count();
+                $merged['cabang'] = $count > 1 ? "Semua cabang ({$count})" : $first['cabang'];
+
+                return $merged;
+            })
+            ->values();
+    }
+
     private function parseDate(?string $value): ?CarbonInterface
     {
         if (! $value || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
