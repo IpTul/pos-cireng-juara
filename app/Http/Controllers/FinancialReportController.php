@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Expense;
 use App\Models\Sale;
 use App\Models\SalesItem;
 use Illuminate\Http\Request;
@@ -118,7 +119,55 @@ class FinancialReportController extends Controller
                 'total_revenue' => (float) $row->total_revenue,
             ]);
 
+        // Pengeluaran tunai (mis. beli gas) yang dicatat kasir, per cabang
+        $expenseRows = Expense::with('cabang:id,name')
+            ->when($cabangId, fn ($q) => $q->where('cabang_id', $cabangId))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->latest()
+            ->latest('id')
+            ->get();
+
+        $cashByCabang = (clone $salesQuery)
+            ->where(fn ($q) => $q->where('payment_method', 'cash')->orWhereNull('payment_method'))
+            ->selectRaw('cabang_id, SUM(total) as total')
+            ->groupBy('cabang_id')
+            ->pluck('total', 'cabang_id');
+        $spentByCabang = $expenseRows->groupBy('cabang_id')->map->sum('amount');
+
+        $expensesPerCabang = Cabang::query()
+            ->when($cabangId, fn ($q) => $q->where('id', $cabangId))
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(function (Cabang $c) use ($cashByCabang, $spentByCabang) {
+                $cash = (int) ($cashByCabang[$c->id] ?? 0);
+                $out = (int) ($spentByCabang[$c->id] ?? 0);
+
+                return [
+                    'cabang' => $c->name,
+                    'cash_sales' => $cash,
+                    'expenses' => $out,
+                    'cash_balance' => $cash - $out,
+                ];
+            })
+            ->values();
+
+        $totalExpenses = (int) $expenseRows->sum('amount');
+
         return Inertia::render('keuangan/index', [
+            'expenses' => [
+                'total' => $totalExpenses,
+                'count' => $expenseRows->count(),
+                'net_revenue' => (int) $totalRevenue - $totalExpenses,
+                'per_cabang' => $expensesPerCabang,
+                'items' => $expenseRows->map(fn (Expense $e) => [
+                    'id' => $e->id,
+                    'date' => $e->created_at->toDateString(),
+                    'cabang' => $e->cabang?->name,
+                    'description' => $e->description,
+                    'operator' => $e->operator_name ?? '-',
+                    'amount' => $e->amount,
+                ])->values(),
+            ],
             'summary' => [
                 'total_revenue' => (float) $totalRevenue,
                 'total_transactions' => $totalTransactions,

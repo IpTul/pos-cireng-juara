@@ -44,7 +44,28 @@ const METHODS = [
   { key: 'gofood', label: 'GoFood' },
 ] as const;
 
+interface ExpensesData {
+  total: number;
+  count: number;
+  net_revenue: number;
+  per_cabang: Array<{
+    cabang: string;
+    cash_sales: number;
+    expenses: number;
+    cash_balance: number;
+  }>;
+  items: Array<{
+    id: number;
+    date: string;
+    cabang: string | null;
+    description: string;
+    operator: string;
+    amount: number;
+  }>;
+}
+
 interface Props {
+  expenses: ExpensesData;
   summary: {
     total_revenue: number;
     total_transactions: number;
@@ -92,6 +113,7 @@ function TypeBadge({ type }: { type: 'produk' | 'paket' }) {
 }
 
 export default function KeuanganIndex({
+  expenses,
   summary,
   payments,
   dailyRevenue,
@@ -126,6 +148,8 @@ export default function KeuanganIndex({
       ['Total Pendapatan', summary.total_revenue],
       ['Jumlah Transaksi', summary.total_transactions],
       ['Rata-rata / Transaksi', summary.average_transaction],
+      ['Total Pengeluaran Tunai', expenses.total],
+      ['Pendapatan Bersih (setelah pengeluaran)', expenses.net_revenue],
       [],
       ['Pendapatan per Metode Pembayaran', ''],
       ...payments.map((p) => [p.label, p.revenue]),
@@ -144,6 +168,27 @@ export default function KeuanganIndex({
       })),
     );
     XLSX.utils.book_append_sheet(workbook, dailySheet, 'Pendapatan Harian');
+
+    const expenseSheet = XLSX.utils.json_to_sheet(
+      expenses.items.map((e) => ({
+        Tanggal: e.date,
+        Cabang: e.cabang ?? '-',
+        Keterangan: e.description,
+        Operator: e.operator,
+        Jumlah: e.amount,
+      })),
+    );
+    XLSX.utils.book_append_sheet(workbook, expenseSheet, 'Pengeluaran');
+
+    const cashSheet = XLSX.utils.json_to_sheet(
+      expenses.per_cabang.map((c) => ({
+        Cabang: c.cabang,
+        'Penjualan Tunai': c.cash_sales,
+        Pengeluaran: c.expenses,
+        'Sisa Tunai': c.cash_balance,
+      })),
+    );
+    XLSX.utils.book_append_sheet(workbook, cashSheet, 'Tunai per Cabang');
 
     const productSheet = XLSX.utils.json_to_sheet(
       topItems.map((row) => ({
@@ -277,6 +322,92 @@ export default function KeuanganIndex({
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Pengeluaran tunai (dicatat kasir) */}
+        <div className="mb-4 md:mb-6">
+          <h2 className="font-semibold">Pengeluaran Tunai</h2>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Dicatat kasir dari uang tunai (mis. beli gas), mengikuti rentang
+            tanggal dan cabang.
+          </p>
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+            <div className="rounded-lg border p-3 md:p-4">
+              <span className="text-sm text-muted-foreground">
+                Total Pengeluaran ({expenses.count})
+              </span>
+              <p className="mt-1 text-xl font-bold text-red-600 md:text-2xl">
+                − {formatIDR(expenses.total)}
+              </p>
+            </div>
+            <div className="rounded-lg border p-3 md:p-4">
+              <span className="text-sm text-muted-foreground">
+                Pendapatan Bersih
+              </span>
+              <p
+                className={`mt-1 text-xl font-bold md:text-2xl ${expenses.net_revenue < 0 ? 'text-red-600' : ''}`}
+              >
+                {formatIDR(expenses.net_revenue)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-3 rounded-lg border">
+            <div className="border-b px-4 py-2 text-sm font-medium">
+              Sisa Tunai per Cabang
+            </div>
+            <ul className="divide-y">
+              {expenses.per_cabang.map((c) => (
+                <li
+                  key={c.cabang}
+                  className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
+                >
+                  <span className="font-medium">{c.cabang}</span>
+                  <span className="text-muted-foreground">
+                    {formatIDR(c.cash_sales)} − {formatIDR(c.expenses)}
+                  </span>
+                  <span
+                    className={`font-semibold ${c.cash_balance < 0 ? 'text-red-600' : 'text-green-600'}`}
+                  >
+                    {formatIDR(c.cash_balance)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-lg border">
+            <div className="border-b px-4 py-2 text-sm font-medium">
+              Rincian Pengeluaran
+            </div>
+            {expenses.items.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                Tidak ada pengeluaran pada rentang ini.
+              </p>
+            ) : (
+              <ul className="divide-y">
+                {expenses.items.map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex items-center justify-between gap-3 px-4 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {e.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDateLabel(e.date)} · {e.cabang ?? '-'} ·{' '}
+                        {e.operator}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-red-600">
+                      − {formatIDR(e.amount)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 

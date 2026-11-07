@@ -6,6 +6,7 @@ import type {
   StockSummaryFilters,
   StockSummaryRow,
 } from '@/components/stock-summary';
+import type { ExpensesData } from '@/components/expenses-report';
 import { FinancialReportSection } from '@/components/financial-report-section';
 import { dashboard } from '@/routes';
 
@@ -27,6 +28,7 @@ interface TopProduct {
 }
 
 interface FinancialData {
+  expenses: ExpensesData;
   summary: {
     total_revenue: number;
     total_transactions: number;
@@ -155,6 +157,7 @@ export default function Dashboard({
         {/* Financial Report Section untuk owner */}
         {user.role === 'owner' && financialData && (
           <FinancialReportSection
+            expenses={financialData.expenses}
             summary={financialData.summary}
             payments={financialData.payments}
             dailyRevenue={financialData.dailyRevenue}

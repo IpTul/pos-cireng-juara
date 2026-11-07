@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import * as XLSX from 'xlsx';
+import { ExpensesReport } from '@/components/expenses-report';
+import type { ExpensesData } from '@/components/expenses-report';
 
 interface PaymentTotal {
   method: string;
@@ -45,6 +47,7 @@ const METHODS = [
 ] as const;
 
 interface FinancialReportSectionProps {
+  expenses?: ExpensesData;
   summary: {
     total_revenue: number;
     total_transactions: number;
@@ -74,6 +77,7 @@ function formatDateLabel(date: string) {
 }
 
 export function FinancialReportSection({
+  expenses,
   summary,
   payments,
   dailyRevenue,
@@ -113,6 +117,12 @@ export function FinancialReportSection({
       ['Total Pendapatan', summary.total_revenue],
       ['Jumlah Transaksi', summary.total_transactions],
       ['Rata-rata / Transaksi', summary.average_transaction],
+      ...(expenses
+        ? [
+            ['Total Pengeluaran Tunai', expenses.total],
+            ['Pendapatan Bersih (setelah pengeluaran)', expenses.net_revenue],
+          ]
+        : []),
       [],
       ['Pendapatan per Metode Pembayaran', ''],
       ...payments.map((p) => [p.label, p.revenue]),
@@ -131,6 +141,34 @@ export function FinancialReportSection({
       })),
     );
     XLSX.utils.book_append_sheet(workbook, dailySheet, 'Pendapatan Harian');
+
+    if (expenses) {
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(
+          expenses.items.map((e) => ({
+            Tanggal: e.date,
+            Cabang: e.cabang ?? '-',
+            Keterangan: e.description,
+            Operator: e.operator,
+            Jumlah: e.amount,
+          })),
+        ),
+        'Pengeluaran',
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(
+          expenses.per_cabang.map((c) => ({
+            Cabang: c.cabang,
+            'Penjualan Tunai': c.cash_sales,
+            Pengeluaran: c.expenses,
+            'Sisa Tunai': c.cash_balance,
+          })),
+        ),
+        'Tunai per Cabang',
+      );
+    }
 
     XLSX.writeFile(
       workbook,
@@ -252,6 +290,8 @@ export function FinancialReportSection({
           })}
         </div>
       </div>
+
+      {expenses && <ExpensesReport expenses={expenses} />}
 
       <div className="grid grid-cols-1 gap-4">
         {/* Pendapatan harian */}

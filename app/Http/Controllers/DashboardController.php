@@ -151,6 +151,8 @@ class DashboardController extends Controller
                 ]);
 
             $financialData = [
+                'expenses' => app(\App\Services\ExpenseReportService::class)
+                    ->summarize($activeCabangId, $finStartDate, $finEndDate, $salesQuery, (int) $totalRevenue),
                 'summary' => [
                     'total_revenue' => (float) $totalRevenue,
                     'total_transactions' => $totalTransactions,

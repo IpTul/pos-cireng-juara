@@ -12,6 +12,7 @@ import {
   PlusCircle,
   UserPlus,
   StickyNote,
+  HandCoins,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -62,6 +63,11 @@ export function AppSidebar() {
       title: 'Halaman Utama',
       href: '/dashboard',
       icon: LayoutGrid,
+    },
+    {
+      title: 'Pengeluaran',
+      href: '/pengeluaran',
+      icon: HandCoins,
     },
   ];
 
