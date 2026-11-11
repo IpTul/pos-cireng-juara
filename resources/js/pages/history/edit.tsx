@@ -193,7 +193,6 @@ export default function HistoryEdit(props: Props) {
   const [newPackId, setNewPackId] = useState('');
   const [newAddonId, setNewAddonId] = useState('');
   const [newQuantity, setNewQuantity] = useState(1);
-  const [newUnitPrice, setNewUnitPrice] = useState('');
   const [packVariants, setPackVariants] = useState<
     Array<{ product_id: number; quantity: number }>
   >([]);
@@ -370,19 +369,6 @@ export default function HistoryEdit(props: Props) {
     setItems(newItems);
   }
 
-  function updateItemUnitPrice(index: number, unitPrice: number) {
-    if (!canEditAll) return; // Only owner can edit price
-    const newItems = [...items];
-    newItems[index] = {
-      ...newItems[index],
-      unit_price: unitPrice,
-      subtotal: newItems[index].is_free
-        ? 0
-        : unitPrice * newItems[index].quantity,
-    };
-    setItems(newItems);
-  }
-
   function changeItemProduct(index: number, productId: number) {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
@@ -424,10 +410,7 @@ export default function HistoryEdit(props: Props) {
           );
           return;
         }
-        const price =
-          canEditAll && newUnitPrice !== ''
-            ? parseInt(newUnitPrice) || 0
-            : getProductPrice(productId);
+        const price = getProductPrice(productId);
         setItems([
           ...items,
           {
@@ -543,7 +526,6 @@ export default function HistoryEdit(props: Props) {
     setNewPackId('');
     setNewAddonId('');
     setNewQuantity(1);
-    setNewUnitPrice('');
     setPackVariants([]);
   }
 
@@ -582,8 +564,6 @@ export default function HistoryEdit(props: Props) {
         quantity: item.quantity,
         is_free: item.is_free,
         pack_variants: item.pack_variants,
-        // Hanya owner yang boleh mengirim harga
-        ...(canEditAll && !item.is_free ? { unit_price: item.unit_price } : {}),
       })),
       ...(canEditAll ? { customer_name: customerName.trim() } : {}),
       ...(canEditAll
@@ -707,28 +687,6 @@ export default function HistoryEdit(props: Props) {
                             }
                             className="w-20 text-center"
                           />
-                          {canEditAll &&
-                            item.type !== 'pack' &&
-                            !item.is_free && (
-                              <div className="flex items-center gap-1">
-                                <Label
-                                  htmlFor={`price-${index}`}
-                                  className="sr-only"
-                                >
-                                  Harga
-                                </Label>
-                                <NumberInput
-                                  id={`price-${index}`}
-                                  min={0}
-                                  step={100}
-                                  value={item.unit_price}
-                                  onCommit={(n) =>
-                                    updateItemUnitPrice(index, n)
-                                  }
-                                  className="w-28 text-right"
-                                />
-                              </div>
-                            )}
                           {canEditAll && (
                             <Button
                               variant="ghost"
@@ -1139,20 +1097,6 @@ export default function HistoryEdit(props: Props) {
                   onCommit={(n) => setNewQuantity(Math.floor(n))}
                 />
               </div>
-
-              {newItemType === 'product' && canEditAll && (
-                <div className="space-y-2">
-                  <Label>Harga (opsional, default harga sistem)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={100}
-                    value={newUnitPrice}
-                    onChange={(e) => setNewUnitPrice(e.target.value)}
-                    placeholder="Kosongkan untuk pakai harga sistem"
-                  />
-                </div>
-              )}
 
               <div className="flex gap-2 pt-2">
                 <Button

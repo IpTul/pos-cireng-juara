@@ -318,6 +318,7 @@ class SaleHistoryController extends Controller
             $saleItems = [];
 
             foreach ($validated['items'] as $itemData) {
+                unset($itemData['unit_price']);
                 $original = null;
                 if (! empty($itemData['id'])) {
                     $original = $oldItems->get((int) $itemData['id']);

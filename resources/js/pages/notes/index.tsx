@@ -281,7 +281,7 @@ export default function NotesIndex({ notes }: Props) {
                       ? ' • hanya pembuat atau owner yang bisa mengubah'
                       : ''
                   }`
-                : 'Tulis catatan seperti di HP.'}
+                : 'Tulis catatan.'}
             </DialogDescription>
           </DialogHeader>
 
