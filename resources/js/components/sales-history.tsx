@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { PaginatedData } from '@/types';
@@ -15,6 +15,7 @@ import {
   Gift,
   Plus,
   Edit,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,8 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -249,6 +252,22 @@ export function SalesHistory({
 }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState<SaleRow | null>(null);
+  const isOwner =
+    (usePage().props as unknown as { auth?: { user?: { role?: string } } }).auth
+      ?.user?.role === 'owner';
+  const [deleting, setDeleting] = useState<SaleRow | null>(null);
+  const [deletingBusy, setDeletingBusy] = useState(false);
+
+  function confirmDelete() {
+    if (!deleting) return;
+    setDeletingBusy(true);
+    router.delete(`/history/${deleting.id}`, {
+      preserveScroll: true,
+      onSuccess: () => setDeleting(null),
+      onError: () => toast.error('Gagal menghapus transaksi'),
+      onFinish: () => setDeletingBusy(false),
+    });
+  }
 
   const [startDate, setStartDate] = useState(filters?.start_date ?? '');
   const [endDate, setEndDate] = useState(filters?.end_date ?? '');
@@ -622,7 +641,9 @@ export function SalesHistory({
                         )}
                       </dl>
 
-                      <div className="grid grid-cols-3 gap-2">
+                      <div
+                        className={`grid gap-2 ${isOwner ? 'grid-cols-4' : 'grid-cols-3'}`}
+                      >
                         <Button
                           variant="outline"
                           className="h-11"
@@ -647,6 +668,16 @@ export function SalesHistory({
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </Button>
+                        {isOwner && (
+                          <Button
+                            variant="outline"
+                            className="h-11 text-destructive hover:text-destructive"
+                            onClick={() => setDeleting(sale)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -762,6 +793,17 @@ export function SalesHistory({
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          {isOwner && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Hapus transaksi"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleting(sale)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -818,6 +860,31 @@ export function SalesHistory({
       </div>
 
       {/* Detail transaksi */}
+      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hapus transaksi?</DialogTitle>
+            <DialogDescription>
+              Transaksi {deleting?.customer_name ?? ''} akan dihapus permanen.
+              Stok dikembalikan (jika masih di hari stok berjalan) dan poin
+              member ikut dikurangi. Tindakan ini tidak bisa dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deletingBusy}
+              onClick={confirmDelete}
+            >
+              {deletingBusy ? 'Menghapus...' : 'Hapus'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>

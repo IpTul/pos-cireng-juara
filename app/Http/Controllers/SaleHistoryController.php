@@ -318,6 +318,7 @@ class SaleHistoryController extends Controller
             $saleItems = [];
 
             foreach ($validated['items'] as $itemData) {
+                // Harga tidak bisa diedit (owner maupun kasir): pakai harga historis / harga sistem
                 unset($itemData['unit_price']);
                 $original = null;
                 if (! empty($itemData['id'])) {
@@ -342,6 +343,11 @@ class SaleHistoryController extends Controller
                     if ($originalType === 'addon') {
                         $itemData['addon_id'] = $original->addon_id;
                     }
+                }
+
+                // Kasir tidak boleh mengubah quantity item yang sudah ada (owner boleh)
+                if ($original && ! $isOwner) {
+                    $itemData['quantity'] = (int) $original->quantity;
                 }
 
                 $result = $this->processSaleItem($itemData, $isOwner, $touchStock, $sale->cabang_id, $original);
@@ -400,6 +406,35 @@ class SaleHistoryController extends Controller
         });
 
         return redirect()->route('history.index')->with('success', 'Transaksi berhasil diperbarui.');
+    }
+
+    /**
+     * Hapus transaksi (owner saja). Stok dikembalikan (jika masih di hari stok
+     * berjalan, sama seperti edit) dan poin member ikut dikurangi.
+     */
+    public function destroy(Sale $sale)
+    {
+        $this->authorizeOwnerOnly();
+
+        $activeCabangId = $this->user->activeCabangId();
+        if ($activeCabangId && $sale->cabang_id !== $activeCabangId) {
+            abort(403, 'Transaksi ini bukan milik cabang aktif.');
+        }
+
+        DB::transaction(function () use ($sale) {
+            $sale = Sale::with('items')->lockForUpdate()->findOrFail($sale->id);
+
+            if ($sale->created_at->gte($this->stockWindowStart())) {
+                $this->restoreStock($sale);
+            }
+
+            $this->adjustMemberPoints($sale->member_id, -$this->cirengCount($sale->items));
+
+            $sale->items()->delete();
+            $sale->delete();
+        });
+
+        return redirect()->back()->with('success', 'Transaksi berhasil dihapus.');
     }
 
     private function authorizeCanEdit(Sale $sale): void

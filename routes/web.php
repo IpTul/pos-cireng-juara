@@ -49,6 +49,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/history/export-data', [SaleHistoryController::class, 'exportData'])->name('history.export-data');
     Route::get('/history/{sale}/edit', [SaleHistoryController::class, 'edit'])->name('history.edit')->middleware('role:owner,kasir');
     Route::put('/history/{sale}', [SaleHistoryController::class, 'update'])->name('history.update')->middleware('role:owner,kasir');
+    Route::delete('/history/{sale}', [SaleHistoryController::class, 'destroy'])->name('history.destroy')->middleware('role:owner');
 
     Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout')->middleware('role:owner,kasir');
     Route::get('receipt/{sale}', [CheckoutController::class, 'receipt'])->name('receipt')->middleware('role:owner,kasir');

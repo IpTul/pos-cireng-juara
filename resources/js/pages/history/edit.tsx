@@ -675,18 +675,33 @@ export default function HistoryEdit(props: Props) {
                             )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <Label htmlFor={`qty-${index}`} className="sr-only">
-                            Quantity
-                          </Label>
-                          <NumberInput
-                            id={`qty-${index}`}
-                            min={1}
-                            value={item.quantity}
-                            onCommit={(n) =>
-                              updateItemQuantity(index, Math.floor(n))
-                            }
-                            className="w-20 text-center"
-                          />
+                          {canEditAll ? (
+                            <>
+                              <Label
+                                htmlFor={`qty-${index}`}
+                                className="sr-only"
+                              >
+                                Quantity
+                              </Label>
+                              <NumberInput
+                                id={`qty-${index}`}
+                                min={1}
+                                value={item.quantity}
+                                onCommit={(n) =>
+                                  updateItemQuantity(index, Math.floor(n))
+                                }
+                                className="w-20 text-center"
+                              />
+                            </>
+                          ) : (
+                            // Kasir: quantity terkunci sesuai saat transaksi dibuat
+                            <span
+                              className="inline-flex h-9 min-w-16 items-center justify-center rounded-md border bg-muted px-3 text-sm font-medium"
+                              aria-label="Quantity"
+                            >
+                              × {item.quantity}
+                            </span>
+                          )}
                           {canEditAll && (
                             <Button
                               variant="ghost"
