@@ -184,7 +184,7 @@ class DashboardController extends Controller
                         ->count(),
             ],
             'top_products' => $topProduct,
-            ...$this->saleHistoryProps($request, $request->only(['stok_period', 'stok_start', 'stok_end'])),
+            ...$this->saleHistoryProps($request, $request->only(['stok_period', 'stok_start', 'stok_end', 'fin_start_date', 'fin_end_date'])),
             'stockSummary' => $stockSummary,
             'stockFilters' => [
                 'period' => $stokPeriod,

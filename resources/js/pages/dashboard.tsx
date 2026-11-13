@@ -86,8 +86,9 @@ export default function Dashboard({
   financialData,
   user,
 }: Props) {
-  // Dua bagian punya filter sendiri di URL yang sama; saling membawa filter
-  // satu sama lain supaya mengganti salah satunya tidak mereset yang lain.
+  // Tiga bagian (keuangan, stok, riwayat penjualan) punya filter sendiri di
+  // URL yang sama; masing-masing membawa filter dua bagian lainnya supaya
+  // mengganti salah satunya tidak mereset yang lain.
   const stockParams: Record<string, string> = {
     stok_period: stockFilters?.period ?? 'today',
   };
@@ -104,6 +105,14 @@ export default function Dashboard({
   Object.entries(filters ?? {}).forEach(([key, value]) => {
     if (typeof value === 'string' && value !== '') historyParams[key] = value;
   });
+
+  const financeParams: Record<string, string> = {};
+  if (financialData?.filters?.start_date) {
+    financeParams.fin_start_date = financialData.filters.start_date;
+  }
+  if (financialData?.filters?.end_date) {
+    financeParams.fin_end_date = financialData.filters.end_date;
+  }
 
   return (
     <>
@@ -165,7 +174,7 @@ export default function Dashboard({
             cabangName={financialData.cabangName}
             filters={financialData.filters}
             basePath={dashboard().url}
-            extraParams={stockParams}
+            extraParams={{ ...stockParams, ...historyParams }}
           />
         )}
 
@@ -175,7 +184,7 @@ export default function Dashboard({
             stockSummary={stockSummary}
             filters={stockFilters}
             basePath={dashboard().url}
-            extraParams={historyParams}
+            extraParams={{ ...historyParams, ...financeParams }}
           />
         </section>
 
@@ -187,7 +196,7 @@ export default function Dashboard({
             itemsSold={itemsSold}
             filters={filters}
             basePath={dashboard().url}
-            extraParams={stockParams}
+            extraParams={{ ...stockParams, ...financeParams }}
           />
         </section>
       </div>
